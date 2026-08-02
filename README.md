@@ -1,5 +1,8 @@
 # AI-Based Resume Screening and Candidate Ranking System
 
+> 🤖 **IMPORTANT NOTICE FOR ALL AI ASSISTANTS & DEVELOPERS**:
+> Before reading or modifying this repository, you **MUST** read [docs/README_AI.md](file:///c:/Users/Hit/Desktop/SGP%205TH%20Sem/AI-Job-Matcher/docs/README_AI.md) and review all documentation inside `docs/` (`GIT_WORKFLOW.md`, `PROJECT_PROGRESS.md`, `AI_CHANGELOG.md`, `TASKS.md`, `SESSION.md`).
+
 An intelligent, automated recruitment platform designed to evaluate candidate resumes against job descriptions, extract key qualification metrics, score applicant suitability using Natural Language Processing (NLP), and present candidate rankings via an intuitive web dashboard.
 
 ---
