@@ -1,52 +1,52 @@
-# 🏗️ System Architecture & Design Specification (`ARCHITECTURE.md`)
+# CareerSync AI Architecture
 
-> **PHASE 2 DELIVERABLE: ARCHITECTURE DESIGN**
+Status: active architecture baseline, August 2026.
 
----
-
-## 📐 1. High-Level Architecture Overview
-
-The system follows a multi-tier, microservice-decoupled architecture:
+## Runtime shape
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│                    React.js Frontend                    │
-│                 (Recruiter & Applicant UI)               │
-└────────────────────────────┬────────────────────────────┘
-                             │ REST API (HTTP/JSON)
-┌────────────────────────────▼────────────────────────────┐
-│                  Node.js / Express API                  │
-│        (Auth, CRUD, File Handling, Job Management)       │
-└──────────────┬───────────────────────────┬──────────────┘
-               │                           │
-               │ Internal REST             │ Mongoose Driver
-┌──────────────▼─────────────┐   ┌─────────▼──────────────┐
-│    Python / FastAPI AI     │   │    MongoDB Database    │
-│  (NLP Parsing & Scoring)   │   │  (Users, Jobs, Scores) │
-└────────────────────────────┘   └────────────────────────┘
+Next.js frontend → FastAPI modular monolith → PostgreSQL + pgvector
+                                      ├── Redis/Celery resume-processing queue
+                                      └── AI/NLP service boundary
 ```
 
----
+The backend is the security and domain authority. Frontend routing or middleware
+is not an authorization boundary. The AI boundary may parse and infer signals,
+but it never decides access, recruiter ownership, or final ranking policy.
 
-## 🧩 2. Core Service Modules
+## Repository mapping
 
-1. **Frontend Application (`frontend/`)**: React.js SPA handling recruiter dashboards, candidate tables, and UI visualizations.
-2. **Backend API Server (`backend/`)**: Node.js & Express API server handling JWT authentication, job postings, file upload storage, and orchestrating AI service requests.
-3. **AI & NLP Microservice (`ai-services/`)**: Python & FastAPI service executing PDF/DOCX text parsing (`pdfplumber`/`PyPDF2`), entity extraction (`spaCy`), transformer embeddings, and scoring metrics.
-4. **Database Layer (`database/`)**: MongoDB storing users, candidate profiles, job postings, and evaluation score histories.
+- `frontend/`: active Next.js application.
+- `frontend2/`: preserved reference copy of the pre-consolidation frontend.
+- `backend/`: FastAPI API, SQLAlchemy models, Alembic migrations, security, and domain services.
+- `database/`: reserved for database fixtures/seeds; schema migrations live with the backend.
+- `ai-services/`: reserved AI worker/service implementation; currently an explicit integration boundary.
 
----
+## Domain flow
 
-## 📊 3. Explainable AI Scoring Framework Architecture
+```text
+Job → Requirements → Candidate → Resume → Application → EvaluationRun → immutable MatchResult
+```
 
-Match Score is calculated using a weighted multi-component model:
+`Application` is the first-class bridge between a candidate and a job.
+`MatchResult` is an immutable snapshot. Requirement, resume, model, parser, or
+saved scoring changes create a new evaluation run; presentation changes and
+temporary what-if previews do not mutate a result.
 
-$$Score = (0.35 \times SkillScore) + (0.35 \times ExpScore) + (0.15 \times EduScore) + (0.15 \times SemanticScore)$$
+## Deterministic policy
 
----
+Required-requirement coverage tiers precede weighted fit score. Exact ties use
+skills, experience, education, semantic score, and stable opaque candidate ID.
+Experience merges overlapping professional intervals and excludes internships
+by default. Education uses PhD ≥ Master ≥ Bachelor. Transferable skills require
+an explicit taxonomy mapping; semantic similarity alone cannot create that status.
 
-## ⚖️ 4. Blind Screening & Anonymization Engine
+## Security boundary
 
-A dedicated text sanitization filter strips PII (Personally Identifiable Information) before sending text to the scoring pipeline:
-- Strips candidate full name, email, phone, address.
-- Sanitizes gender markers and graduation year ranges.
+FastAPI independently verifies identity, role, and resource ownership for every
+protected operation. Uploads are restricted to PDF/DOCX, limited to 10 MB,
+signature-checked, hashed with SHA-256, stored under generated keys outside the
+served application directory, and rejected when identical content is already
+associated with the same job.
+
+The old Express/MongoDB design is historical and is no longer the active target.
