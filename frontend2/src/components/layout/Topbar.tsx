@@ -1,89 +1,89 @@
 "use client";
 
 import React from "react";
-import { usePathname } from "next/navigation";
 import { useRecruiter } from "@/lib/context/RecruiterContext";
-import { ChevronRight, Search, Bell, ShieldAlert } from "lucide-react";
+import { useTheme } from "@/lib/context/ThemeContext";
+import { 
+  Building2, 
+  Search, 
+  Sun, 
+  Moon, 
+  Sparkles, 
+  Plus, 
+  Bell, 
+  Sliders, 
+  ChevronDown 
+} from "lucide-react";
 import Link from "next/link";
 
 export const Topbar: React.FC = () => {
-  const pathname = usePathname();
-  const { currentJob } = useRecruiter();
-
-  // Simple breadcrumbs generator
-  const getBreadcrumbs = () => {
-    const parts = pathname.split("/").filter(Boolean);
-    const crumbs = [];
-
-    // Base Recruiter
-    if (parts[0] === "recruiter") {
-      crumbs.push({ label: "Recruitment Portal", href: "/recruiter" });
-
-      if (parts[1] === "jobs" && parts[2]) {
-        crumbs.push({
-          label: currentJob ? currentJob.title : "Job Workspace",
-          href: `/recruiter/jobs/${parts[2]}`
-        });
-
-        if (parts[3] === "candidates" && parts[4]) {
-          crumbs.push({ label: "Candidate Inspector", href: "" });
-        }
-      } else if (parts[1] === "upload") {
-        crumbs.push({ label: "Resume Upload Queue", href: "/recruiter/upload" });
-      } else if (parts[1] === "compare") {
-        crumbs.push({ label: "Candidate Compare Board", href: "/recruiter/compare" });
-      }
-    }
-
-    return crumbs;
-  };
-
-  const breadcrumbs = getBreadcrumbs();
+  const { currentJob, jobs, setSelectedJobId } = useRecruiter();
+  const { theme, cycleTheme } = useTheme();
 
   return (
-    <header className="h-16 border-b border-white/10 glass-panel rounded-none px-6 flex items-center justify-between sticky top-0 z-20">
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-secondary">
-        {breadcrumbs.map((crumb, idx) => {
-          const isLast = idx === breadcrumbs.length - 1;
-          return (
-            <React.Fragment key={idx}>
-              {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-text-tertiary" />}
-              {isLast || !crumb.href ? (
-                <span className="font-semibold text-text-primary truncate max-w-[200px] md:max-w-xs">
-                  {crumb.label}
-                </span>
-              ) : (
-                <Link href={crumb.href} className="hover:text-text-primary transition-colors">
-                  {crumb.label}
-                </Link>
-              )}
-            </React.Fragment>
-          );
-        })}
-      </nav>
-
-      {/* Recruiter Identity Context */}
+    <header className="h-16 glass-panel rounded-none border-t-0 border-l-0 border-r-0 border-b border-ink-border sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between bg-ink-surface/90 backdrop-blur-xl select-none">
+      
+      {/* Active Requisition Picker */}
       <div className="flex items-center gap-4">
-        {/* Simple Notification Button */}
-        <button
-          className="p-1.5 rounded hover:bg-ink-border text-text-secondary hover:text-text-primary transition-colors relative"
-          aria-label="View notifications"
-        >
-          <Bell className="w-4.5 h-4.5" />
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-signal-500" />
-        </button>
-
-        {/* User Identity info */}
-        <div className="flex items-center gap-2 border-l border-ink-border pl-4">
-          <div className="w-8 h-8 rounded-full bg-signal-500/20 border border-signal-500/40 text-signal-500 flex items-center justify-center font-display font-semibold text-sm">
-            H
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-signal-500/15 border border-signal-500/30 flex items-center justify-center text-signal-500">
+            <Building2 className="w-4 h-4" />
           </div>
-          <div className="hidden sm:block text-left">
-            <p className="text-xs font-semibold text-text-primary">Hit</p>
-            <p className="text-[11px] text-text-secondary leading-none">Senior Recruiter</p>
+          <div className="relative">
+            <select
+              value={currentJob?.id || ""}
+              onChange={(e) => setSelectedJobId(e.target.value)}
+              className="appearance-none bg-white/5 border border-ink-border hover:border-signal-500/40 rounded-xl px-3 py-1.5 pr-8 text-xs font-semibold text-text-primary focus:outline-none cursor-pointer"
+            >
+              {jobs.map((j) => (
+                <option key={j.id} value={j.id} className="bg-ink-base text-text-primary">
+                  {j.title} ({j.applicantCount} candidates)
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-text-tertiary absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
+      </div>
+
+      {/* Right Controls */}
+      <div className="flex items-center gap-3">
+        
+        {/* Quick Search Trigger (Cmd+K) */}
+        <button
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+          }}
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-ink-border text-xs text-text-secondary hover:text-text-primary hover:border-signal-500/40 transition-all font-mono"
+        >
+          <Search className="w-3.5 h-3.5 text-signal-500" />
+          <span>Quick Find</span>
+          <kbd className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-ink-border">Cmd+K</kbd>
+        </button>
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={cycleTheme}
+          className="p-2 rounded-xl border border-ink-border glass-card text-text-secondary hover:text-text-primary transition-all"
+          title={`Switch Theme (Current: ${theme})`}
+        >
+          {theme === "light" ? (
+            <Sun className="w-4 h-4 text-warning" />
+          ) : theme === "cyber" ? (
+            <Sparkles className="w-4 h-4 text-success" />
+          ) : (
+            <Moon className="w-4 h-4 text-signal-500" />
+          )}
+        </button>
+
+        {/* New Job CTA */}
+        <Link
+          href="/recruiter/jobs/new"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-signal-500/15 border border-signal-500/30 text-xs font-semibold text-signal-500 hover:bg-signal-500/25 transition-all"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>New Requisition</span>
+        </Link>
       </div>
     </header>
   );
