@@ -24,7 +24,7 @@ interface RecruiterContextType {
 const RecruiterContext = createContext<RecruiterContextType | undefined>(undefined);
 
 export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [selectedJobId, setSelectedJobIdState] = useState<string>("job-1");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJob, setCurrentJob] = useState<Job | null>(null);
@@ -42,7 +42,7 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       document.documentElement.setAttribute("data-theme", savedTheme);
       return () => clearTimeout(timer);
     } else {
-      document.documentElement.setAttribute("data-theme", "dark");
+      document.documentElement.setAttribute("data-theme", "light");
     }
   }, []);
 
