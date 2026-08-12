@@ -77,7 +77,7 @@ export default function ApplicationDetailPage({
 
       {/* Overview Card */}
       <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-3">
-        <span className="inline-block px-2.5 py-0.5 bg-aperture-500/10 text-aperture-500 rounded text-[10px] font-semibold uppercase tracking-wider font-mono">
+        <span className="inline-block px-2.5 py-0.5 bg-aperture-500/10 text-aperture-500 rounded text-[11px] font-semibold uppercase tracking-wider font-mono">
           Requisition ID: {job.id}
         </span>
         <h2 className="font-display font-semibold text-lg text-text-primary tracking-tight">
@@ -97,7 +97,7 @@ export default function ApplicationDetailPage({
 
       {/* Timeline list */}
       <div className="space-y-4">
-        <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider text-[10px]">
+        <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider text-[11px]">
           Milestone Timeline
         </h3>
 
@@ -117,7 +117,7 @@ export default function ApplicationDetailPage({
                     {getStageHeader(event.stage)}
                   </h4>
                   <span className={cn(
-                    "px-2 py-0.5 rounded border text-[9px] font-semibold uppercase tracking-wider",
+                    "px-2 py-0.5 rounded border text-[10px] font-semibold uppercase tracking-wider",
                     getStageColor(event.stage)
                   )}>
                     {event.stage === "screened" ? "reviewed" : event.stage}
@@ -125,13 +125,13 @@ export default function ApplicationDetailPage({
                 </div>
 
                 {/* Event timestamp */}
-                <p className="text-[10px] text-text-tertiary flex items-center gap-1">
+                <p className="text-[11px] text-text-tertiary flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" />
                   {new Date(event.timestamp).toLocaleString()}
                 </p>
 
                 {event.note && (
-                  <p className="text-[11px] text-text-secondary pt-1 border-t border-ink-border/50 flex items-start gap-1">
+                  <p className="text-xs text-text-secondary pt-1 border-t border-ink-border/50 flex items-start gap-1">
                     <MessageSquare className="w-3.5 h-3.5 text-text-tertiary mt-0.5 shrink-0" />
                     <span>{event.note}</span>
                   </p>

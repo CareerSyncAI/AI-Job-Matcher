@@ -61,7 +61,7 @@ export default function ApplicationsPage() {
       {/* Applications list */}
       <div className="space-y-4">
         {applications.length === 0 ? (
-          <div className="p-12 bg-ink-surface border border-ink-border rounded text-center text-text-secondary text-xs">
+          <div className="p-12 glass-card text-center text-text-secondary text-xs">
             <Briefcase className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
             <p className="font-semibold text-text-primary">No active applications</p>
             <p className="text-text-tertiary mt-1">Submit your matching credentials to open job listings to start tracking.</p>
@@ -78,7 +78,7 @@ export default function ApplicationsPage() {
             return (
               <div
                 key={app.id}
-                className="bg-ink-surface border border-ink-border rounded p-5 space-y-4"
+                className="glass-card p-5 space-y-4"
               >
                 {/* Header card details */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -86,7 +86,7 @@ export default function ApplicationsPage() {
                     <h3 className="font-semibold text-sm text-text-primary">
                       {job ? job.title : "Unknown Requisition"}
                     </h3>
-                    <p className="text-[10px] text-text-tertiary font-semibold uppercase mt-0.5">
+                    <p className="text-[11px] text-text-tertiary font-semibold uppercase mt-0.5">
                       {job ? job.department : "Engineering"}
                     </p>
                   </div>
@@ -94,7 +94,7 @@ export default function ApplicationsPage() {
                   <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
                     <span
                       className={cn(
-                        "inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider capitalize",
+                        "inline-block px-2.5 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider capitalize",
                         getStatusColor(app.status)
                       )}
                     >
@@ -114,7 +114,7 @@ export default function ApplicationsPage() {
                 {/* Progress bar pipeline visual */}
                 {app.status !== "rejected" && (
                   <div className="space-y-2 pt-2 border-t border-ink-border/50">
-                    <div className="flex justify-between items-center text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
+                    <div className="flex justify-between items-center text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
                       <span className={cn(currentStage >= 1 && "text-aperture-500")}>Applied</span>
                       <span className={cn(currentStage >= 2 && "text-warning")}>Reviewed</span>
                       <span className={cn(currentStage >= 3 && "text-success")}>Shortlisted</span>
@@ -141,7 +141,7 @@ export default function ApplicationsPage() {
                 )}
 
                 {/* Date stamp */}
-                <div className="text-[10px] text-text-tertiary flex items-center gap-1">
+                <div className="text-[11px] text-text-tertiary flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
                   Submitted: {new Date(app.appliedAt).toLocaleDateString()}
                 </div>

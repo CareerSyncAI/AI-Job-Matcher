@@ -155,21 +155,21 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
         <div className="flex items-center justify-between bg-signal-500/10 border border-signal-500/30 px-4 py-3 rounded animate-fade-in">
           <p className="text-xs font-semibold text-text-primary">
             {selectedIds.length} candidate{selectedIds.length > 1 ? "s" : ""} selected for evaluation.
-            <span className="text-[10px] text-text-secondary font-normal block sm:inline sm:ml-2">
+            <span className="text-[11px] text-text-secondary font-normal block sm:inline sm:ml-2">
               (Choose between 2 to 4 candidates to enable side-by-side trade-offs)
             </span>
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setSelectedIds([])}
-              className="px-2.5 py-1 text-[11px] font-semibold text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+              className="px-2.5 py-1 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
             >
               Clear selection
             </button>
             <button
               disabled={selectedIds.length < 2 || selectedIds.length > 4}
               onClick={handleCompare}
-              className="px-3 py-1 bg-signal-500 disabled:bg-signal-500/30 hover:bg-signal-600 text-ink-base font-bold text-[11px] rounded transition-colors disabled:cursor-not-allowed cursor-pointer"
+              className="px-3 py-1 bg-signal-500 disabled:bg-signal-500/30 hover:bg-signal-600 text-ink-base font-bold text-xs rounded transition-colors disabled:cursor-not-allowed cursor-pointer"
             >
               Compare Side-by-Side
             </button>
@@ -277,7 +277,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                             {displayName}
                           </Link>
                           {density === "comfortable" && (
-                            <div className="text-[10px] text-text-secondary mt-0.5">
+                            <div className="text-[11px] text-text-secondary mt-0.5">
                               {displayRole} &bull; {displayLocation}
                             </div>
                           )}
@@ -302,13 +302,13 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                           {matchedList.slice(0, 3).map((s, idx) => (
                             <span
                               key={idx}
-                              className="px-1.5 py-0.5 bg-success/10 text-success rounded text-[9px] font-medium uppercase tracking-wider"
+                              className="px-1.5 py-0.5 bg-success/10 text-success rounded text-[10px] font-medium uppercase tracking-wider"
                             >
                               {s}
                             </span>
                           ))}
                           {matchedList.length > 3 && (
-                            <span className="text-[9px] text-text-tertiary">
+                            <span className="text-[10px] text-text-tertiary">
                               +{matchedList.length - 3} more
                             </span>
                           )}
@@ -325,7 +325,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                           {gapsList.map((g, idx) => (
                             <span
                               key={idx}
-                              className="px-1.5 py-0.5 bg-danger/10 text-danger rounded text-[9px] font-medium uppercase tracking-wider"
+                              className="px-1.5 py-0.5 bg-danger/10 text-danger rounded text-[10px] font-medium uppercase tracking-wider"
                               title="Direct constraint mismatch"
                             >
                               {g} (Gap)
@@ -335,14 +335,14 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                           {notDetectedList.slice(0, 2).map((nd, idx) => (
                             <span
                               key={idx}
-                              className="px-1.5 py-0.5 bg-ink-border text-text-secondary border border-ink-border rounded text-[9px] font-medium uppercase tracking-wider"
+                              className="px-1.5 py-0.5 bg-ink-border text-text-secondary border border-ink-border rounded text-[10px] font-medium uppercase tracking-wider"
                               title="No direct mention found"
                             >
                               {nd}
                             </span>
                           ))}
                           {(gapsList.length === 0 && notDetectedList.length === 0) && (
-                            <span className="text-success text-[10px]">No gaps</span>
+                            <span className="text-success text-[11px]">No gaps</span>
                           )}
                         </div>
                       </td>
@@ -356,7 +356,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                       <td className="p-3 text-center">
                         <span
                           className={cn(
-                            "inline-block px-2 py-0.5 rounded text-[10px] font-semibold capitalize",
+                            "inline-block px-2 py-0.5 rounded text-[11px] font-semibold capitalize",
                             candidate.status === "shortlisted" && "bg-success/10 text-success",
                             candidate.status === "interviewing" && "bg-signal-500/10 text-signal-500",
                             candidate.status === "rejected" && "bg-ink-border text-text-secondary", // rejected is grey, never harsh red!

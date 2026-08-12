@@ -43,7 +43,7 @@ export default function ComparePage() {
 
   if (compareList.length === 0) {
     return (
-      <div className="space-y-4 p-8 text-center bg-ink-surface border border-ink-border rounded">
+      <div className="space-y-4 p-8 text-center glass-panel">
         <ArrowLeftRight className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
         <h2 className="font-semibold text-text-primary">No candidates selected for comparison</h2>
         <p className="text-xs text-text-secondary max-w-sm mx-auto">
@@ -155,7 +155,7 @@ export default function ComparePage() {
             className={`px-3 py-1.5 border rounded text-xs font-semibold transition-colors cursor-pointer ${
               showDifferencesOnly
                 ? "bg-signal-500/10 border-signal-500 text-signal-500"
-                : "bg-ink-surface border-ink-border text-text-secondary hover:border-ink-border/80"
+                : "glass-card text-text-secondary hover:border-ink-border/80"
             }`}
           >
             {showDifferencesOnly ? "Showing Differences Only" : "Show Differences Only"}
@@ -164,18 +164,18 @@ export default function ComparePage() {
       </div>
 
       {/* Compare Candidates Profile Cards (Columns) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 border border-ink-border bg-ink-surface rounded text-left overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-4 glass-panel rounded-xl text-left overflow-hidden">
         {/* Requirement Baseline Column */}
         <div className="p-4 flex flex-col justify-between h-44 bg-ink-base/40">
           <div>
             <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
               Comparison Board
             </h3>
-            <p className="text-[10px] text-text-secondary mt-1 leading-normal">
+            <p className="text-[11px] text-text-secondary mt-1 leading-normal">
               Evaluating trade-offs side-by-side for <strong>{compareList.length}</strong> candidates matching the job specification.
             </p>
           </div>
-          <div className="text-[10px] text-text-tertiary font-mono">
+          <div className="text-[11px] text-text-tertiary font-mono">
             Job Scope: {targetJob.title}
           </div>
         </div>
@@ -206,7 +206,7 @@ export default function ComparePage() {
                 </Link>
                 <span
                   className={cn(
-                    "inline-block px-1.5 py-0.5 rounded font-mono font-semibold border text-[10px] shrink-0",
+                    "inline-block px-1.5 py-0.5 rounded font-mono font-semibold border text-[11px] shrink-0",
                     getScoreColor(candidate.matchScore)
                   )}
                 >
@@ -221,14 +221,14 @@ export default function ComparePage() {
               <button
                 disabled={candidate.status === "shortlisted"}
                 onClick={() => updateCandidateStatus(candidate.id, "shortlisted")}
-                className="flex-1 py-1 bg-success disabled:opacity-40 text-ink-base font-semibold text-[10px] rounded transition-colors cursor-pointer"
+                className="flex-1 py-1 bg-success disabled:opacity-40 text-ink-base font-semibold text-[11px] rounded transition-colors cursor-pointer"
               >
                 {candidate.status === "shortlisted" ? "Shortlisted" : "Shortlist"}
               </button>
               <button
                 disabled={candidate.status === "rejected"}
                 onClick={() => updateCandidateStatus(candidate.id, "rejected")}
-                className="flex-1 py-1 bg-ink-border hover:bg-ink-border/80 border border-ink-border text-text-secondary text-[10px] rounded transition-colors cursor-pointer"
+                className="flex-1 py-1 bg-ink-border hover:bg-ink-border/80 border border-ink-border text-text-secondary text-[11px] rounded transition-colors cursor-pointer"
               >
                 Reject
               </button>
@@ -238,8 +238,8 @@ export default function ComparePage() {
       </div>
 
       {/* Grid details mapping requirements */}
-      <div className="border border-ink-border rounded bg-ink-surface overflow-hidden">
-        <div className="border-b border-ink-border bg-ink-base p-3 text-left">
+      <div className="glass-panel rounded-xl overflow-hidden mt-6">
+        <div className="border-b border-white/10 bg-white/5 p-3 text-left">
           <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
             Evidential Breakdown Grid
           </h3>
@@ -309,12 +309,12 @@ export default function ComparePage() {
                     <div key={candidate.id} className="p-4 text-xs flex flex-col justify-between space-y-2 text-left">
                       <div className="flex items-center gap-2">
                         {badgeIcon}
-                        <span className={cn("px-1.5 py-0.5 rounded border font-semibold text-[9px] uppercase tracking-wider", badgeColor)}>
+                        <span className={cn("px-1.5 py-0.5 rounded border font-semibold text-[10px] uppercase tracking-wider", badgeColor)}>
                           {label}
                         </span>
                       </div>
                       {evidence && (
-                        <p className="text-text-secondary italic font-sans leading-relaxed text-[11px]">
+                        <p className="text-text-secondary italic font-sans leading-relaxed text-xs">
                           &quot;{evidence.claim}&quot;
                         </p>
                       )}

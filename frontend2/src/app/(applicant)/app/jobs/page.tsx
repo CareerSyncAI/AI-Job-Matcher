@@ -90,7 +90,7 @@ export default function JobsPage() {
       </div>
 
       {/* Toolbar filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-ink-surface p-4 border border-ink-border rounded">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-4">
         {/* Keyword Search */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-tertiary" />
@@ -138,10 +138,10 @@ export default function JobsPage() {
       {/* Grid List */}
       <div className="space-y-4">
         {filteredMatches.length === 0 ? (
-          <div className="p-12 bg-ink-surface border border-ink-border rounded text-center text-text-secondary">
+          <div className="p-12 glass-card text-center text-text-secondary">
             <Compass className="w-8 h-8 text-text-tertiary mx-auto mb-2 animate-spin duration-3000" />
             <p className="text-xs font-semibold text-text-primary">No job matches found</p>
-            <p className="text-[11px] text-text-tertiary mt-1">Try adjusting your filters or adding skills to your profile.</p>
+            <p className="text-xs text-text-tertiary mt-1">Try adjusting your filters or adding skills to your profile.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -150,7 +150,7 @@ export default function JobsPage() {
               return (
                 <div
                   key={job.id}
-                  className="bg-ink-surface border border-ink-border hover:border-aperture-500/30 rounded p-5 flex flex-col justify-between h-[200px] transition-all relative overflow-hidden group"
+                  className="glass-card p-5 flex flex-col justify-between h-[200px] transition-all relative overflow-hidden group hover:border-aperture-500/50"
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
@@ -160,7 +160,7 @@ export default function JobsPage() {
                             {job.title}
                           </Link>
                         </h3>
-                        <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider mt-0.5">
+                        <p className="text-[11px] text-text-tertiary font-semibold uppercase tracking-wider mt-0.5">
                           {job.department}
                         </p>
                       </div>
@@ -195,7 +195,7 @@ export default function JobsPage() {
 
                   {/* Skills summary & link */}
                   <div className="flex items-center justify-between border-t border-ink-border/50 pt-3 mt-3">
-                    <div className="text-[11px] text-text-secondary">
+                    <div className="text-xs text-text-secondary">
                       <span className="font-semibold text-text-primary">
                         {matchedSkills.length} of {job.requiredSkills.length}
                       </span>{" "}

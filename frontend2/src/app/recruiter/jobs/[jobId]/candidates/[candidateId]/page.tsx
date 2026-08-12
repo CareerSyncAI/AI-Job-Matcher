@@ -127,7 +127,7 @@ export default function CandidateInspectorPage({
 
         {/* Quick status actions */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-text-tertiary font-semibold uppercase mr-1">
+          <span className="text-[11px] text-text-tertiary font-semibold uppercase mr-1">
             Current Status: {candidate.status === "screened" ? "Awaiting Review" : candidate.status}
           </span>
           {candidate.status !== "shortlisted" && (
@@ -168,16 +168,16 @@ export default function CandidateInspectorPage({
             <div className="space-y-1">
               <h2 className="text-base font-semibold text-text-primary">{candidate.name}</h2>
               <p className="text-xs text-text-secondary">{candidate.currentRole || "Software Professional"}</p>
-              <p className="text-[10px] text-text-tertiary">{candidate.location || "Location Unknown"}</p>
+              <p className="text-[11px] text-text-tertiary">{candidate.location || "Location Unknown"}</p>
             </div>
 
             {/* Overall Score Circle */}
             <div className="flex items-center justify-between border-t border-b border-ink-border py-4">
               <div>
-                <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">
+                <p className="text-[11px] text-text-tertiary font-semibold uppercase tracking-wider">
                   NLP Proximity Match
                 </p>
-                <p className="text-[10px] text-text-secondary mt-1 max-w-[120px] leading-tight">
+                <p className="text-[11px] text-text-secondary mt-1 max-w-[120px] leading-tight">
                   Semantic match score against job specifications.
                 </p>
               </div>
@@ -192,7 +192,7 @@ export default function CandidateInspectorPage({
 
             {/* Score Breakdown list */}
             <div className="space-y-2.5 text-xs">
-              <h3 className="font-semibold text-text-tertiary uppercase tracking-wider text-[10px]">
+              <h3 className="font-semibold text-text-tertiary uppercase tracking-wider text-[11px]">
                 Score Components
               </h3>
               <div className="space-y-1.5 font-mono">
@@ -300,7 +300,7 @@ export default function CandidateInspectorPage({
               <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
                 Evidential Audits
               </h2>
-              <p className="text-[11px] text-text-secondary mt-0.5">
+              <p className="text-xs text-text-secondary mt-0.5">
                 Claims extracted from candidates&apos; resumes cross-referenced against requirements.
               </p>
             </div>
@@ -328,7 +328,7 @@ export default function CandidateInspectorPage({
                     </div>
 
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-semibold uppercase tracking-wider shrink-0 ${badge.classes}`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-semibold uppercase tracking-wider shrink-0 ${badge.classes}`}
                     >
                       <BadgeIcon className="w-3 h-3 stroke-[2.5px]" />
                       {badge.label}
@@ -348,7 +348,7 @@ export default function CandidateInspectorPage({
 
                     {/* Source citation */}
                     {item.sourceText && (
-                      <div className="flex items-center gap-1.5 text-[10px] text-text-secondary border-t border-ink-border/40 pt-2 mt-2">
+                      <div className="flex items-center gap-1.5 text-[11px] text-text-secondary border-t border-ink-border/40 pt-2 mt-2">
                         <FileText className="w-3.5 h-3.5 text-text-tertiary" />
                         <span>Source: {item.sourceText}</span>
                       </div>
@@ -356,7 +356,7 @@ export default function CandidateInspectorPage({
 
                     {/* Gap / Details description */}
                     {item.details && (
-                      <div className="text-[10px] border-t border-ink-border/40 pt-2 mt-2 space-y-1">
+                      <div className="text-[11px] border-t border-ink-border/40 pt-2 mt-2 space-y-1">
                         <span className="font-semibold text-text-secondary uppercase text-[8.5px] tracking-wider block">
                           AI Reasoning / Annotations
                         </span>

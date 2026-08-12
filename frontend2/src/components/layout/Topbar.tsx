@@ -41,7 +41,7 @@ export const Topbar: React.FC = () => {
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="h-16 border-b border-ink-border bg-ink-surface px-6 flex items-center justify-between sticky top-0 z-20">
+    <header className="h-16 border-b border-white/10 glass-panel rounded-none px-6 flex items-center justify-between sticky top-0 z-20">
       {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-secondary">
         {breadcrumbs.map((crumb, idx) => {
@@ -81,7 +81,7 @@ export const Topbar: React.FC = () => {
           </div>
           <div className="hidden sm:block text-left">
             <p className="text-xs font-semibold text-text-primary">Hit</p>
-            <p className="text-[10px] text-text-secondary leading-none">Senior Recruiter</p>
+            <p className="text-[11px] text-text-secondary leading-none">Senior Recruiter</p>
           </div>
         </div>
       </div>

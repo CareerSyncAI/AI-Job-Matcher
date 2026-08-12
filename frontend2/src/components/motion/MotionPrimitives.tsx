@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence, useReducedMotion, Variants } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, Variants, HTMLMotionProps } from "framer-motion";
 import { pageVariants, MOTION_DURATIONS, MOTION_EASINGS } from "@/lib/motion/tokens";
 import { cn } from "@/lib/utils";
 
@@ -152,4 +152,72 @@ export const ApertureLoader: React.FC<ApertureLoaderProps> = ({
       </svg>
     </motion.div>
   );
+};
+
+interface LiquidButtonProps extends HTMLMotionProps<"button"> {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'danger';
+}
+
+export const LiquidButton: React.FC<LiquidButtonProps> = ({ children, variant = 'primary', className, ...props }) => {
+  const getGlowColor = () => {
+    switch (variant) {
+      case 'danger': return 'rgba(239, 68, 68, 0.4)'; // Red 500
+      case 'secondary': return 'rgba(255, 255, 255, 0.2)';
+      default: return 'rgba(59, 130, 246, 0.4)'; // Blue 500
+    }
+  };
+
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className={cn(
+        "relative overflow-hidden soft-button px-6 py-2.5 font-medium text-sm text-text-primary group",
+        variant === 'primary' ? 'bg-signal-600/20' : '',
+        variant === 'danger' ? 'bg-danger/20' : '',
+        className
+      )}
+      {...props}
+    >
+      <motion.div
+        className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"
+      />
+      <motion.div
+        animate={{
+          boxShadow: [
+            `0 0 0px ${getGlowColor()}`,
+            `0 0 15px ${getGlowColor()}`,
+            `0 0 0px ${getGlowColor()}`
+          ]
+        }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="absolute inset-0 rounded-full pointer-events-none"
+      />
+      <span className="relative z-10">{children}</span>
+    </motion.button>
+  );
+};
+
+export const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+export const staggerItem: Variants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15
+    }
+  }
 };
