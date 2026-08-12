@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { RecruiterProvider } from "@/lib/context/RecruiterContext";
+import { AppProviders } from "@/components/layout/AppProviders";
 import { LiquidBackground } from "@/components/layout/LiquidBackground";
 
 export const metadata: Metadata = {
-  title: "CareerSync AI — Hybrid Premium Portal",
-  description: "Enterprise workflow for evaluating and ranking candidate resumes against job descriptions.",
+  title: "CareerSync AI — Next-Gen AI Talent & Career Platform",
+  description: "Deterministic AI matching, deep semantic resume parsing, and dynamic career trajectory optimization.",
 };
 
 export default function RootLayout({
@@ -14,12 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased" data-theme="dark">
+    <html lang="en" className="h-full antialiased" data-theme="dark" suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-transparent text-text-primary">
         <LiquidBackground />
-        <RecruiterProvider>
+        <AppProviders>
           {children}
-        </RecruiterProvider>
+        </AppProviders>
       </body>
     </html>
   );

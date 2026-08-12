@@ -1,47 +1,62 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 
 export function LiquidBackground() {
   return (
-    <div className="fixed inset-0 -z-50 overflow-hidden pointer-events-none bg-[var(--ink-base)]">
-      {/* Mesh Gradient Orbs */}
+    <div className="fixed inset-0 -z-50 overflow-hidden pointer-events-none bg-[var(--ink-base)] transition-colors duration-500">
+      
+      {/* Background Architectural Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.025] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
+        style={{
+          backgroundImage: `linear-gradient(to right, var(--text-primary) 1px, transparent 1px), linear-gradient(to bottom, var(--text-primary) 1px, transparent 1px)`,
+          backgroundSize: '48px 48px',
+        }}
+      />
+
+      {/* Mesh Gradient Orb 1: Upper Left */}
       <motion.div
         animate={{
-          scale: [1, 1.2, 1],
-          x: [0, 100, 0],
-          y: [0, -50, 0],
+          scale: [1, 1.15, 1],
+          x: [0, 80, 0],
+          y: [0, -40, 0],
         }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-        className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-[0.15]"
-        style={{ background: 'radial-gradient(circle, var(--aperture-600) 0%, transparent 70%)' }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] rounded-full blur-[130px] opacity-[0.14]"
+        style={{ background: 'radial-gradient(circle, var(--aperture-500) 0%, transparent 70%)' }}
       />
+
+      {/* Mesh Gradient Orb 2: Lower Right */}
       <motion.div
         animate={{
-          scale: [1, 1.5, 1],
-          x: [0, -100, 0],
-          y: [0, 100, 0],
+          scale: [1, 1.25, 1],
+          x: [0, -80, 0],
+          y: [0, 60, 0],
         }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-        className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[140px] opacity-[0.10]"
-        style={{ background: 'radial-gradient(circle, var(--signal-600) 0%, transparent 70%)' }}
+        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[140px] opacity-[0.12]"
+        style={{ background: 'radial-gradient(circle, var(--signal-500) 0%, transparent 70%)' }}
       />
+
+      {/* Mesh Gradient Orb 3: Center Ambient Glow */}
       <motion.div
         animate={{
           scale: [1, 1.1, 1],
-          x: [0, 50, 0],
-          y: [0, 50, 0],
+          x: [0, 40, 0],
+          y: [0, 40, 0],
         }}
-        transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-        className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full blur-[100px] opacity-[0.05]"
-        style={{ background: 'radial-gradient(circle, var(--text-secondary) 0%, transparent 70%)' }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-[35%] left-[25%] w-[45%] h-[45%] rounded-full blur-[110px] opacity-[0.06]"
+        style={{ background: 'radial-gradient(circle, var(--success) 0%, transparent 70%)' }}
       />
 
-      {/* Frosted Noise Overlay */}
+      {/* Noise Texture Overlay */}
       <div 
-        className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
+        className="absolute inset-0 opacity-[0.02] mix-blend-overlay"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
         }}
       />
     </div>

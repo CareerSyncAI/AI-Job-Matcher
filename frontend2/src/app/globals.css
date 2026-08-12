@@ -1,11 +1,12 @@
-@import url('https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=general-sans@400,500,600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=general-sans@400,500,600,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
 @theme {
   --color-ink-base: var(--ink-base);
   --color-ink-surface: var(--ink-surface);
+  --color-ink-surface-hover: var(--ink-surface-hover);
   --color-ink-border: var(--ink-border);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -22,40 +23,73 @@
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-display: 'Clash Display', 'Inter', sans-serif;
   
-  --shadow-glass-sm: 0 4px 30px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  --shadow-glass-lg: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  --shadow-soft: 6px 6px 12px rgba(0,0,0,0.4), -6px -6px 12px rgba(255,255,255,0.05);
-  --shadow-soft-inset: inset 4px 4px 8px rgba(0,0,0,0.4), inset -4px -4px 8px rgba(255,255,255,0.05);
+  --shadow-glass-sm: var(--shadow-glass-sm-val);
+  --shadow-glass-lg: var(--shadow-glass-lg-val);
+  --shadow-soft: 6px 6px 16px rgba(0,0,0,0.35), -6px -6px 16px rgba(255,255,255,0.03);
+  --shadow-soft-inset: inset 4px 4px 8px rgba(0,0,0,0.4), inset -4px -4px 8px rgba(255,255,255,0.03);
 }
 
-:root {
-  /* OLED Dark / Obsidian Base */
-  --ink-base: #030305;
-  --ink-surface: rgba(20, 22, 30, 0.4);
-  --ink-border: rgba(255, 255, 255, 0.08);
+/* =========================================================================
+   1. Theme Palettes
+   ========================================================================= */
+
+/* Default: Obsidian Aurora (Dark) */
+:root, [data-theme='dark'] {
+  --ink-base: #07090E;
+  --ink-surface: rgba(18, 22, 34, 0.65);
+  --ink-surface-hover: rgba(28, 34, 52, 0.8);
+  --ink-border: rgba(255, 255, 255, 0.10);
   --text-primary: #FFFFFF;
-  --text-secondary: #8A93A6;
-  --text-tertiary: #52596A;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
   
-  /* Professional Accent Colors */
   --signal-500: #3B82F6; /* Premium Blue */
   --signal-600: #2563EB;
-  --aperture-500: #6366F1; /* Premium Indigo */
+  --aperture-500: #6366F1; /* Royal Indigo */
   --aperture-600: #4F46E5;
   
-  --success: #10B981; /* Premium Emerald */
-  --warning: #F59E0B; /* Premium Amber */
-  --danger: #EF4444; /* Premium Red */
+  --success: #10B981; /* Emerald 500 */
+  --warning: #F59E0B; /* Amber 500 */
+  --danger: #EF4444; /* Red 500 */
+
+  --shadow-glass-sm-val: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --shadow-glass-lg-val: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  --spotlight-color: rgba(99, 102, 241, 0.15);
 }
 
+/* Theme 2: Emerald Cyber (High-Tech Matrix) */
+[data-theme='cyber'] {
+  --ink-base: #060D12;
+  --ink-surface: rgba(10, 24, 30, 0.70);
+  --ink-surface-hover: rgba(16, 38, 48, 0.85);
+  --ink-border: rgba(16, 185, 129, 0.18);
+  --text-primary: #F0FDF4;
+  --text-secondary: #86EFAC;
+  --text-tertiary: #4ADE80;
+  
+  --signal-500: #06B6D4; /* Electric Cyan */
+  --signal-600: #0891B2;
+  --aperture-500: #10B981; /* Electric Emerald */
+  --aperture-600: #059669;
+  
+  --success: #10B981;
+  --warning: #FBBF24;
+  --danger: #F43F5E;
+
+  --shadow-glass-sm-val: 0 4px 24px rgba(6, 182, 212, 0.12), inset 0 1px 0 rgba(16, 185, 129, 0.2);
+  --shadow-glass-lg-val: 0 12px 44px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(6, 182, 212, 0.25);
+  --spotlight-color: rgba(16, 185, 129, 0.18);
+}
+
+/* Theme 3: Titanium Frost (Crisp Light Mode) */
 [data-theme='light'] {
-  /* Soft Frost Light Theme */
-  --ink-base: #F8F9FB;
-  --ink-surface: rgba(255, 255, 255, 0.6);
-  --ink-border: rgba(0, 0, 0, 0.05);
-  --text-primary: #0F1115;
-  --text-secondary: #4A5160;
-  --text-tertiary: #848A96;
+  --ink-base: #F8FAFC;
+  --ink-surface: rgba(255, 255, 255, 0.85);
+  --ink-surface-hover: rgba(255, 255, 255, 0.95);
+  --ink-border: rgba(15, 23, 42, 0.08);
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #64748B;
   
   --signal-500: #2563EB;
   --signal-600: #1D4ED8;
@@ -65,7 +99,15 @@
   --success: #059669;
   --warning: #D97706;
   --danger: #DC2626;
+
+  --shadow-glass-sm-val: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-glass-lg-val: 0 16px 36px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --spotlight-color: rgba(79, 70, 229, 0.08);
 }
+
+/* =========================================================================
+   2. Base Rules
+   ========================================================================= */
 
 body {
   background-color: var(--ink-base);
@@ -75,45 +117,91 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Glassmorphism Panel Utilities */
+/* =========================================================================
+   3. Glassmorphism & UI Utilities
+   ========================================================================= */
+
 @utility glass-panel {
   background-color: var(--ink-surface);
-  backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid var(--ink-border);
   box-shadow: var(--shadow-glass-lg);
-  border-radius: 1.5rem; /* 24px smooth curve */
+  border-radius: 1.25rem;
 }
 
 @utility glass-card {
   background-color: var(--ink-surface);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--ink-border);
   box-shadow: var(--shadow-glass-sm);
   border-radius: 1rem;
 }
 
-/* Soft UI (Neumorphism) Utilities */
 @utility soft-button {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ink-border);
   box-shadow: var(--shadow-soft);
-  border-radius: 9999px; /* Pill shape */
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  border-radius: 9999px;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 
   &:hover {
-    box-shadow: var(--shadow-soft), 0 0 15px rgba(59, 130, 246, 0.2);
-    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: var(--shadow-soft), 0 0 16px var(--spotlight-color);
+    border-color: var(--signal-500);
+    transform: translateY(-1px);
   }
 
   &:active {
     box-shadow: var(--shadow-soft-inset);
-    transform: scale(0.98);
+    transform: translateY(0) scale(0.98);
   }
 }
 
-/* Core accessibility focus states */
+@utility border-gradient-glass {
+  position: relative;
+  
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 60%, rgba(99, 102, 241, 0.25));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@utility shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--text-primary) 0%,
+    var(--signal-500) 50%,
+    var(--text-primary) 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shine 4s linear infinite;
+}
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* =========================================================================
+   4. Accessibility & Custom Scrollbars
+   ========================================================================= */
+
 input:focus, select:focus, textarea:focus, button:focus-visible {
   outline: 2px solid var(--signal-500);
   outline-offset: 2px;
@@ -124,7 +212,6 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
-/* Professional custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -133,14 +220,13 @@ a:focus-visible {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  background: var(--ink-border);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--text-tertiary);
 }
 
-/* Reduced motion accessibility standard reset */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-delay: -1ms !important;

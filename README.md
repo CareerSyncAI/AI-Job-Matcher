@@ -1,4 +1,4 @@
-# AI-Based Resume Screening and Candidate Ranking System
+# CareerSync AI — AI-Assisted Resume Screening and Candidate Ranking
 
 > 🤖 **IMPORTANT NOTICE FOR ALL AI ASSISTANTS & DEVELOPERS**:
 > Before reading or modifying this repository, you **MUST** read [docs/README_AI.md](file:///c:/Users/Hit/Desktop/SGP%205TH%20Sem/AI-Job-Matcher/docs/README_AI.md) and review all documentation inside `docs/` (`GIT_WORKFLOW.md`, `PROJECT_PROGRESS.md`, `AI_CHANGELOG.md`, `TASKS.md`, `SESSION.md`).
@@ -28,10 +28,11 @@ The **AI-Based Resume Screening and Candidate Ranking System** streamlines the r
 
 | Component | Technology | Description |
 | :--- | :--- | :--- |
-| **Frontend** | **React.js** | Single Page Application (SPA) for candidate & recruiter interface |
-| **Backend API** | **Node.js / Express.js** | RESTful API server handling business workflows and data endpoints |
-| **AI / ML Services** | **Python / FastAPI** | Microservice executing NLP parsing, semantic embedding & ranking models |
-| **Database** | **MongoDB** | NoSQL database storing candidate profiles, resumes, and job listings |
+| **Frontend** | **Next.js / React / TypeScript** | Active application in `frontend/`; `frontend2/` is preserved reference material |
+| **Backend API** | **Python / FastAPI** | Authenticated REST API, domain workflows, upload security, and ownership checks |
+| **Database** | **PostgreSQL + pgvector** | SQLAlchemy/Alembic relational model and scoped embeddings |
+| **Async processing** | **Redis / Celery** | Queue boundary for resume parsing and evaluation work |
+| **AI / ML Services** | **Separate Python boundary** | Docling, GLiNER, RapidFuzz, and BGE-M3 integration is staged after the core API |
 | **Version Control** | **Git & GitHub** | Collaborative source code control and version management |
 
 ---
@@ -43,10 +44,11 @@ AI-Job-Matcher/
 ├── .github/          # GitHub Workflows, issue templates, and CI/CD configurations
 ├── ai-services/      # Python & FastAPI microservices for AI/ML and NLP processing
 ├── assets/           # Static media assets, architecture diagrams, and images
-├── backend/          # Node.js & Express API backend server logic
-├── database/         # MongoDB schema definitions, migrations, and seed scripts
+├── backend/          # FastAPI API, SQLAlchemy models, and Alembic migrations
+├── database/         # Database fixtures and seed data
 ├── docs/             # Technical specifications, SRS, and project documentation
-├── frontend/         # React.js application source code
+├── frontend/         # Active Next.js application source code
+├── frontend2/        # Preserved frontend reference/backup
 └── README.md         # Primary project documentation
 ```
 
@@ -54,7 +56,10 @@ AI-Job-Matcher/
 
 ## 🚀 Getting Started
 
-Instructions for setting up the frontend, backend, database, and AI microservices locally will be added here as development progresses.
+Start local infrastructure with `docker compose up -d postgres redis`. See
+`backend/README.md` for FastAPI, Poetry, and migration commands. Real AI model
+inference is staged behind the processing boundary and is not represented by
+the current deterministic fixtures.
 
 ---
 

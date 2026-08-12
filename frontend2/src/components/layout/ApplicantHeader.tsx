@@ -4,310 +4,264 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApplicant } from "@/lib/context/ApplicantContext";
-import { useRecruiter } from "@/lib/context/RecruiterContext"; // We can reuse theme toggle from RecruiterContext since it mounts on root layout html
-import { Briefcase, LayoutDashboard, FileText, Bell, Settings, Menu, X, ArrowLeftRight, Award, Compass, Sun, Moon, User, Clock } from "lucide-react";
+import { useTheme } from "@/lib/context/ThemeContext";
+import { 
+  Briefcase, 
+  LayoutDashboard, 
+  FileText, 
+  Bell, 
+  Award, 
+  Compass, 
+  Sun, 
+  Moon, 
+  Sparkles, 
+  User, 
+  Clock, 
+  Search, 
+  Menu, 
+  X,
+  ArrowRight
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const ApplicantHeader: React.FC = () => {
   const pathname = usePathname();
   const { profile } = useApplicant();
-  const { theme, toggleTheme } = useRecruiter(); // Unify theme toggling at root
-  const [isOpen, setIsOpen] = useState(false);
+  const { theme, cycleTheme } = useTheme();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const notifications = [
     {
       id: "notif-1",
-      type: "application",
-      title: "Application status updated",
-      description: "Recruiter reviewed your profile for Senior Software Engineer (Frontend).",
+      title: "Application status: Shortlisted",
+      description: "Recruiter moved you to 'Interviewing' for Senior AI Engineer at Stripe.",
       time: "2 hours ago",
       icon: Briefcase,
       link: "/app/applications"
     },
     {
       id: "notif-2",
-      type: "resume",
       title: "Resume parsed successfully",
-      description: "Dhruv_Gajera_Resume_v1.pdf structured. 5 skill tags extracted.",
+      description: "Dhruv_Gajera_Resume_v2.pdf parsed. 8 technical competencies extracted.",
       time: "1 day ago",
       icon: FileText,
       link: "/app/resume"
     },
     {
       id: "notif-3",
-      type: "profile",
-      title: "Optimize profile visibility",
-      description: "Headline and education completed. Matching score computed.",
+      title: "New High-Match Job Detected",
+      description: "94% match identified for 'Principal Distributed Systems Lead' at Datadog.",
       time: "2 days ago",
-      icon: User,
-      link: "/app/profile"
+      icon: Sparkles,
+      link: "/app/jobs"
     }
   ];
 
   const navItems = [
-    {
-      label: "Dashboard",
-      href: "/app/dashboard",
-      icon: LayoutDashboard
-    },
-    {
-      label: "Find Jobs",
-      href: "/app/jobs",
-      icon: Compass
-    },
-    {
-      label: "My Applications",
-      href: "/app/applications",
-      icon: Briefcase
-    },
-    {
-      label: "Skill Gap Matrix",
-      href: "/app/skill-gap",
-      icon: Award
-    },
-    {
-      label: "Resume Vault",
-      href: "/app/resume",
-      icon: FileText
-    }
+    { label: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+    { label: "Find Jobs", href: "/app/jobs", icon: Compass },
+    { label: "My Applications", href: "/app/applications", icon: Briefcase },
+    { label: "Skill Gap Matrix", href: "/app/skill-gap", icon: Award },
+    { label: "Resume Vault", href: "/app/resume", icon: FileText }
   ];
 
   return (
-    <header className="glass-panel rounded-none border-t-0 border-l-0 border-r-0 border-b border-white/10 sticky top-0 z-50 select-none">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="glass-panel rounded-none border-t-0 border-l-0 border-r-0 border-b border-ink-border sticky top-0 z-50 select-none bg-ink-surface/90 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand Logo */}
+          
+          {/* Brand & Left Navigation */}
           <div className="flex items-center gap-8">
-            <Link href="/app/dashboard" className="flex items-center gap-2">
-              <div className="relative w-8 h-8 flex items-center justify-center text-aperture-500 shrink-0">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-7 h-7 stroke-current"
-                  fill="none"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 2a10 10 0 0 0-7.07 17.07L12 12V2z" />
-                  <circle cx="12" cy="12" r="3.5" className="fill-current" />
-                </svg>
+            <Link href="/app/dashboard" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-lg bg-aperture-500/15 border border-aperture-500/30 flex items-center justify-center text-aperture-500 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-4 h-4" />
               </div>
-              <span className="font-display font-semibold text-base tracking-tight text-text-primary">
-                CareerSync
-              </span>
-              <span className="text-[10px] bg-aperture-500/10 text-aperture-500 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider font-mono">
-                Job Seeker
+              <span className="font-display font-bold text-base tracking-tight text-text-primary">
+                CareerSync <span className="text-xs text-aperture-500 font-mono">Hub</span>
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-1" aria-label="Main navigation">
+            {/* Desktop Navigation Links */}
+            <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const isActive = pathname === item.href || (item.href !== "/app/dashboard" && pathname.startsWith(item.href));
+                const IconComponent = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "px-3 py-2 rounded text-xs font-semibold tracking-wide transition-colors flex items-center gap-1.5 cursor-pointer",
+                      "flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150",
                       isActive
-                        ? "bg-aperture-500/10 text-aperture-500"
-                        : "text-text-secondary hover:bg-ink-border hover:text-text-primary"
+                        ? "bg-aperture-500/15 text-aperture-500 border border-aperture-500/30 shadow-sm"
+                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                     )}
                   >
-                    <item.icon className="w-4 h-4" />
-                    {item.label}
+                    <IconComponent className="w-3.5 h-3.5" />
+                    <span>{item.label}</span>
                   </Link>
                 );
               })}
             </nav>
           </div>
 
-          {/* Right Utility Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            {/* Theme Toggle */}
+          {/* Right Action Icons & Profile */}
+          <div className="flex items-center gap-2.5">
+            
+            {/* Quick Command Launcher (Cmd+K) */}
             <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded hover:bg-ink-border text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
-              title={theme === "dark" ? "Toggle Light Theme" : "Toggle Dark Theme"}
+              onClick={() => {
+                window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+              }}
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-ink-border text-xs text-text-secondary hover:text-text-primary hover:border-signal-500/40 transition-all font-mono"
             >
-              {theme === "dark" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              <Search className="w-3.5 h-3.5 text-signal-500" />
+              <span>Search</span>
+              <kbd className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-ink-border">Cmd+K</kbd>
             </button>
 
-            {/* Notifications */}
+            {/* Theme Toggle Button */}
+            <button
+              onClick={cycleTheme}
+              className="p-2 rounded-xl border border-ink-border glass-card text-text-secondary hover:text-text-primary transition-all"
+              title={`Switch Theme (Current: ${theme})`}
+            >
+              {theme === "light" ? (
+                <Sun className="w-4 h-4 text-warning" />
+              ) : theme === "cyber" ? (
+                <Sparkles className="w-4 h-4 text-success" />
+              ) : (
+                <Moon className="w-4 h-4 text-signal-500" />
+              )}
+            </button>
+
+            {/* Notifications Popover */}
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className={cn(
-                  "p-1.5 rounded hover:bg-ink-border text-text-secondary hover:text-text-primary transition-colors relative cursor-pointer",
-                  showNotifications ? "text-aperture-500 hover:text-aperture-500" : ""
+                  "p-2 rounded-xl border border-ink-border glass-card text-text-secondary hover:text-text-primary transition-all relative",
+                  showNotifications && "bg-white/10 text-text-primary border-aperture-500/40"
                 )}
                 title="Notifications"
               >
-                <Bell className="w-4.5 h-4.5" />
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-aperture-500 rounded-full" />
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-aperture-500 animate-pulse ring-2 ring-ink-base" />
               </button>
-              
+
               <AnimatePresence>
                 {showNotifications && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="absolute right-0 mt-2 w-80 glass-panel border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
-                    >
-                      <div className="p-3 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                        <h3 className="font-semibold text-xs text-text-primary">Notifications</h3>
-                        <span className="text-[11px] text-aperture-500 bg-aperture-500/10 px-1.5 py-0.5 rounded">3 New</span>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-80 sm:w-96 glass-panel border border-ink-border shadow-glass-lg rounded-2xl p-3 z-50 max-h-[85vh] overflow-y-auto"
+                  >
+                    <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-ink-border px-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-text-primary tracking-tight">Notifications</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-aperture-500/20 text-aperture-500 border border-aperture-500/30">
+                          {notifications.length} New
+                        </span>
                       </div>
-                      <div className="max-h-[300px] overflow-y-auto p-2 space-y-1">
-                        {notifications.map((item) => {
-                          const Icon = item.icon;
-                          return (
-                            <Link
-                              key={item.id}
-                              href={item.link}
-                              onClick={() => setShowNotifications(false)}
-                              className="glass-card hover:bg-white/5 p-3 flex gap-3 text-xs transition-all cursor-pointer rounded-lg border border-transparent"
-                            >
-                              <div className="w-8 h-8 rounded bg-aperture-500/10 text-aperture-500 flex items-center justify-center shrink-0">
-                                <Icon className="w-4 h-4" />
-                              </div>
-                              <div className="space-y-0.5 min-w-0 flex-1">
-                                <h4 className="font-semibold text-text-primary text-xs truncate">
-                                  {item.title}
-                                </h4>
-                                <p className="text-text-secondary leading-tight text-[11px] line-clamp-2">
-                                  {item.description}
-                                </p>
-                                <p className="text-[10px] text-text-tertiary font-mono pt-1 flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {item.time}
-                                </p>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  </>
+                      <span className="text-[11px] text-text-tertiary hover:text-text-secondary cursor-pointer">
+                        Mark all read
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {notifications.map((n) => {
+                        const Icon = n.icon;
+                        return (
+                          <Link
+                            key={n.id}
+                            href={n.link}
+                            onClick={() => setShowNotifications(false)}
+                            className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors group text-left border border-transparent hover:border-ink-border"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-aperture-500/10 border border-aperture-500/20 flex items-center justify-center text-aperture-500 shrink-0 mt-0.5">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-text-primary truncate">{n.title}</p>
+                              <p className="text-[11px] text-text-secondary leading-relaxed line-clamp-2 mt-0.5 font-sans">
+                                {n.description}
+                              </p>
+                              <span className="text-[10px] font-mono text-text-tertiary flex items-center gap-1 mt-1">
+                                <Clock className="w-3 h-3" /> {n.time}
+                              </span>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Profile link */}
+            {/* Profile Avatar / Link */}
             <Link
               href="/app/profile"
               className={cn(
-                "flex items-center gap-2 border-l border-ink-border pl-4 cursor-pointer",
-                pathname === "/app/profile" ? "text-aperture-500" : "text-text-secondary hover:text-text-primary"
+                "flex items-center gap-2.5 pl-2 pr-3 py-1 rounded-xl glass-card border border-ink-border hover:border-aperture-500/40 transition-all",
+                pathname === "/app/profile" && "border-aperture-500/40 bg-aperture-500/10"
               )}
-              title="Profile"
             >
-              <div className="w-8 h-8 rounded-full bg-aperture-500/20 border border-aperture-500/40 text-aperture-500 flex items-center justify-center font-display font-semibold text-sm">
-                {(profile?.name || "D").charAt(0)}
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-aperture-600 to-signal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                {profile?.name ? profile.name.charAt(0) : "D"}
               </div>
+              <span className="text-xs font-medium text-text-primary hidden sm:inline truncate max-w-[100px]">
+                {profile?.name || "Dhruv G."}
+              </span>
             </Link>
 
-            {/* Portal Switcher (Recruiter workspace) */}
-            <Link
-              href="/recruiter"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  sessionStorage.setItem("careersync_user_role", "recruiter");
-                }
-              }}
-              className="ml-2 text-[11px] text-text-tertiary hover:text-signal-500 font-semibold uppercase tracking-wider flex items-center gap-1 border border-ink-border px-2 py-1 rounded hover:border-signal-500/30"
-              title="Switch to employer view"
-            >
-              <ArrowLeftRight className="w-3 h-3" />
-              Employer
-            </Link>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-3">
+            {/* Mobile Menu Toggle Button */}
             <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded hover:bg-ink-border text-text-secondary cursor-pointer"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-xl glass-card border border-ink-border text-text-secondary hover:text-text-primary md:hidden"
             >
-              {theme === "dark" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
-            </button>
-
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded text-text-secondary hover:text-text-primary hover:bg-ink-border cursor-pointer"
-              aria-label="Toggle navigation menu"
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu Panel */}
-      {isOpen && (
-        <div className="md:hidden border-t border-white/10 glass-panel rounded-none px-4 py-3 space-y-1 animate-fade-in text-left">
-          {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded text-xs font-semibold tracking-wide transition-colors cursor-pointer",
-                  isActive
-                    ? "bg-aperture-500/10 text-aperture-500"
-                    : "text-text-secondary hover:bg-ink-border hover:text-text-primary"
-                )}
-              >
-                <item.icon className="w-5 h-5 shrink-0" />
-                {item.label}
-              </Link>
-            );
-          })}
-          <div className="border-t border-ink-border mt-3 pt-3 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                setShowNotifications(!showNotifications);
-              }}
-              className="flex items-center gap-3 px-3 py-2.5 text-xs text-text-secondary hover:text-text-primary cursor-pointer w-full text-left"
-            >
-              <Bell className="w-5 h-5 shrink-0" />
-              Notifications
-            </button>
-            <Link
-              href="/app/profile"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 text-xs text-text-secondary hover:text-text-primary"
-            >
-              <User className="w-5 h-5 shrink-0" />
-              Profile
-            </Link>
-            <Link
-              href="/recruiter"
-              onClick={() => {
-                setIsOpen(false);
-                if (typeof window !== "undefined") {
-                  sessionStorage.setItem("careersync_user_role", "recruiter");
-                }
-              }}
-              className="flex items-center gap-3 px-3 py-2.5 text-xs text-text-tertiary hover:text-signal-500"
-            >
-              <ArrowLeftRight className="w-5 h-5 shrink-0" />
-              Switch to Employer View
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* Mobile Drawer Navigation */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t border-ink-border px-4 py-3 space-y-1 bg-ink-surface/95 backdrop-blur-2xl"
+          >
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-aperture-500/15 text-aperture-500 border border-aperture-500/30"
+                      : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
