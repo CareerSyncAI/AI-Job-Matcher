@@ -143,7 +143,7 @@ export default function UploadPage() {
         {/* Settings & Job selector */}
         <div className="space-y-4">
           <div className="bg-ink-surface border border-ink-border rounded p-4 space-y-4 text-xs">
-            <h3 className="font-semibold text-text-primary uppercase tracking-wider text-[10px]">
+            <h3 className="font-semibold text-text-primary uppercase tracking-wider text-[11px]">
               Upload Settings
             </h3>
             
@@ -166,7 +166,7 @@ export default function UploadPage() {
 
             <div className="p-3 bg-ink-base/40 border border-ink-border rounded space-y-1">
               <p className="font-semibold text-text-secondary">Expected Schema</p>
-              <p className="text-[10px] text-text-tertiary leading-relaxed">
+              <p className="text-[11px] text-text-tertiary leading-relaxed">
                 Matches are evaluated against:
                 <br />
                 - Required Skills: {currentJob?.requiredSkills.join(", ")}
@@ -227,7 +227,7 @@ export default function UploadPage() {
                 <h3 className="font-semibold text-xs text-text-primary uppercase tracking-wider">
                   Processing Queue
                 </h3>
-                <span className="text-[10px] text-text-tertiary font-mono">
+                <span className="text-[11px] text-text-tertiary font-mono">
                   {queue.length} files queued
                 </span>
               </div>
@@ -250,7 +250,7 @@ export default function UploadPage() {
                           <p className="font-semibold text-text-primary truncate">
                             {item.file.name}
                           </p>
-                          <span className="font-mono text-[10px] text-text-tertiary shrink-0">
+                          <span className="font-mono text-[11px] text-text-tertiary shrink-0">
                             {(item.file.size / (1024 * 1024)).toFixed(2)} MB
                           </span>
                         </div>
@@ -273,20 +273,20 @@ export default function UploadPage() {
 
                         {/* Error info */}
                         {item.status === "error" && (
-                          <p className="text-[10px] text-danger">{item.error}</p>
+                          <p className="text-[11px] text-danger">{item.error}</p>
                         )}
 
                         {/* Success info */}
                         {item.status === "success" && (
                           <div className="flex items-center justify-between">
-                            <p className="text-[10px] text-success font-semibold flex items-center gap-1">
+                            <p className="text-[11px] text-success font-semibold flex items-center gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                               Parsed successfully
                             </p>
                             {item.resultId && (
                               <Link
                                 href={`/recruiter/jobs/${selectedJobId}/candidates/${item.resultId}`}
-                                className="text-[10px] text-signal-500 hover:text-signal-600 font-semibold flex items-center gap-0.5"
+                                className="text-[11px] text-signal-500 hover:text-signal-600 font-semibold flex items-center gap-0.5"
                               >
                                 View Evidence
                                 <ArrowRight className="w-3 h-3" />

@@ -2,23 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { ApertureLoader } from "@/components/motion/MotionPrimitives";
+import { ApertureLoader, staggerContainer, staggerItem } from "@/components/motion/MotionPrimitives";
 
 export default function EntryPortal() {
   const [apertureState, setApertureState] = useState<"closed" | "opening" | "settled">("closed");
 
   useEffect(() => {
-    // Sequence the signature Aperture iris opening animation on mount
     const timer1 = setTimeout(() => {
       setApertureState("opening");
     }, 100);
-
     const timer2 = setTimeout(() => {
       setApertureState("settled");
     }, 800);
-
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -26,99 +23,107 @@ export default function EntryPortal() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-ink-base flex flex-col justify-between p-6 relative overflow-hidden select-none">
-      {/* Subtle brand dots in static positions (no continuous high-cost animation) */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-1/4 left-1/3 w-1 h-1 rounded-full bg-signal-500" />
-        <div className="absolute top-1/2 left-2/3 w-1.5 h-1.5 rounded-full bg-signal-500" />
-        <div className="absolute top-3/4 left-1/4 w-1 h-1 rounded-full bg-signal-500" />
-      </div>
-
-      {/* Header with Aperture logo */}
+    <div className="min-h-screen flex flex-col justify-between p-6 md:p-12 relative overflow-hidden select-none z-10">
+      
+      {/* Header */}
       <header className="flex items-center gap-3">
-        <ApertureLoader state={apertureState} size="sm" />
-        <span className="font-display font-semibold text-lg tracking-tight text-text-primary">
+        <ApertureLoader state={apertureState} size="md" />
+        <span className="font-display font-semibold text-xl tracking-tight text-text-primary drop-shadow-md">
           CareerSync AI
         </span>
       </header>
 
       {/* Hero Body */}
-      <div className="max-w-2xl mx-auto my-auto text-center space-y-8 py-12 relative z-10">
-        <div className="space-y-4">
+      <div className="max-w-4xl mx-auto my-auto text-center space-y-12 py-12">
+        <motion.div 
+          className="space-y-6"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           <motion.h1
-            initial={{ opacity: 0, y: 7 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: [0, 0, 0.2, 1] }}
-            className="font-display text-4xl sm:text-5xl font-semibold tracking-tight leading-tight text-text-primary"
+            variants={staggerItem}
+            className="font-display text-5xl md:text-7xl font-bold tracking-tighter leading-tight text-white drop-shadow-lg"
           >
-            Bring the right match <br className="hidden sm:inline" />
-            <span className="text-signal-500 font-bold">into focus.</span>
+            Intelligence that <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-signal-500 to-aperture-500">
+              powers your career.
+            </span>
           </motion.h1>
           
           <motion.p
-            initial={{ opacity: 0, y: 7 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, delay: 0.12, ease: [0, 0, 0.2, 1] }}
-            className="text-sm sm:text-base text-text-secondary max-w-md mx-auto leading-relaxed"
+            variants={staggerItem}
+            className="text-base md:text-lg text-text-primary/80 max-w-xl mx-auto leading-relaxed font-medium"
           >
-            Enterprise decision-support dashboard matching qualifications to requirements with claims and evidence.
+            Experience the next generation of AI-driven job matching. Whether you're building a world-class team or finding your dream role, CareerSync brings the right fit into perfect focus.
           </motion.p>
-        </div>
+        </motion.div>
 
-        {/* Action Cards with Staggered Entrance */}
+        {/* Action Cards */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.32, delay: 0.24, ease: [0, 0, 0.2, 1] }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto pt-4"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-8"
         >
           {/* Recruiter Route */}
-          <Link
-            href="/recruiter"
-            className="group block text-left p-6 bg-ink-surface border border-ink-border hover:border-signal-500/40 hover:bg-ink-surface/80 rounded-lg transition-all duration-150 focus:outline-none focus:border-signal-500 focus:ring-2 focus:ring-signal-500/20 active:scale-[0.985]"
-          >
-            <span className="text-xs font-semibold text-signal-500 uppercase tracking-wider block mb-1">
-              For Employers
-            </span>
-            <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-text-primary">
-                I&apos;m hiring
-              </span>
-              <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-signal-500 group-hover:translate-x-1 transition-transform duration-150" />
-            </div>
-            <p className="text-xs text-text-tertiary mt-2 font-sans">
-              Review active jobs, rank candidates, inspect source evidence, and track hiring pipelines.
-            </p>
+          <Link href="/recruiter" className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-500 rounded-3xl">
+            <motion.div 
+              variants={staggerItem}
+              whileHover={{ y: -5, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="group text-left p-8 glass-card border border-white/10 hover:border-signal-500/50 transition-all duration-300 h-full flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-full bg-signal-500/20 flex items-center justify-center mb-6 border border-signal-500/30 group-hover:scale-110 transition-transform duration-300">
+                  <Building2 className="w-6 h-6 text-signal-500" />
+                </div>
+                <h3 className="font-display text-2xl font-semibold text-white mb-2">Recruiter Center</h3>
+                <p className="text-sm text-text-primary/70 leading-relaxed font-sans mb-6">
+                  Review active job requisitions, rank candidates with AI transparency, and track your hiring pipeline.
+                </p>
+              </div>
+              <div className="flex items-center text-signal-500 font-medium text-sm">
+                Enter Workspace <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-2 transition-transform" />
+              </div>
+            </motion.div>
           </Link>
 
           {/* Applicant Route */}
-          <Link
+          <Link 
             href="/app/dashboard"
             onClick={() => {
               if (typeof window !== "undefined") {
                 sessionStorage.setItem("careersync_user_role", "applicant");
               }
             }}
-            className="group block text-left p-6 bg-ink-surface border border-ink-border hover:border-aperture-500/40 hover:bg-ink-surface/80 rounded-lg transition-all duration-150 focus:outline-none focus:border-aperture-500 focus:ring-2 focus:ring-aperture-500/20 active:scale-[0.985] cursor-pointer"
+            className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-aperture-500 rounded-3xl"
           >
-            <span className="text-xs font-semibold text-aperture-500 uppercase tracking-wider block mb-1">
-              For Job Seekers
-            </span>
-            <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-text-primary">
-                I&apos;m job-hunting
-              </span>
-              <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-aperture-500 group-hover:translate-x-1 transition-transform duration-150" />
-            </div>
-            <p className="text-xs text-text-tertiary mt-2 font-sans">
-              Manage resume versions, view match metrics, and track your active job applications.
-            </p>
+            <motion.div 
+              variants={staggerItem}
+              whileHover={{ y: -5, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="group text-left p-8 glass-card border border-white/10 hover:border-aperture-500/50 transition-all duration-300 h-full flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-full bg-aperture-500/20 flex items-center justify-center mb-6 border border-aperture-500/30 group-hover:scale-110 transition-transform duration-300">
+                  <Sparkles className="w-6 h-6 text-aperture-500" />
+                </div>
+                <h3 className="font-display text-2xl font-semibold text-white mb-2">AI Career Hub</h3>
+                <p className="text-sm text-text-primary/70 leading-relaxed font-sans mb-6">
+                  Optimize your resume, discover matching roles, and track your applications with intelligent insights.
+                </p>
+              </div>
+              <div className="flex items-center text-aperture-500 font-medium text-sm">
+                Enter Portal <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-2 transition-transform" />
+              </div>
+            </motion.div>
           </Link>
         </motion.div>
       </div>
 
       {/* Footer */}
-      <footer className="text-center text-xs text-text-tertiary border-t border-ink-border/50 pt-4">
+      <footer className="text-center text-xs text-text-primary/50 pt-8 font-mono">
         &copy; {new Date().getFullYear()} CareerSync AI. Developed as SGP 5th Semester. All Rights Reserved.
       </footer>
     </div>

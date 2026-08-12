@@ -34,13 +34,13 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       className={cn(
-        "h-screen bg-ink-surface border-r border-ink-border flex flex-col justify-between transition-all duration-200 sticky top-0 z-30",
+        "h-screen glass-panel rounded-none border-t-0 border-l-0 border-b-0 border-r border-white/10 flex flex-col justify-between transition-all duration-200 sticky top-0 z-30",
         isCollapsed ? "w-[72px]" : "w-[240px]"
       )}
     >
       <div className="flex flex-col flex-1 overflow-y-auto">
         {/* Brand Header */}
-        <div className="h-16 border-b border-ink-border flex items-center px-4 justify-between">
+        <div className="h-16 border-b border-white/10 flex items-center px-4 justify-between">
           <Link href="/recruiter" className="flex items-center gap-3 select-none">
             {/* Aperture Logo */}
             <div className="relative w-8 h-8 flex items-center justify-center text-signal-500 shrink-0">
@@ -104,9 +104,9 @@ export const Sidebar: React.FC = () => {
         </nav>
 
         {/* Job Scope Context Selector */}
-        <div className="p-3 border-t border-ink-border mt-auto">
+        <div className="p-3 border-t border-white/10 mt-auto">
           {!isCollapsed && (
-            <label className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider block mb-2 px-1">
+            <label className="text-xs font-semibold text-text-tertiary uppercase tracking-wider block mb-2 px-1">
               Active Job Scope
             </label>
           )}
@@ -142,7 +142,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Theme Toggler & Footer */}
-      <div className="p-3 border-t border-ink-border flex flex-col gap-2">
+      <div className="p-3 border-t border-white/10 flex flex-col gap-2">
         <button
           onClick={toggleTheme}
           className={cn(

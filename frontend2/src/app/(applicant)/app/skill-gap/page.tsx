@@ -134,7 +134,7 @@ export default function SkillGapPage() {
       </div>
 
       {/* Constructive definitions banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-ink-surface p-4 border border-ink-border rounded text-[11px] leading-relaxed text-text-secondary">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 glass-card p-4 text-xs leading-relaxed text-text-secondary">
         <div>
           <span className="font-semibold text-text-primary block mb-1">🔍 NOT DETECTED</span>
           The resume did not contain clear evidence. This simply means CareerSync could not verify it. Add it to your credentials if you possess the experience.
@@ -151,7 +151,7 @@ export default function SkillGapPage() {
 
       {/* Matrix list */}
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider text-[10px]">
+        <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider text-[11px]">
           Aggregated Requirement Matrix ({skillAnalysis.length})
         </h3>
 
@@ -163,14 +163,14 @@ export default function SkillGapPage() {
             return (
               <div
                 key={idx}
-                className="bg-ink-surface border border-ink-border rounded p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs"
+                className="glass-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs"
               >
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2">
                     <h4 className="font-semibold text-sm text-text-primary">
                       {item.skill}
                     </h4>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-semibold uppercase tracking-wider ${meta.classes}`}>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-semibold uppercase tracking-wider ${meta.classes}`}>
                       <MetaIcon className="w-3.5 h-3.5" />
                       {meta.label}
                     </span>
@@ -180,7 +180,7 @@ export default function SkillGapPage() {
                     Required by: <strong className="text-text-primary">{item.roles.join(", ")}</strong>
                   </p>
                   
-                  <p className="text-[10px] text-text-tertiary font-sans leading-normal italic">
+                  <p className="text-[11px] text-text-tertiary font-sans leading-normal italic">
                     Recommendation: {item.recommendation}
                   </p>
                 </div>

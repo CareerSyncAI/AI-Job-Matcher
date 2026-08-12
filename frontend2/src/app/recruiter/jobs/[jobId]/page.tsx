@@ -46,7 +46,7 @@ export default function JobWorkspacePage({
       <div className="bg-ink-surface border border-ink-border rounded p-6">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-2">
-            <span className="inline-block px-2 py-0.5 bg-signal-500/10 text-signal-500 rounded text-[10px] font-semibold uppercase tracking-wider">
+            <span className="inline-block px-2 py-0.5 bg-signal-500/10 text-signal-500 rounded text-[11px] font-semibold uppercase tracking-wider">
               {currentJob.department || "Engineering"}
             </span>
             <h1 className="font-display font-semibold text-xl text-text-primary tracking-tight">
@@ -84,7 +84,7 @@ export default function JobWorkspacePage({
         {/* Job details expansion */}
         <div className="mt-5 pt-5 border-t border-ink-border grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-left">
           <div className="md:col-span-2 space-y-2">
-            <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[10px]">
+            <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[11px]">
               Job Description
             </h3>
             <p className="text-text-secondary leading-relaxed max-w-2xl font-sans">
@@ -94,7 +94,7 @@ export default function JobWorkspacePage({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[10px]">
+              <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[11px]">
                 Required Core Skills
               </h3>
               <div className="flex flex-wrap gap-1.5">
@@ -111,7 +111,7 @@ export default function JobWorkspacePage({
 
             {currentJob.preferredSkills && currentJob.preferredSkills.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[10px]">
+                <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[11px]">
                   Preferred Skills
                 </h3>
                 <div className="flex flex-wrap gap-1.5">

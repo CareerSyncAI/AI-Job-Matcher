@@ -116,7 +116,7 @@ export default function ResumePage() {
         
         {/* Left Side: Upload zone */}
         <div className="space-y-4">
-          <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider text-[10px]">
+          <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider text-[11px]">
             Upload Resume
           </h3>
 
@@ -127,7 +127,7 @@ export default function ResumePage() {
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
               isDragging
                 ? "border-aperture-500 bg-aperture-500/5"
-                : "border-ink-border bg-ink-surface hover:border-ink-border/80"
+                : "glass-card hover:border-white/20"
             }`}
           >
             <input
@@ -145,7 +145,7 @@ export default function ResumePage() {
                 <p className="text-xs font-semibold text-text-primary">
                   Drag and drop your resume file here
                 </p>
-                <p className="text-[10px] text-text-tertiary">
+                <p className="text-[11px] text-text-tertiary">
                   Supports PDF or DOCX up to 5MB.
                 </p>
               </div>
@@ -163,7 +163,7 @@ export default function ResumePage() {
 
           {/* Active processing states */}
           {uploadState.status !== "idle" && (
-            <div className="p-4 bg-ink-surface border border-ink-border rounded text-xs space-y-3">
+            <div className="p-4 glass-card text-xs space-y-3">
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-text-primary truncate max-w-[150px]">
                   {uploadState.fileName}
@@ -189,13 +189,13 @@ export default function ResumePage() {
               )}
 
               {uploadState.status === "error" && (
-                <p className="text-[10px] text-danger font-semibold">
+                <p className="text-[11px] text-danger font-semibold">
                   Error: {uploadState.stage}
                 </p>
               )}
 
               {uploadState.status === "success" && (
-                <p className="text-[10px] text-success font-semibold flex items-center gap-1">
+                <p className="text-[11px] text-success font-semibold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Resume processed! Skills synced.
                 </p>
@@ -213,7 +213,7 @@ export default function ResumePage() {
           </div>
 
           {profile.resumes.length === 0 ? (
-            <div className="p-8 bg-ink-surface border border-ink-border rounded text-center text-text-secondary text-xs">
+            <div className="p-8 glass-card text-center text-text-secondary text-xs">
               No resumes uploaded yet. Upload a PDF or DOCX file to configure credentials.
             </div>
           ) : (
@@ -221,8 +221,8 @@ export default function ResumePage() {
               {profile.resumes.map((resume) => (
                 <div
                   key={resume.id}
-                  className={`p-4 bg-ink-surface border rounded flex items-center justify-between gap-4 transition-all ${
-                    resume.isPrimary ? "border-aperture-500/40" : "border-ink-border"
+                  className={`p-4 glass-card flex items-center justify-between gap-4 transition-all ${
+                    resume.isPrimary ? "border-aperture-500/40" : ""
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -233,7 +233,7 @@ export default function ResumePage() {
                       <p className="font-semibold text-xs text-text-primary truncate">
                         {resume.name}
                       </p>
-                      <p className="text-[10px] text-text-tertiary mt-0.5 flex items-center gap-1.5">
+                      <p className="text-[11px] text-text-tertiary mt-0.5 flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5" />
                         Uploaded: {new Date(resume.uploadedAt).toLocaleDateString()} at{" "}
                         {new Date(resume.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -243,14 +243,14 @@ export default function ResumePage() {
 
                   <div className="flex items-center gap-3 shrink-0">
                     {resume.isPrimary ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-aperture-500/35 text-aperture-500 bg-aperture-500/5 text-[9px] font-semibold uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-aperture-500/35 text-aperture-500 bg-aperture-500/5 text-[10px] font-semibold uppercase tracking-wider">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         Primary Matching
                       </span>
                     ) : (
                       <button
                         onClick={() => setPrimaryResume(resume.id)}
-                        className="px-2 py-1 bg-ink-border hover:bg-aperture-500 hover:text-ink-base text-text-secondary hover:text-text-primary text-[10px] font-semibold rounded transition-colors cursor-pointer"
+                        className="px-2 py-1 bg-ink-border hover:bg-aperture-500 hover:text-ink-base text-text-secondary hover:text-text-primary text-[11px] font-semibold rounded transition-colors cursor-pointer"
                       >
                         Set Primary
                       </button>
@@ -271,12 +271,12 @@ export default function ResumePage() {
 
           {/* Parsed Resume Preview Panel (Visual support only) */}
           {profile.resumes.length > 0 && (
-            <div className="bg-ink-surface border border-ink-border rounded p-4 space-y-3">
-              <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-ink-border pb-2 flex items-center gap-1.5">
+            <div className="glass-card p-4 space-y-3">
+              <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-white/10 pb-2 flex items-center gap-1.5">
                 <FileCheck className="w-4.5 h-4.5 text-aperture-500" />
                 Parsed Resume Preview
               </h3>
-              <div className="text-[11px] bg-ink-base/40 border border-ink-border/60 p-3 rounded font-mono text-text-secondary space-y-2 max-h-[160px] overflow-y-auto leading-relaxed">
+              <div className="text-xs bg-ink-base/40 border border-ink-border/60 p-3 rounded font-mono text-text-secondary space-y-2 max-h-[160px] overflow-y-auto leading-relaxed">
                 <p className="font-semibold text-text-primary">--- PARSED PROFILE ---</p>
                 <p>Candidate: {profile.name}</p>
                 <p>Experience: {profile.experienceYears} Years</p>

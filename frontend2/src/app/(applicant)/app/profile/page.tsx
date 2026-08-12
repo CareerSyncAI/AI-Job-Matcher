@@ -2,11 +2,15 @@
 
 import React, { useState } from "react";
 import { useApplicant as useApplicantContext } from "@/lib/context/ApplicantContext";
-import { User, Tag, Calendar, MapPin, GraduationCap, X, Check, Save } from "lucide-react";
+import { User, Tag, Calendar, MapPin, GraduationCap, X, Check, Save, LogOut, RefreshCw, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useRecruiter } from "@/lib/context/RecruiterContext";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
   const { profile, updateProfile, profileCompleteness, isLoading } = useApplicantContext();
+  const { theme, toggleTheme } = useRecruiter();
+  const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
 
   const [name, setName] = useState(profile?.name || "");
@@ -77,6 +81,22 @@ export default function ProfilePage() {
     }
   };
 
+  const handleReset = () => {
+    if (confirm("This will reset all session applications, edited skills, and uploaded resumes to their default mock states. Do you want to proceed?")) {
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+        window.location.reload();
+      }
+    }
+  };
+
+  const handleExit = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("careersync_user_role");
+      router.push("/");
+    }
+  };
+
   return (
     <div className="space-y-6 text-left max-w-3xl mx-auto">
       {/* Header */}
@@ -90,7 +110,7 @@ export default function ProfilePage() {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-text-tertiary font-semibold uppercase">Completion</p>
+          <p className="text-[11px] text-text-tertiary font-semibold uppercase">Completion</p>
           <span className="font-mono text-sm font-bold text-aperture-500">{profileCompleteness}%</span>
         </div>
       </div>
@@ -105,8 +125,8 @@ export default function ProfilePage() {
 
       {/* Profile Form */}
       <form onSubmit={handleSave} className="space-y-6 text-xs">
-        <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-4">
-          <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-ink-border pb-2 flex items-center gap-2">
+        <div className="glass-card p-5 space-y-4">
+          <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-white/10 pb-2 flex items-center gap-2">
             <User className="w-4 h-4 text-aperture-500" />
             General Profile Details
           </h3>
@@ -181,8 +201,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Skill tag Manager */}
-        <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-4">
-          <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-ink-border pb-2 flex items-center gap-2">
+        <div className="glass-card p-5 space-y-4">
+          <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-white/10 pb-2 flex items-center gap-2">
             <Tag className="w-4 h-4 text-aperture-500" />
             Skills Management
           </h3>
@@ -207,7 +227,7 @@ export default function ProfilePage() {
 
           {/* Skill lists */}
           <div className="space-y-2">
-            <p className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider">
+            <p className="text-[11px] text-text-secondary font-semibold uppercase tracking-wider">
               Declared Skills ({skills.length})
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -253,6 +273,57 @@ export default function ProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* Settings section */}
+      <div className="glass-card p-5 space-y-5 text-xs mt-8">
+        <h2 className="font-display font-semibold text-base text-text-primary tracking-tight">Portal Settings</h2>
+        
+        {/* Theme Settings */}
+        <div className="border-b border-white/10 pb-4 space-y-3">
+          <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider flex items-center gap-1.5">
+            {theme === "dark" ? <Moon className="w-4.5 h-4.5 text-aperture-500" /> : <Sun className="w-4.5 h-4.5 text-aperture-500" />}
+            Color Schemes
+          </h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-text-primary">Theme Toggle</p>
+              <p className="text-[11px] text-text-tertiary mt-0.5">Current select: {theme === "dark" ? "Dark Mode" : "Light Mode"}</p>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="px-3 py-1.5 bg-ink-border hover:bg-ink-border/80 text-text-primary font-semibold rounded cursor-pointer"
+            >
+              Switch Theme
+            </button>
+          </div>
+        </div>
+
+        {/* Action controls */}
+        <div className="space-y-4 pt-1">
+          <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider">
+            Danger Zone
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {/* Reset */}
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-danger/10 hover:bg-danger/20 border border-danger/30 text-danger font-semibold rounded transition-colors cursor-pointer"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Reset Session Data
+            </button>
+
+            {/* Exit */}
+            <button
+              onClick={handleExit}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-ink-border hover:bg-ink-border/80 text-text-secondary hover:text-text-primary font-semibold rounded transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              Exit Candidate View
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -209,7 +209,7 @@ export default function JobDetailPage({
           {/* Job title panel */}
           <div className="bg-ink-surface border border-ink-border rounded p-6 space-y-4">
             <div className="space-y-2">
-              <span className="inline-block px-2.5 py-0.5 bg-aperture-500/10 text-aperture-500 rounded text-[10px] font-semibold uppercase tracking-wider font-mono">
+              <span className="inline-block px-2.5 py-0.5 bg-aperture-500/10 text-aperture-500 rounded text-[11px] font-semibold uppercase tracking-wider font-mono">
                 {job.department}
               </span>
               <h1 className="font-display font-semibold text-xl text-text-primary tracking-tight">
@@ -235,7 +235,7 @@ export default function JobDetailPage({
 
             {/* Description */}
             <div className="border-t border-ink-border pt-4 text-xs space-y-2">
-              <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[10px]">
+              <h3 className="font-semibold text-text-secondary uppercase tracking-wider text-[11px]">
                 Position Overview
               </h3>
               <p className="text-text-secondary leading-relaxed font-sans">
@@ -253,7 +253,7 @@ export default function JobDetailPage({
               <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider">
                 Match Diagnostics
               </h3>
-              <span className={cn("px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold border", getScoreColor(matchScore))}>
+              <span className={cn("px-1.5 py-0.5 rounded font-mono text-[11px] font-semibold border", getScoreColor(matchScore))}>
                 {matchScore}% fit
               </span>
             </div>
@@ -267,7 +267,7 @@ export default function JobDetailPage({
               </div>
             </div>
 
-            <p className="text-[11px] text-text-secondary text-center leading-normal">
+            <p className="text-xs text-text-secondary text-center leading-normal">
               Based on the information currently available in your profile and primary resume version.
             </p>
 
@@ -323,14 +323,14 @@ export default function JobDetailPage({
                     &ldquo;{item.claim}&rdquo;
                   </p>
                   {item.details && (
-                    <p className="text-[10px] text-text-tertiary font-sans leading-normal pt-1">
+                    <p className="text-[11px] text-text-tertiary font-sans leading-normal pt-1">
                       {item.details}
                     </p>
                   )}
                 </div>
 
                 <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-semibold uppercase tracking-wider shrink-0 self-start sm:self-center ${badge.classes}`}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-semibold uppercase tracking-wider shrink-0 self-start sm:self-center ${badge.classes}`}
                 >
                   <BadgeIcon className="w-3.5 h-3.5 stroke-[2px]" />
                   {badge.label}

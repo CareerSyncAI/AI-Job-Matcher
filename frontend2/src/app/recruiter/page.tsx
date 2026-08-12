@@ -83,7 +83,7 @@ export default function RecruiterDashboard() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Metric 1 */}
-        <div className="p-4 bg-ink-surface border border-ink-border rounded flex items-center gap-4">
+        <div className="p-4 glass-card flex items-center gap-4">
           <div className="w-10 h-10 rounded bg-signal-500/10 text-signal-500 flex items-center justify-center">
             <Briefcase className="w-5 h-5" />
           </div>
@@ -98,7 +98,7 @@ export default function RecruiterDashboard() {
         </div>
 
         {/* Metric 2 */}
-        <div className="p-4 bg-ink-surface border border-ink-border rounded flex items-center gap-4">
+        <div className="p-4 glass-card flex items-center gap-4">
           <div className="w-10 h-10 rounded bg-warning/10 text-warning flex items-center justify-center">
             <Clock className="w-5 h-5" />
           </div>
@@ -113,7 +113,7 @@ export default function RecruiterDashboard() {
         </div>
 
         {/* Metric 3 */}
-        <div className="p-4 bg-ink-surface border border-ink-border rounded flex items-center gap-4">
+        <div className="p-4 glass-card flex items-center gap-4">
           <div className="w-10 h-10 rounded bg-success/10 text-success flex items-center justify-center">
             <UserCheck className="w-5 h-5" />
           </div>
@@ -145,7 +145,7 @@ export default function RecruiterDashboard() {
             {jobs.map((job) => (
               <div
                 key={job.id}
-                className="p-4 bg-ink-surface border border-ink-border hover:border-signal-500/30 rounded transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="p-4 glass-card hover:border-signal-500/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div>
                   <h3 className="font-semibold text-sm text-text-primary hover:text-signal-500 transition-colors">
@@ -164,7 +164,7 @@ export default function RecruiterDashboard() {
 
                 <div className="flex items-center gap-4 shrink-0 justify-between sm:justify-end border-t sm:border-t-0 border-ink-border pt-3 sm:pt-0">
                   <div className="text-right">
-                    <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">
+                    <p className="text-[11px] text-text-tertiary font-semibold uppercase tracking-wider">
                       Applicants
                     </p>
                     <p className="text-sm font-mono font-semibold text-text-primary mt-0.5">
@@ -195,7 +195,7 @@ export default function RecruiterDashboard() {
             </div>
             
             {awaitingReviewCandidates.length === 0 ? (
-              <div className="p-4 bg-ink-surface/50 border border-ink-border rounded text-center">
+              <div className="p-4 glass-card text-center">
                 <p className="text-xs text-text-secondary">No candidates awaiting review.</p>
               </div>
             ) : (
@@ -205,20 +205,20 @@ export default function RecruiterDashboard() {
                   return (
                     <div
                       key={candidate.id}
-                      className="p-3 bg-ink-surface border border-ink-border rounded flex items-center justify-between gap-3"
+                      className="p-3 glass-card flex items-center justify-between gap-3"
                     >
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-text-primary truncate">
                           {candidate.name}
                         </p>
-                        <p className="text-[10px] text-text-secondary truncate mt-0.5">
+                        <p className="text-[11px] text-text-secondary truncate mt-0.5">
                           {job ? job.title : "Unknown Job"}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
-                          <p className="text-[9px] text-text-tertiary font-semibold uppercase">
+                          <p className="text-[10px] text-text-tertiary font-semibold uppercase">
                             Score
                           </p>
                           <span className="font-mono text-xs font-semibold text-signal-500">
@@ -227,7 +227,7 @@ export default function RecruiterDashboard() {
                         </div>
                         <Link
                           href={`/recruiter/jobs/${candidate.jobId}/candidates/${candidate.id}`}
-                          className="px-2 py-1 bg-ink-border hover:bg-signal-500 hover:text-ink-base text-text-primary text-[10px] font-semibold rounded transition-colors"
+                          className="px-2 py-1 bg-ink-border hover:bg-signal-500 hover:text-ink-base text-text-primary text-[11px] font-semibold rounded transition-colors"
                         >
                           Review
                         </Link>
@@ -253,7 +253,7 @@ export default function RecruiterDashboard() {
                   <div className="w-1.5 h-1.5 rounded-full bg-signal-500 mt-1.5 shrink-0" />
                   <div>
                     <p className="font-medium text-text-primary">{act.title}</p>
-                    <p className="text-[10px] text-text-tertiary mt-0.5">
+                    <p className="text-[11px] text-text-tertiary mt-0.5">
                       {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &bull; {act.jobTitle}
                     </p>
                   </div>

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { RecruiterProvider } from "@/lib/context/RecruiterContext";
+import { LiquidBackground } from "@/components/layout/LiquidBackground";
 
 export const metadata: Metadata = {
-  title: "CareerSync AI — Decision-Support Portal",
-  description: "Enterprise recruiter workflow for evaluating and ranking candidate resumes against job descriptions.",
+  title: "CareerSync AI — Hybrid Premium Portal",
+  description: "Enterprise workflow for evaluating and ranking candidate resumes against job descriptions.",
 };
 
 export default function RootLayout({
@@ -14,7 +15,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased" data-theme="dark">
-      <body className="min-h-full flex flex-col bg-ink-base text-text-primary">
+      <body className="min-h-full flex flex-col bg-transparent text-text-primary">
+        <LiquidBackground />
         <RecruiterProvider>
           {children}
         </RecruiterProvider>

@@ -1,4 +1,4 @@
-@import url('https://api.fontshare.com/v2/css?f[]=clash-display@500,600&f[]=general-sans@400,500,600&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=general-sans@400,500,600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
 
 @import "tailwindcss";
@@ -21,36 +21,50 @@
   --font-sans: 'General Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-display: 'Clash Display', 'Inter', sans-serif;
+  
+  --shadow-glass-sm: 0 4px 30px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-glass-lg: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-soft: 6px 6px 12px rgba(0,0,0,0.4), -6px -6px 12px rgba(255,255,255,0.05);
+  --shadow-soft-inset: inset 4px 4px 8px rgba(0,0,0,0.4), inset -4px -4px 8px rgba(255,255,255,0.05);
 }
 
 :root {
-  /* Default: Dark Theme */
-  --ink-base: #0D0F14;
-  --ink-surface: #161922;
+  /* OLED Dark / Obsidian Base */
+  --ink-base: #030305;
+  --ink-surface: rgba(20, 22, 30, 0.4);
   --ink-border: rgba(255, 255, 255, 0.08);
-  --text-primary: #F2F3F5;
-  --text-secondary: #A6ACBB;
-  --text-tertiary: #6B7284;
-  --signal-500: #1FB6C4;
-  --signal-600: #159AA6;
-  --success: #2FAE6B;
-  --warning: #E3A008;
-  --danger: #E24C4B;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8A93A6;
+  --text-tertiary: #52596A;
+  
+  /* Professional Accent Colors */
+  --signal-500: #3B82F6; /* Premium Blue */
+  --signal-600: #2563EB;
+  --aperture-500: #6366F1; /* Premium Indigo */
+  --aperture-600: #4F46E5;
+  
+  --success: #10B981; /* Premium Emerald */
+  --warning: #F59E0B; /* Premium Amber */
+  --danger: #EF4444; /* Premium Red */
 }
 
 [data-theme='light'] {
-  /* Light Theme */
-  --ink-base: #F5F6F8;
-  --ink-surface: #FFFFFF;
-  --ink-border: rgba(13, 15, 20, 0.08);
-  --text-primary: #14161C;
-  --text-secondary: #565D6D;
-  --text-tertiary: #8A90A0;
-  --signal-500: #1FB6C4;
-  --signal-600: #159AA6;
-  --success: #2FAE6B;
-  --warning: #E3A008;
-  --danger: #E24C4B;
+  /* Soft Frost Light Theme */
+  --ink-base: #F8F9FB;
+  --ink-surface: rgba(255, 255, 255, 0.6);
+  --ink-border: rgba(0, 0, 0, 0.05);
+  --text-primary: #0F1115;
+  --text-secondary: #4A5160;
+  --text-tertiary: #848A96;
+  
+  --signal-500: #2563EB;
+  --signal-600: #1D4ED8;
+  --aperture-500: #4F46E5;
+  --aperture-600: #4338CA;
+  
+  --success: #059669;
+  --warning: #D97706;
+  --danger: #DC2626;
 }
 
 body {
@@ -63,13 +77,48 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Glassmorphism Panel Utilities */
+@utility glass-panel {
+  background-color: var(--ink-surface);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid var(--ink-border);
+  box-shadow: var(--shadow-glass-lg);
+  border-radius: 1.5rem; /* 24px smooth curve */
+}
+
+@utility glass-card {
+  background-color: var(--ink-surface);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--ink-border);
+  box-shadow: var(--shadow-glass-sm);
+  border-radius: 1rem;
+}
+
+/* Soft UI (Neumorphism) Utilities */
+@utility soft-button {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-soft);
+  border-radius: 9999px; /* Pill shape */
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+
+  &:hover {
+    box-shadow: var(--shadow-soft), 0 0 15px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  &:active {
+    box-shadow: var(--shadow-soft-inset);
+    transform: scale(0.98);
+  }
+}
+
 /* Core accessibility focus states */
 input:focus, select:focus, textarea:focus, button:focus-visible {
   outline: 2px solid var(--signal-500);
   outline-offset: 2px;
 }
 
-/* Focus outline overrides for interactive elements */
 a:focus-visible {
   outline: 2px solid var(--signal-500);
   outline-offset: 2px;
@@ -77,18 +126,18 @@ a:focus-visible {
 
 /* Professional custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--ink-border);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Reduced motion accessibility standard reset */

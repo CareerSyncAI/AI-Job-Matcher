@@ -9,7 +9,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { isLoading } = useRecruiter();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-ink-base">
+    <div className="flex h-screen overflow-hidden bg-transparent">
       {/* Sidebar Navigation */}
       <Sidebar />
 

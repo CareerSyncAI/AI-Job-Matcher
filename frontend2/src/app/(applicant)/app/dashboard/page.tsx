@@ -80,7 +80,7 @@ export default function ApplicantDashboard() {
             Analyze your credentials, track applications, and inspect requirement matches.
           </p>
         </div>
-        <div className="text-[10px] text-text-tertiary font-mono">
+        <div className="text-[11px] text-text-tertiary font-mono">
           Last profile sync: {new Date().toLocaleDateString()}
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function ApplicantDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Card 1: Profile Completeness */}
-        <div className="bg-ink-surface border border-ink-border rounded p-5 flex flex-col justify-between h-[190px]">
+        <div className="glass-card p-5 flex flex-col justify-between h-[190px]">
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider">
@@ -108,7 +108,7 @@ export default function ApplicantDashboard() {
               />
             </div>
 
-            <p className="text-[11px] text-text-secondary mt-4 leading-normal">
+            <p className="text-xs text-text-secondary mt-4 leading-normal">
               Completing your profile adds credibility and ensures direct compatibility matches against job listings.
             </p>
           </div>
@@ -123,7 +123,7 @@ export default function ApplicantDashboard() {
         </div>
 
         {/* Card 2: Strongest Matching Requisition */}
-        <div className="bg-ink-surface border border-ink-border rounded p-5 flex flex-col justify-between h-[190px]">
+        <div className="glass-card p-5 flex flex-col justify-between h-[190px]">
           {topMatch ? (
             <>
               <div>
@@ -138,7 +138,7 @@ export default function ApplicantDashboard() {
                 <h4 className="font-semibold text-sm text-text-primary truncate mt-3">
                   {topMatch.job.title}
                 </h4>
-                <p className="text-[11px] text-text-secondary truncate mt-1">
+                <p className="text-xs text-text-secondary truncate mt-1">
                   {topMatch.job.department} &bull; {topMatch.job.location}
                 </p>
               </div>
@@ -160,7 +160,7 @@ export default function ApplicantDashboard() {
         </div>
 
         {/* Card 3: Active Applications Tracker */}
-        <div className="bg-ink-surface border border-ink-border rounded p-5 flex flex-col justify-between h-[190px]">
+        <div className="glass-card p-5 flex flex-col justify-between h-[190px]">
           <div>
             <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider mb-2">
               Active Tracker
@@ -171,7 +171,7 @@ export default function ApplicantDashboard() {
               </span>
               <span className="text-xs text-text-secondary">Active application{activeApps.length !== 1 ? "s" : ""}</span>
             </div>
-            <p className="text-[11px] text-text-secondary mt-3 leading-normal">
+            <p className="text-xs text-text-secondary mt-3 leading-normal">
               Keep track of interview invites, screening updates, and offers in the application vault.
             </p>
           </div>
@@ -204,7 +204,7 @@ export default function ApplicantDashboard() {
 
           <div className="space-y-3">
             {recommendedJobs.length === 0 ? (
-              <div className="p-6 bg-ink-surface border border-ink-border rounded text-center">
+              <div className="p-6 glass-card text-center">
                 <Compass className="w-8 h-8 text-text-tertiary mx-auto mb-2 animate-spin duration-3000" />
                 <p className="text-xs text-text-secondary">No recommendations available. Update your skills to discover matches.</p>
               </div>
@@ -212,7 +212,7 @@ export default function ApplicantDashboard() {
               recommendedJobs.map(({ job, score }) => (
                 <div
                   key={job.id}
-                  className="p-4 bg-ink-surface border border-ink-border hover:border-aperture-500/30 rounded transition-all flex items-center justify-between gap-4"
+                  className="p-4 glass-card hover:border-aperture-500/50 transition-all flex items-center justify-between gap-4"
                 >
                   <div className="min-w-0">
                     <h3 className="font-semibold text-sm text-text-primary truncate">
@@ -248,7 +248,7 @@ export default function ApplicantDashboard() {
         <div className="space-y-6">
           
           {/* Constructive Skill Gap Highlights */}
-          <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-4">
+          <div className="glass-card p-5 space-y-4">
             <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-ink-border pb-2">
               Evidential Skill Gap
             </h3>
@@ -281,7 +281,7 @@ export default function ApplicantDashboard() {
           </div>
 
           {/* Action Checklist */}
-          <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-3">
+          <div className="glass-card p-5 space-y-3">
             <h3 className="font-display font-semibold text-xs text-text-primary uppercase tracking-wider border-b border-ink-border pb-2">
               Next Action Items
             </h3>
@@ -293,7 +293,7 @@ export default function ApplicantDashboard() {
                     <Link href="/app/profile" className="font-semibold text-text-primary hover:text-aperture-500 transition-colors">
                       Complete profile credentials
                     </Link>
-                    <p className="text-[10px] text-text-secondary mt-0.5">Fill out education and experience to boost fit ratings.</p>
+                    <p className="text-[11px] text-text-secondary mt-0.5">Fill out education and experience to boost fit ratings.</p>
                   </div>
                 </div>
               )}
@@ -304,7 +304,7 @@ export default function ApplicantDashboard() {
                     <Link href="/app/resume" className="font-semibold text-text-primary hover:text-aperture-500 transition-colors">
                       Upload primary resume version
                     </Link>
-                    <p className="text-[10px] text-text-secondary mt-0.5">Parse skills and certifications directly from PDF.</p>
+                    <p className="text-[11px] text-text-secondary mt-0.5">Parse skills and certifications directly from PDF.</p>
                   </div>
                 </div>
               )}
@@ -315,7 +315,7 @@ export default function ApplicantDashboard() {
                     <Link href="/app/jobs" className="font-semibold text-text-primary hover:text-aperture-500 transition-colors">
                       Browse matched job listings
                     </Link>
-                    <p className="text-[10px] text-text-secondary mt-0.5">Identify positions matching your specific skill set.</p>
+                    <p className="text-[11px] text-text-secondary mt-0.5">Identify positions matching your specific skill set.</p>
                   </div>
                 </div>
               )}

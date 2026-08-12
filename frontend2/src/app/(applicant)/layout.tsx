@@ -11,7 +11,7 @@ export default function ApplicantLayout({
 }) {
   return (
     <ApplicantProvider>
-      <div className="flex flex-col min-h-screen bg-ink-base text-text-primary">
+      <div className="flex flex-col min-h-screen bg-transparent text-text-primary z-10">
         {/* Top Navbar */}
         <ApplicantHeader />
         
