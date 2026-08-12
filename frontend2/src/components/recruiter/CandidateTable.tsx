@@ -6,6 +6,7 @@ import { Search, EyeOff, Eye, ArrowUpDown, ChevronDown, CheckSquare, Square, Tra
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface CandidateTableProps {
   candidates: Candidate[];
@@ -19,6 +20,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
   onStatusUpdate
 }) => {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   
   // States
   const [searchTerm, setSearchTerm] = useState("");
@@ -236,8 +238,10 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                   const notDetectedList = candidate.evidence.filter((e) => e.type === "not_detected").map((e) => e.requirement.replace(" requirement", ""));
 
                   return (
-                    <tr
+                    <motion.tr
                       key={candidate.id}
+                      layout={!shouldReduceMotion}
+                      transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
                       className={cn(
                         "border-b border-ink-border hover:bg-ink-border/20 transition-all",
                         isSelected ? "bg-signal-500/5" : "",
@@ -393,7 +397,7 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
                           </Link>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}

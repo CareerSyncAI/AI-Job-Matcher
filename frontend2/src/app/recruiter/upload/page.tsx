@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { useRecruiter } from "@/lib/context/RecruiterContext";
 import { Upload, File, CheckCircle2, Trash2, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { ApertureLoader } from "@/components/motion/MotionPrimitives";
 
 interface UploadQueueItem {
   id: string;
@@ -235,7 +236,15 @@ export default function UploadPage() {
                 {queue.map((item) => (
                   <div key={item.id} className="p-4 flex items-center justify-between gap-4 text-xs">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <File className="w-5 h-5 text-text-secondary shrink-0" />
+                      {item.status === "uploading" ? (
+                        <ApertureLoader state="processing" size="sm" />
+                      ) : item.status === "success" ? (
+                        <ApertureLoader state="settled" size="sm" />
+                      ) : item.status === "error" ? (
+                        <ApertureLoader state="error" size="sm" />
+                      ) : (
+                        <File className="w-5 h-5 text-text-secondary shrink-0" />
+                      )}
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex justify-between items-center gap-2">
                           <p className="font-semibold text-text-primary truncate">

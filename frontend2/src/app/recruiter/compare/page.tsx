@@ -1,22 +1,35 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useRecruiter } from "@/lib/context/RecruiterContext";
-import { ArrowLeft, CheckCircle, AlertTriangle, HelpCircle, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertTriangle, HelpCircle, ArrowLeftRight, X } from "lucide-react";
 import Link from "next/link";
 import { Candidate, EvidenceItem, EvidenceType } from "@/types";
 import { cn } from "@/lib/utils";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 
 export default function ComparePage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { jobs, candidates, updateCandidateStatus, currentJob } = useRecruiter();
+  const shouldReduceMotion = useReducedMotion();
 
   const [compareList, setCompareList] = useState<Candidate[]>([]);
   const [showDifferencesOnly, setShowDifferencesOnly] = useState(false);
 
   // Parse candidate IDs from search params
   const paramCandidates = searchParams.get("candidates");
+
+  const removeFromCompare = (candidateId: string) => {
+    const newIds = compareList.filter((c) => c.id !== candidateId).map((c) => c.id);
+    if (newIds.length === 0) {
+      const jobId = compareList[0]?.jobId || currentJob?.id;
+      router.push(jobId ? `/recruiter/jobs/${jobId}` : "/recruiter");
+    } else {
+      router.push(`/recruiter/compare?candidates=${newIds.join(",")}`);
+    }
+  };
 
   useEffect(() => {
     if (paramCandidates) {
@@ -151,7 +164,7 @@ export default function ComparePage() {
       </div>
 
       {/* Compare Candidates Profile Cards (Columns) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 border border-ink-border bg-ink-surface rounded divide-y md:divide-y-0 md:divide-x divide-ink-border text-left">
+      <div className="grid grid-cols-1 md:grid-cols-4 border border-ink-border bg-ink-surface rounded text-left overflow-hidden">
         {/* Requirement Baseline Column */}
         <div className="p-4 flex flex-col justify-between h-44 bg-ink-base/40">
           <div>
@@ -169,8 +182,21 @@ export default function ComparePage() {
 
         {/* Candidate Columns */}
         {compareList.map((candidate) => (
-          <div key={candidate.id} className="p-4 flex flex-col justify-between h-44 space-y-4">
-            <div className="space-y-1 min-w-0">
+          <motion.div
+            key={candidate.id}
+            layout={!shouldReduceMotion}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+            className="p-4 flex flex-col justify-between h-44 space-y-4 border-t md:border-t-0 md:border-l border-ink-border relative"
+          >
+            <button
+              onClick={() => removeFromCompare(candidate.id)}
+              className="absolute top-2 right-2 text-text-tertiary hover:text-text-primary p-1 cursor-pointer"
+              title="Remove candidate from comparison"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+
+            <div className="space-y-1 min-w-0 pr-4">
               <div className="flex items-start justify-between gap-2">
                 <Link
                   href={`/recruiter/jobs/${candidate.jobId}/candidates/${candidate.id}`}
@@ -207,7 +233,7 @@ export default function ComparePage() {
                 Reject
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
@@ -249,48 +275,55 @@ export default function ComparePage() {
           )}
 
           {/* Requirements Rows */}
-          {filteredRequirements.map((req, rIdx) => (
-            <div
-              key={rIdx}
-              className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-ink-border items-stretch"
-            >
-              {/* Requirement title */}
-              <div className="p-4 font-semibold text-xs text-text-secondary bg-ink-base/10 flex items-center justify-between gap-2">
-                <span className="truncate text-left">{req}</span>
-                {isDifference(req) && (
-                  <span className="px-1 py-0.5 bg-signal-500/10 text-signal-500 rounded-[3px] text-[8px] font-semibold uppercase tracking-wider shrink-0">
-                    Delta
-                  </span>
-                )}
-              </div>
+          <AnimatePresence initial={false}>
+            {filteredRequirements.map((req) => (
+              <motion.div
+                key={req}
+                layout={!shouldReduceMotion}
+                initial={shouldReduceMotion ? {} : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-ink-border items-stretch overflow-hidden"
+              >
+                {/* Requirement title */}
+                <div className="p-4 font-semibold text-xs text-text-secondary bg-ink-base/10 flex items-center justify-between gap-2">
+                  <span className="truncate text-left">{req}</span>
+                  {isDifference(req) && (
+                    <span className="px-1 py-0.5 bg-signal-500/10 text-signal-500 rounded-[3px] text-[8px] font-semibold uppercase tracking-wider shrink-0">
+                      Delta
+                    </span>
+                  )}
+                </div>
 
-              {/* Candidates' Evidences */}
-              {compareList.map((candidate) => {
-                const evidence = getCandidateEvidenceForRequirement(candidate, req);
-                const badgeColor = getEvidenceColor(evidence?.type);
-                const badgeIcon = getEvidenceIcon(evidence?.type);
-                const label = evidence ? (evidence.type === "matched" ? "Matched" : 
-                               evidence.type === "transferable" ? "Transferable" :
-                               evidence.type === "gap" ? "Constraint Gap" : "Not Detected") : "Not Mentioned";
+                {/* Candidates' Evidences */}
+                {compareList.map((candidate) => {
+                  const evidence = getCandidateEvidenceForRequirement(candidate, req);
+                  const badgeColor = getEvidenceColor(evidence?.type);
+                  const badgeIcon = getEvidenceIcon(evidence?.type);
+                  const label = evidence ? (evidence.type === "matched" ? "Matched" : 
+                                 evidence.type === "transferable" ? "Transferable" :
+                                 evidence.type === "gap" ? "Constraint Gap" : "Not Detected") : "Not Mentioned";
 
-                return (
-                  <div key={candidate.id} className="p-4 text-xs flex flex-col justify-between space-y-2 text-left">
-                    <div className="flex items-center gap-2">
-                      {badgeIcon}
-                      <span className={cn("px-1.5 py-0.5 rounded border font-semibold text-[9px] uppercase tracking-wider", badgeColor)}>
-                        {label}
-                      </span>
+                  return (
+                    <div key={candidate.id} className="p-4 text-xs flex flex-col justify-between space-y-2 text-left">
+                      <div className="flex items-center gap-2">
+                        {badgeIcon}
+                        <span className={cn("px-1.5 py-0.5 rounded border font-semibold text-[9px] uppercase tracking-wider", badgeColor)}>
+                          {label}
+                        </span>
+                      </div>
+                      {evidence && (
+                        <p className="text-text-secondary italic font-sans leading-relaxed text-[11px]">
+                          &quot;{evidence.claim}&quot;
+                        </p>
+                      )}
                     </div>
-                    {evidence && (
-                      <p className="text-text-secondary italic font-sans leading-relaxed text-[11px]">
-                        &quot;{evidence.claim}&quot;
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                  );
+                })}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </div>
