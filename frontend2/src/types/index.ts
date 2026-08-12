@@ -55,3 +55,34 @@ export type Activity = {
   jobTitle: string;
   timestamp: string;
 };
+
+export type ResumeVersion = {
+  id: string;
+  name: string;
+  uploadedAt: string;
+  isPrimary: boolean;
+};
+
+export type ApplicantProfile = {
+  name: string;
+  headline?: string;
+  location?: string;
+  skills: string[];
+  experienceYears: number;
+  education?: string;
+  resumes: ResumeVersion[];
+};
+
+export type ApplicationTimelineEvent = {
+  stage: "applied" | "screened" | "shortlisted" | "interviewing" | "offered" | "rejected";
+  timestamp: string;
+  note?: string;
+};
+
+export type JobApplication = {
+  id: string;
+  jobId: string;
+  appliedAt: string;
+  status: "applied" | "screened" | "shortlisted" | "interviewing" | "offered" | "rejected";
+  timeline: ApplicationTimelineEvent[];
+};

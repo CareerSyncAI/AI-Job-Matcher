@@ -1,37 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ApertureLoader } from "@/components/motion/MotionPrimitives";
 
 export default function EntryPortal() {
-  const [showApplicantNotice, setShowApplicantNotice] = useState(false);
+  const [apertureState, setApertureState] = useState<"closed" | "opening" | "settled">("closed");
+
+  useEffect(() => {
+    // Sequence the signature Aperture iris opening animation on mount
+    const timer1 = setTimeout(() => {
+      setApertureState("opening");
+    }, 100);
+
+    const timer2 = setTimeout(() => {
+      setApertureState("settled");
+    }, 800);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-ink-base flex flex-col justify-between p-6 relative overflow-hidden select-none">
-      {/* CSS Particle background (Aperture drifting dots style) */}
-      <div className="absolute inset-0 opacity-15 pointer-events-none">
-        <div className="absolute top-1/4 left-1/3 w-1.5 h-1.5 rounded-full bg-signal-500 animate-pulse duration-3000" />
-        <div className="absolute top-1/2 left-2/3 w-2.5 h-2.5 rounded-full bg-signal-500 animate-pulse duration-4000" />
-        <div className="absolute top-3/4 left-1/4 w-1.5 h-1.5 rounded-full bg-signal-500 animate-pulse duration-2500" />
-        <div className="absolute top-1/3 left-3/4 w-2 h-2 rounded-full bg-signal-500 animate-pulse duration-3500" />
+      {/* Subtle brand dots in static positions (no continuous high-cost animation) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-1/4 left-1/3 w-1 h-1 rounded-full bg-signal-500" />
+        <div className="absolute top-1/2 left-2/3 w-1.5 h-1.5 rounded-full bg-signal-500" />
+        <div className="absolute top-3/4 left-1/4 w-1 h-1 rounded-full bg-signal-500" />
       </div>
 
-      {/* Header */}
+      {/* Header with Aperture logo */}
       <header className="flex items-center gap-3">
-        <div className="relative w-8 h-8 text-signal-500">
-          <svg
-            viewBox="0 0 24 24"
-            className="w-full h-full stroke-current"
-            fill="none"
-            strokeWidth="2"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <circle cx="12" cy="12" r="3" className="fill-current" />
-            <path d="M12 2a10 10 0 0 0-7.07 17.07L12 12V2z" />
-          </svg>
-        </div>
-        <span className="font-display font-semibold text-lg tracking-tight">
+        <ApertureLoader state={apertureState} size="sm" />
+        <span className="font-display font-semibold text-lg tracking-tight text-text-primary">
           CareerSync AI
         </span>
       </header>
@@ -39,21 +45,37 @@ export default function EntryPortal() {
       {/* Hero Body */}
       <div className="max-w-2xl mx-auto my-auto text-center space-y-8 py-12 relative z-10">
         <div className="space-y-4">
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
+          <motion.h1
+            initial={{ opacity: 0, y: 7 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0, 0, 0.2, 1] }}
+            className="font-display text-4xl sm:text-5xl font-semibold tracking-tight leading-tight text-text-primary"
+          >
             Bring the right match <br className="hidden sm:inline" />
             <span className="text-signal-500 font-bold">into focus.</span>
-          </h1>
-          <p className="text-sm sm:text-base text-text-secondary max-w-md mx-auto leading-relaxed">
+          </motion.h1>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 7 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, delay: 0.12, ease: [0, 0, 0.2, 1] }}
+            className="text-sm sm:text-base text-text-secondary max-w-md mx-auto leading-relaxed"
+          >
             Enterprise decision-support dashboard matching qualifications to requirements with claims and evidence.
-          </p>
+          </motion.p>
         </div>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto pt-4">
+        {/* Action Cards with Staggered Entrance */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.24, ease: [0, 0, 0.2, 1] }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto pt-4"
+        >
           {/* Recruiter Route */}
           <Link
             href="/recruiter"
-            className="group block text-left p-6 bg-ink-surface border border-ink-border hover:border-signal-500/50 rounded-lg transition-all focus:outline-none focus:border-signal-500 focus:ring-1 focus:ring-signal-500"
+            className="group block text-left p-6 bg-ink-surface border border-ink-border hover:border-signal-500/40 hover:bg-ink-surface/80 rounded-lg transition-all duration-150 focus:outline-none focus:border-signal-500 focus:ring-2 focus:ring-signal-500/20 active:scale-[0.985]"
           >
             <span className="text-xs font-semibold text-signal-500 uppercase tracking-wider block mb-1">
               For Employers
@@ -62,49 +84,37 @@ export default function EntryPortal() {
               <span className="text-base font-semibold text-text-primary">
                 I&apos;m hiring
               </span>
-              <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-signal-500 group-hover:translate-x-1 transition-all" />
+              <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-signal-500 group-hover:translate-x-1 transition-transform duration-150" />
             </div>
-            <p className="text-xs text-text-tertiary mt-2">
+            <p className="text-xs text-text-tertiary mt-2 font-sans">
               Review active jobs, rank candidates, inspect source evidence, and track hiring pipelines.
             </p>
           </Link>
 
-          {/* Applicant Route (Deferred) */}
-          <button
-            onClick={() => setShowApplicantNotice(true)}
-            className="group text-left p-6 bg-ink-surface border border-ink-border hover:border-ink-border/80 rounded-lg transition-all focus:outline-none focus:border-signal-500 focus:ring-1 focus:ring-signal-500 cursor-pointer"
+          {/* Applicant Route */}
+          <Link
+            href="/app/dashboard"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("careersync_user_role", "applicant");
+              }
+            }}
+            className="group block text-left p-6 bg-ink-surface border border-ink-border hover:border-aperture-500/40 hover:bg-ink-surface/80 rounded-lg transition-all duration-150 focus:outline-none focus:border-aperture-500 focus:ring-2 focus:ring-aperture-500/20 active:scale-[0.985] cursor-pointer"
           >
-            <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-              For Job Seekers <Lock className="w-3 h-3" />
+            <span className="text-xs font-semibold text-aperture-500 uppercase tracking-wider block mb-1">
+              For Job Seekers
             </span>
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-text-secondary">
+              <span className="text-base font-semibold text-text-primary">
                 I&apos;m job-hunting
               </span>
-              <ArrowRight className="w-4 h-4 text-text-tertiary" />
+              <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-aperture-500 group-hover:translate-x-1 transition-transform duration-150" />
             </div>
-            <p className="text-xs text-text-tertiary mt-2">
+            <p className="text-xs text-text-tertiary mt-2 font-sans">
               Manage resume versions, view match metrics, and track your active job applications.
             </p>
-          </button>
-        </div>
-
-        {/* Sandbox alert when clicking applicant card */}
-        {showApplicantNotice && (
-          <div className="p-4 bg-ink-surface border border-ink-border rounded-lg max-w-md mx-auto text-left flex items-start gap-3 animate-fade-in">
-            <span className="w-2 h-2 rounded-full bg-signal-500 mt-2 shrink-0 animate-ping" />
-            <div>
-              <p className="text-xs font-semibold text-text-primary">Applicant Portal Sandbox Mode</p>
-              <p className="text-[11px] text-text-secondary mt-1">
-                The applicant space is deferred for now to prioritize the recruiter screening workflow. Please use the{" "}
-                <Link href="/recruiter" className="text-signal-500 font-semibold underline">
-                  I&apos;m hiring portal
-                </Link>{" "}
-                to check out the core ranking experience.
-              </p>
-            </div>
-          </div>
-        )}
+          </Link>
+        </motion.div>
       </div>
 
       {/* Footer */}

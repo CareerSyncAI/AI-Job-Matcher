@@ -12,6 +12,8 @@
   --color-text-tertiary: var(--text-tertiary);
   --color-signal-500: var(--signal-500);
   --color-signal-600: var(--signal-600);
+  --color-aperture-500: var(--aperture-500);
+  --color-aperture-600: var(--aperture-600);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
@@ -87,4 +89,17 @@ a:focus-visible {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
+}
+
+/* Reduced motion accessibility standard reset */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
 }
