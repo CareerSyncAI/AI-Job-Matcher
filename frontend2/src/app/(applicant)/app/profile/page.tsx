@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import { useApplicant as useApplicantContext } from "@/lib/context/ApplicantContext";
 import { User, Tag, Calendar, MapPin, GraduationCap, X, Check, Save } from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 export default function ProfilePage() {
   const { profile, updateProfile, profileCompleteness, isLoading } = useApplicantContext();
+  const shouldReduceMotion = useReducedMotion();
 
   const [name, setName] = useState(profile?.name || "");
   const [headline, setHeadline] = useState(profile?.headline || "");
@@ -209,22 +211,29 @@ export default function ProfilePage() {
               Declared Skills ({skills.length})
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
-              {skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 bg-ink-base border border-ink-border text-text-primary rounded-full"
-                >
-                  <span className="font-medium">{skill}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSkill(skill)}
-                    className="p-0.5 rounded-full hover:bg-ink-border text-text-secondary hover:text-danger cursor-pointer"
-                    aria-label={`Remove skill ${skill}`}
+              <AnimatePresence>
+                {skills.map((skill) => (
+                  <motion.span
+                    key={skill}
+                    layout={!shouldReduceMotion}
+                    initial={shouldReduceMotion ? {} : { opacity: 0, scale: 0.96, x: -3 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, x: 3, transition: { duration: 0.12 } }}
+                    transition={{ duration: 0.16, ease: [0.4, 0, 0.2, 1] }}
+                    className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 bg-ink-base border border-ink-border text-text-primary rounded-full"
                   >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
+                    <span className="font-medium">{skill}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill(skill)}
+                      className="p-0.5 rounded-full hover:bg-ink-border text-text-secondary hover:text-danger cursor-pointer"
+                      aria-label={`Remove skill ${skill}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </motion.span>
+                ))}
+              </AnimatePresence>
               {skills.length === 0 && (
                 <p className="text-xs text-text-tertiary italic">No skills declared yet. Add skills to compute matches.</p>
               )}

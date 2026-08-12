@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import { useApplicant as useApplicantContext } from "@/lib/context/ApplicantContext";
 import { FileText, Upload, CheckCircle2, Trash2, ShieldCheck, Clock, FileCheck } from "lucide-react";
+import { ApertureLoader } from "@/components/motion/MotionPrimitives";
 
 interface UploadState {
   progress: number;
@@ -168,13 +169,7 @@ export default function ResumePage() {
                   {uploadState.fileName}
                 </p>
                 {uploadState.status === "processing" && (
-                  /* Rotating Aperture loading logo */
-                  <div className="w-4 h-4 text-aperture-500 animate-spin">
-                    <svg viewBox="0 0 24 24" className="stroke-current" fill="none" strokeWidth="2.5">
-                      <circle cx="12" cy="12" r="10" className="opacity-20" />
-                      <path d="M12 2a10 10 0 0 1 10 10" />
-                    </svg>
-                  </div>
+                  <ApertureLoader state="processing" size="sm" />
                 )}
               </div>
 
