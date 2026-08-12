@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function EntryPortal() {
-  const [showApplicantNotice, setShowApplicantNotice] = useState(false);
 
   return (
     <div className="min-h-screen bg-ink-base flex flex-col justify-between p-6 relative overflow-hidden select-none">
@@ -69,42 +68,30 @@ export default function EntryPortal() {
             </p>
           </Link>
 
-          {/* Applicant Route (Deferred) */}
-          <button
-            onClick={() => setShowApplicantNotice(true)}
-            className="group text-left p-6 bg-ink-surface border border-ink-border hover:border-ink-border/80 rounded-lg transition-all focus:outline-none focus:border-signal-500 focus:ring-1 focus:ring-signal-500 cursor-pointer"
+          {/* Applicant Route */}
+          <Link
+            href="/app/dashboard"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("careersync_user_role", "applicant");
+              }
+            }}
+            className="group block text-left p-6 bg-ink-surface border border-ink-border hover:border-aperture-500/50 rounded-lg transition-all focus:outline-none focus:border-aperture-500 focus:ring-1 focus:ring-aperture-500 cursor-pointer"
           >
-            <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-              For Job Seekers <Lock className="w-3 h-3" />
+            <span className="text-xs font-semibold text-aperture-500 uppercase tracking-wider block mb-1">
+              For Job Seekers
             </span>
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-text-secondary">
+              <span className="text-base font-semibold text-text-primary">
                 I&apos;m job-hunting
               </span>
-              <ArrowRight className="w-4 h-4 text-text-tertiary" />
+              <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-aperture-500 group-hover:translate-x-1 transition-all" />
             </div>
             <p className="text-xs text-text-tertiary mt-2">
               Manage resume versions, view match metrics, and track your active job applications.
             </p>
-          </button>
+          </Link>
         </div>
-
-        {/* Sandbox alert when clicking applicant card */}
-        {showApplicantNotice && (
-          <div className="p-4 bg-ink-surface border border-ink-border rounded-lg max-w-md mx-auto text-left flex items-start gap-3 animate-fade-in">
-            <span className="w-2 h-2 rounded-full bg-signal-500 mt-2 shrink-0 animate-ping" />
-            <div>
-              <p className="text-xs font-semibold text-text-primary">Applicant Portal Sandbox Mode</p>
-              <p className="text-[11px] text-text-secondary mt-1">
-                The applicant space is deferred for now to prioritize the recruiter screening workflow. Please use the{" "}
-                <Link href="/recruiter" className="text-signal-500 font-semibold underline">
-                  I&apos;m hiring portal
-                </Link>{" "}
-                to check out the core ranking experience.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Footer */}

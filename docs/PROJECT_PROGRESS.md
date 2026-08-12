@@ -57,6 +57,19 @@ This file tracks project milestones, current status, completed work, and upcomin
 - Developed persistent mock database service layer wrapper (`mock.ts`).
 - Created Recruiter AppShell navigation, Dashboard overview, Job Workspace, Candidate Leaderboard (with Blind Screening mode), Candidate Inspector (pros/cons decision snapshot and claim-to-source evidence cross-referencing), Trade-off Compare Board (with delta differences filter), and Resume Upload Queue portal.
 
+### Entry 4: Applicant / "I'm job hunting" Portal Integration (2026-08-12)
+
+#### Current Status
+- Complete candidate experience implemented and integrated under `frontend2`.
+- Production build compiles successfully, and lint checks validate cleanly.
+- Dev server is running locally on port 3000.
+
+#### Completed Work
+- Created separate dynamic route groups and layouts (`(applicant)` routes) for job seekers.
+- Added Aperture color tokens (gold accent `#C6902F`) to standard Tailwind v4 theme variables.
+- Developed persistent mock database service boundaries supporting applicant profile edits, applications, resume uploads, and status syncing with recruiter candidate leaderboards.
+- Created Applicant top navbar navigation, bento-grid dashboard (profile completeness, top matches, active trackers), profile credentials editor with dynamic progress calculations, drag-and-drop resume vault, search listings, detailed match diagnostics with custom evidence badges, timeline milestones tracking, and aggregate skill matrix.
+
 #### Current Work
 - Code completed and local dev server running in background.
 
@@ -68,4 +81,5 @@ This file tracks project milestones, current status, completed work, and upcomin
 
 #### Next Priority
 - Connect service API boundaries to database endpoints and backend services.
+
 

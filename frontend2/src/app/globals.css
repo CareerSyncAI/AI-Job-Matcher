@@ -12,6 +12,8 @@
   --color-text-tertiary: var(--text-tertiary);
   --color-signal-500: var(--signal-500);
   --color-signal-600: var(--signal-600);
+  --color-aperture-500: var(--aperture-500);
+  --color-aperture-600: var(--aperture-600);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);

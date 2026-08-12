@@ -1,5 +1,5 @@
-import { IRecruiterService } from "./api";
-import { Job, Candidate, Activity, EvidenceItem } from "@/types";
+import { IRecruiterService, IApplicantService } from "./api";
+import { Job, Candidate, Activity, EvidenceItem, ApplicantProfile, ResumeVersion, JobApplication } from "@/types";
 
 const initialJobs: Job[] = [
   {
@@ -252,162 +252,6 @@ const initialCandidates: Candidate[] = [
         details: "No explicit Zustand keyword in resume. Shows high capability in Redux, Context API, and state hooks."
       }
     ]
-  },
-  {
-    id: "cand-4",
-    jobId: "job-1",
-    name: "Diana Prince",
-    currentRole: "Junior Developer",
-    location: "San Mateo, CA",
-    experienceYears: 2,
-    education: "Self-taught / Bootcamp Graduate",
-    skills: ["React", "JavaScript", "CSS", "Git"],
-    certifications: [],
-    matchScore: 45,
-    skillScore: 50,
-    experienceScore: 40,
-    educationScore: 30,
-    semanticScore: 55,
-    matchedSkills: ["React"],
-    transferableSkills: ["JavaScript", "CSS", "Git"],
-    missingSkills: ["TypeScript", "Tailwind CSS", "Next.js", "Zustand", "Framer Motion", "Recharts", "Jest"],
-    status: "rejected",
-    recruiterNotes: "Lacks core experience requirements. No TypeScript, Next.js or styling framework familiarity.",
-    evidence: [
-      {
-        requirement: "React Expertise",
-        claim: "Completed 3-month intensive bootcamp focus on basic React components and API parsing",
-        sourceText: "Student (2024), TechAcademy - page 1",
-        type: "matched"
-      },
-      {
-        requirement: "TypeScript Proficiency",
-        claim: "No TypeScript reference. Relies exclusively on dynamically typed JavaScript",
-        type: "gap",
-        details: "Explicitly misses strict type checking which is an immediate job mandate."
-      },
-      {
-        requirement: "Next.js Integration",
-        claim: "No Next.js experience listed",
-        type: "not_provided"
-      },
-      {
-        requirement: "Tailwind CSS",
-        claim: "Uses standard CSS files for styling, shows basic HTML/CSS layout understanding",
-        sourceText: "Student (2024), TechAcademy - page 2",
-        type: "transferable",
-        details: "Has standard CSS capabilities but will require training to adopt utility-first models."
-      }
-    ]
-  },
-
-  // Job 2 Candidates (Lead AI Researcher)
-  {
-    id: "cand-5",
-    jobId: "job-2",
-    name: "Edward Norton",
-    currentRole: "AI Researcher",
-    location: "Boston, MA",
-    experienceYears: 7,
-    education: "Ph.D. in Artificial Intelligence",
-    skills: ["Python", "PyTorch", "NLP", "Transformers", "spaCy", "Scikit-Learn"],
-    certifications: [],
-    matchScore: 91,
-    skillScore: 92,
-    experienceScore: 90,
-    educationScore: 100,
-    semanticScore: 92,
-    matchedSkills: ["Python", "PyTorch", "NLP", "Transformers", "spaCy"],
-    transferableSkills: ["Scikit-Learn"],
-    missingSkills: ["FastAPI", "Vector Databases", "LangChain"],
-    status: "shortlisted",
-    recruiterNotes: "Strong research profile. PhD adds significant value to core AI models.",
-    evidence: [
-      {
-        requirement: "Python Core",
-        claim: "Created neural network training loops and preprocessing pipelines in Python",
-        sourceText: "AI Researcher (2021-Present), MIT Labs - page 1",
-        type: "matched"
-      },
-      {
-        requirement: "PyTorch Deep Learning",
-        claim: "Trained transformer architecture variations from scratch using PyTorch",
-        sourceText: "AI Researcher (2021-Present), MIT Labs - page 2",
-        type: "matched"
-      },
-      {
-        requirement: "NLP & Transformers",
-        claim: "Specialized in sequence-to-sequence fine-tuning and tokenization optimization",
-        sourceText: "PhD Thesis (2018-2021), Harvard University - page 1",
-        type: "matched"
-      },
-      {
-        requirement: "FastAPI Boilerplate",
-        claim: "Uses Flask and Django for research model serving, showing transferable REST architecture understanding",
-        sourceText: "Graduate Researcher (2019-2021), Harvard - page 2",
-        type: "transferable",
-        details: "Uses Flask which indicates strong ability to pick up FastAPI swiftly."
-      },
-      {
-        requirement: "Vector Databases",
-        claim: "No direct vector storage engine experience listed in project summaries",
-        type: "not_detected",
-        details: "Relies on direct numpy arrays and matrix computing databases for nearest-neighbor evaluations."
-      }
-    ]
-  },
-  {
-    id: "cand-6",
-    jobId: "job-2",
-    name: "Fiona Gallagher",
-    currentRole: "Machine Learning Engineer",
-    location: "Chicago, IL",
-    experienceYears: 5,
-    education: "M.S. in CS",
-    skills: ["Python", "FastAPI", "PyTorch", "NLP", "Transformers", "Vector Databases", "LangChain", "SQL"],
-    certifications: [],
-    matchScore: 97,
-    skillScore: 98,
-    experienceScore: 94,
-    educationScore: 95,
-    semanticScore: 99,
-    matchedSkills: ["Python", "FastAPI", "PyTorch", "NLP", "Transformers", "Vector Databases", "LangChain"],
-    transferableSkills: ["SQL"],
-    missingSkills: ["spaCy"],
-    status: "interviewing",
-    recruiterNotes: "Superb practical ML engineer. Great production API hosting experience using FastAPI.",
-    evidence: [
-      {
-        requirement: "Python Core",
-        claim: "Built asynchronous ETL scripts and model pipelines in Python",
-        sourceText: "ML Engineer (2021-Present), AutoScale - page 1",
-        type: "matched"
-      },
-      {
-        requirement: "FastAPI Integration",
-        claim: "Deployed ML model inferences via FastAPI with asynchronous request handlers, serving 1M+ requests daily",
-        sourceText: "ML Engineer (2021-Present), AutoScale - page 1",
-        type: "matched"
-      },
-      {
-        requirement: "PyTorch Deep Learning",
-        claim: "Implemented PyTorch neural model evaluation systems and optimized weights compilation",
-        sourceText: "ML Engineer (2021-Present), AutoScale - page 2",
-        type: "matched"
-      },
-      {
-        requirement: "Vector Databases",
-        claim: "Configured Pinecone and Qdrant clusters for fast semantic text retrieval and caching",
-        sourceText: "ML Engineer (2021-Present), AutoScale - page 1",
-        type: "matched"
-      },
-      {
-        requirement: "NLP & Transformers",
-        claim: "Fine-tuned Hugging Face transformer models for domain-specific entity extraction",
-        sourceText: "Graduate Intern (2020), AI Systems - page 1",
-        type: "matched"
-      }
-    ]
   }
 ];
 
@@ -427,28 +271,55 @@ const initialActivities: Activity[] = [
     candidateName: "Alice Vance",
     jobTitle: "Senior Software Engineer (Frontend)",
     timestamp: "2026-08-08T11:15:00Z"
-  },
-  {
-    id: "act-3",
-    type: "job_created",
-    title: "Created job posting Lead AI Researcher (NLP)",
-    jobTitle: "Lead AI Researcher (NLP)",
-    timestamp: "2026-08-02T11:00:00Z"
-  },
-  {
-    id: "act-4",
-    type: "candidate_interviewing",
-    title: "Scheduled Fiona Gallagher for technical interview",
-    candidateName: "Fiona Gallagher",
-    jobTitle: "Lead AI Researcher (NLP)",
-    timestamp: "2026-08-08T14:30:00Z"
   }
 ];
 
-class RecruiterServiceMock implements IRecruiterService {
+const initialProfile: ApplicantProfile = {
+  name: "Dhruv Gajera",
+  headline: "Aspiring Frontend Developer & Software Engineer",
+  location: "Surat, Gujarat, India",
+  skills: ["React", "TypeScript", "JavaScript", "HTML5", "CSS3"],
+  experienceYears: 1,
+  education: "B.Tech in Computer Engineering",
+  resumes: [
+    {
+      id: "res-1",
+      name: "Dhruv_Gajera_Resume_v1.pdf",
+      uploadedAt: "2026-08-05T14:30:00Z",
+      isPrimary: true
+    }
+  ]
+};
+
+const initialApplications: JobApplication[] = [
+  {
+    id: "app-initial-1",
+    jobId: "job-1",
+    appliedAt: "2026-08-08T10:45:00Z",
+    status: "screened",
+    timeline: [
+      {
+        stage: "applied",
+        timestamp: "2026-08-08T10:45:00Z",
+        note: "Application submitted successfully."
+      },
+      {
+        stage: "screened",
+        timestamp: "2026-08-09T09:30:00Z",
+        note: "Resume parsed. Fit rating generated."
+      }
+    ]
+  }
+];
+
+class RecruiterServiceMock implements IRecruiterService, IApplicantService {
   private jobs: Job[] = [];
   private candidates: Candidate[] = [];
   private activities: Activity[] = [];
+  
+  // Applicant details
+  private profile: ApplicantProfile = { name: "", skills: [], experienceYears: 0, resumes: [] };
+  private applications: JobApplication[] = [];
 
   constructor() {
     this.loadState();
@@ -467,6 +338,8 @@ class RecruiterServiceMock implements IRecruiterService {
           this.jobs = parsed.jobs || [];
           this.candidates = parsed.candidates || [];
           this.activities = parsed.activities || [];
+          this.profile = parsed.profile || { ...initialProfile };
+          this.applications = parsed.applications || [...initialApplications];
           return;
         } catch (e) {
           console.error("Failed to parse stored mock state, seeding new...", e);
@@ -477,6 +350,60 @@ class RecruiterServiceMock implements IRecruiterService {
     this.jobs = [...initialJobs];
     this.candidates = [...initialCandidates];
     this.activities = [...initialActivities];
+    this.profile = { ...initialProfile };
+    this.applications = [...initialApplications];
+
+    // Seed Dhruv's pre-application candidate profile in the recruiter database
+    const hasDhruv = this.candidates.some(c => c.id === "cand-applicant-job-1");
+    if (!hasDhruv) {
+      this.candidates.push({
+        id: "cand-applicant-job-1",
+        jobId: "job-1",
+        name: this.profile.name,
+        currentRole: this.profile.headline || "Software Engineer",
+        location: this.profile.location || "Surat, India",
+        experienceYears: this.profile.experienceYears,
+        education: this.profile.education || "B.Tech in Computer Engineering",
+        skills: this.profile.skills,
+        certifications: [],
+        matchScore: 82,
+        skillScore: 85,
+        experienceScore: 75,
+        educationScore: 90,
+        semanticScore: 80,
+        matchedSkills: ["React", "TypeScript"],
+        transferableSkills: ["JavaScript", "HTML5", "CSS3"],
+        missingSkills: ["Tailwind CSS", "Next.js"],
+        status: "screened",
+        recruiterNotes: "Applied via candidate portal. Review credentials.",
+        evidence: [
+          {
+            requirement: "React Expertise",
+            claim: "Proficient in component states, React hooks, and context bindings",
+            sourceText: "Profile Declarations",
+            type: "matched"
+          },
+          {
+            requirement: "TypeScript Proficiency",
+            claim: "Uses type interfaces and compiler annotations in side-projects",
+            sourceText: "Profile Declarations",
+            type: "matched"
+          },
+          {
+            requirement: "Tailwind CSS",
+            claim: "No direct experience listed on profile",
+            type: "not_detected",
+            details: "Proficient in vanilla CSS3 and responsive styling models."
+          },
+          {
+            requirement: "Next.js Integration",
+            claim: "No Next.js experience declared in profile sections",
+            type: "not_provided"
+          }
+        ]
+      });
+    }
+
     this.saveState();
   }
 
@@ -487,12 +414,15 @@ class RecruiterServiceMock implements IRecruiterService {
         JSON.stringify({
           jobs: this.jobs,
           candidates: this.candidates,
-          activities: this.activities
+          activities: this.activities,
+          profile: this.profile,
+          applications: this.applications
         })
       );
     }
   }
 
+  // RECRUITER METHODS
   async getJobs(): Promise<Job[]> {
     this.loadState();
     return this.jobs;
@@ -523,6 +453,25 @@ class RecruiterServiceMock implements IRecruiterService {
     }
 
     candidate.status = status;
+
+    // Synchronize to applicant application status if matching
+    if (candidateId.startsWith("cand-applicant-")) {
+      const jobId = candidate.jobId;
+      const app = this.applications.find((a) => a.jobId === jobId);
+      if (app) {
+        let appStatus: JobApplication["status"] = "screened";
+        if (status === "shortlisted") appStatus = "shortlisted";
+        else if (status === "interviewing") appStatus = "interviewing";
+        else if (status === "rejected") appStatus = "rejected";
+
+        app.status = appStatus;
+        app.timeline.push({
+          stage: appStatus,
+          timestamp: new Date().toISOString(),
+          note: `recruiter changed candidate status to: ${status}`
+        });
+      }
+    }
 
     // Log this activity
     const activityId = `act-${Date.now()}`;
@@ -605,17 +554,14 @@ class RecruiterServiceMock implements IRecruiterService {
     ];
 
     for (const stage of stages) {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 300));
       onProgress(stage.progress, stage.label);
     }
 
-    // Determine candidate details from filename or generate deterministically
     const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
     const candId = `cand-${Date.now()}`;
-    
-    // Deterministic metrics based on string values so it's not random
     const charSum = baseName.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const scoreSeed = (charSum % 40) + 60; // range 60-99
+    const scoreSeed = (charSum % 40) + 60;
     
     const newCandidate: Candidate = {
       id: candId,
@@ -623,7 +569,7 @@ class RecruiterServiceMock implements IRecruiterService {
       name: baseName,
       currentRole: "Software Engineer",
       location: "San Jose, CA",
-      experienceYears: (charSum % 5) + 3, // 3 to 7 years
+      experienceYears: (charSum % 5) + 3,
       education: "B.S. in Computer Science",
       skills: [...job.requiredSkills.slice(0, 3), "Git", "REST APIs"],
       certifications: [],
@@ -669,6 +615,202 @@ class RecruiterServiceMock implements IRecruiterService {
     this.saveState();
     return newCandidate;
   }
+
+  // APPLICANT METHODS
+  async getApplicantProfile(): Promise<ApplicantProfile> {
+    this.loadState();
+    return this.profile;
+  }
+
+  async updateApplicantProfile(profileData: Partial<ApplicantProfile>): Promise<ApplicantProfile> {
+    this.loadState();
+    this.profile = {
+      ...this.profile,
+      ...profileData
+    };
+
+    // Update synchronized candidate profile in recruiter candidates list
+    const applicantCandidate = this.candidates.find(c => c.id === "cand-applicant-job-1");
+    if (applicantCandidate) {
+      applicantCandidate.name = this.profile.name;
+      applicantCandidate.currentRole = this.profile.headline || "Software Engineer";
+      applicantCandidate.location = this.profile.location || "Surat, India";
+      applicantCandidate.skills = this.profile.skills;
+      applicantCandidate.experienceYears = this.profile.experienceYears;
+      applicantCandidate.education = this.profile.education || "";
+      applicantCandidate.matchedSkills = applicantCandidate.matchedSkills.filter(s => this.profile.skills.includes(s));
+    }
+
+    this.saveState();
+    return this.profile;
+  }
+
+  async getApplications(): Promise<JobApplication[]> {
+    this.loadState();
+    return this.applications;
+  }
+
+  async getApplication(id: string): Promise<JobApplication | null> {
+    this.loadState();
+    const app = this.applications.find((a) => a.id === id);
+    return app || null;
+  }
+
+  async applyToJob(jobId: string): Promise<JobApplication> {
+    this.loadState();
+    const job = this.jobs.find((j) => j.id === jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+
+    const exists = this.applications.some((app) => app.jobId === jobId);
+    if (exists) {
+      throw new Error("You have already applied to this job.");
+    }
+
+    const appId = `app-${Date.now()}`;
+    const newApplication: JobApplication = {
+      id: appId,
+      jobId: jobId,
+      appliedAt: new Date().toISOString(),
+      status: "applied",
+      timeline: [
+        {
+          stage: "applied",
+          timestamp: new Date().toISOString(),
+          note: "Application submitted successfully."
+        }
+      ]
+    };
+
+    this.applications.unshift(newApplication);
+
+    // Sync to Recruiter candidate dataset
+    const candId = `cand-applicant-${jobId}`;
+    const charSum = this.profile.name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const scoreSeed = (charSum % 25) + 70; // range 70-95
+    
+    const newCandidate: Candidate = {
+      id: candId,
+      jobId: jobId,
+      name: this.profile.name,
+      currentRole: this.profile.headline || "Software Developer",
+      location: this.profile.location || "Surat, India",
+      experienceYears: this.profile.experienceYears,
+      education: this.profile.education || "B.Tech in Computer Engineering",
+      skills: this.profile.skills,
+      certifications: [],
+      matchScore: scoreSeed,
+      skillScore: Math.min(scoreSeed + 5, 100),
+      experienceScore: Math.max(scoreSeed - 10, 60),
+      educationScore: 90,
+      semanticScore: scoreSeed,
+      matchedSkills: job.requiredSkills.filter(s => this.profile.skills.includes(s)),
+      transferableSkills: this.profile.skills.filter(s => !job.requiredSkills.includes(s)),
+      missingSkills: job.requiredSkills.filter(s => !this.profile.skills.includes(s)),
+      status: "screened",
+      recruiterNotes: "Applied via candidate portal. Review credentials.",
+      evidence: job.requiredSkills.map((skill) => {
+        const isMatched = this.profile.skills.includes(skill);
+        return {
+          requirement: `${skill} requirement`,
+          claim: isMatched 
+            ? `Proficient in ${skill} based on declared skills`
+            : `Did not detect direct evidence of ${skill} in resume`,
+          sourceText: isMatched ? "Profile declaration" : undefined,
+          type: isMatched ? "matched" : "not_detected",
+          details: isMatched ? undefined : `Requirement for ${skill} is not explicitly specified in the profile list.`
+        };
+      })
+    };
+
+    this.candidates.push(newCandidate);
+    job.applicantCount += 1;
+
+    // Log recruiter activity
+    const activityId = `act-${Date.now()}`;
+    const newActivity: Activity = {
+      id: activityId,
+      type: "resume_processed",
+      title: `Processed application for ${this.profile.name}`,
+      candidateName: this.profile.name,
+      jobTitle: job.title,
+      timestamp: new Date().toISOString()
+    };
+    this.activities.unshift(newActivity);
+
+    this.saveState();
+    return newApplication;
+  }
+
+  async uploadResumeVersion(
+    file: File,
+    onProgress: (progress: number, stage: string) => void
+  ): Promise<ResumeVersion> {
+    this.loadState();
+
+    const stages = [
+      { progress: 15, label: "Verifying document schema..." },
+      { progress: 45, label: "Scanning text nodes..." },
+      { progress: 75, label: "Extracting skills credentials..." },
+      { progress: 95, label: "Optimizing profile weights..." }
+    ];
+
+    for (const stage of stages) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      onProgress(stage.progress, stage.label);
+    }
+
+    const newId = `res-${Date.now()}`;
+    const newResume: ResumeVersion = {
+      id: newId,
+      name: file.name,
+      uploadedAt: new Date().toISOString(),
+      isPrimary: this.profile.resumes.length === 0
+    };
+
+    this.profile.resumes.push(newResume);
+    
+    // Simulate updating applicant skills with some deterministic additions from resume text
+    const baseName = file.name.toLowerCase();
+    let addedSkill = "";
+    if (baseName.includes("tailwind") && !this.profile.skills.includes("Tailwind CSS")) {
+      addedSkill = "Tailwind CSS";
+    } else if (baseName.includes("next") && !this.profile.skills.includes("Next.js")) {
+      addedSkill = "Next.js";
+    } else if (baseName.includes("devops") && !this.profile.skills.includes("AWS")) {
+      addedSkill = "AWS";
+    }
+
+    if (addedSkill) {
+      this.profile.skills = [...this.profile.skills, addedSkill];
+    }
+
+    this.saveState();
+    return newResume;
+  }
+
+  async setPrimaryResume(resumeId: string): Promise<void> {
+    this.loadState();
+    this.profile.resumes = this.profile.resumes.map((r) => ({
+      ...r,
+      isPrimary: r.id === resumeId
+    }));
+    this.saveState();
+  }
+
+  async deleteResumeVersion(resumeId: string): Promise<void> {
+    this.loadState();
+    const wasPrimary = this.profile.resumes.find((r) => r.id === resumeId)?.isPrimary;
+    this.profile.resumes = this.profile.resumes.filter((r) => r.id !== resumeId);
+    
+    if (wasPrimary && this.profile.resumes.length > 0) {
+      this.profile.resumes[0].isPrimary = true;
+    }
+    
+    this.saveState();
+  }
 }
 
 export const recruiterService = new RecruiterServiceMock();
+export const applicantService = recruiterService;
