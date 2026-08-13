@@ -10,9 +10,9 @@ import {
   Moon, 
   Sparkles, 
   Plus, 
-  Bell, 
-  Sliders, 
-  ChevronDown 
+  ChevronDown,
+  User,
+  ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 
@@ -47,19 +47,18 @@ export const Topbar: React.FC = () => {
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         
-        {/* Quick Search Trigger (Cmd+K) */}
-        <button
-          onClick={() => {
-            window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
-          }}
-          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-ink-border text-xs text-text-secondary hover:text-text-primary hover:border-signal-500/40 transition-all font-mono"
+        {/* Switch to Candidate Portal */}
+        <Link
+          href="/app/dashboard"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-aperture-500/10 border border-aperture-500/30 text-xs font-semibold text-aperture-500 hover:bg-aperture-500/20 transition-all cursor-pointer"
+          title="Switch to Candidate Experience"
         >
-          <Search className="w-3.5 h-3.5 text-signal-500" />
-          <span>Quick Find</span>
-          <kbd className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-ink-border">Cmd+K</kbd>
-        </button>
+          <User className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Candidate View</span>
+          <ArrowRight className="w-3 h-3 hidden sm:inline" />
+        </Link>
 
         {/* Theme Toggle Button */}
         <button
@@ -79,7 +78,7 @@ export const Topbar: React.FC = () => {
         {/* New Job CTA */}
         <Link
           href="/recruiter/jobs/new"
-          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-signal-500/15 border border-signal-500/30 text-xs font-semibold text-signal-500 hover:bg-signal-500/25 transition-all"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-signal-500 hover:bg-signal-600 text-white text-xs font-semibold transition-all shadow-sm"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New Requisition</span>

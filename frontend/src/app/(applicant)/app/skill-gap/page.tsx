@@ -1,121 +1,163 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { 
-  Award, 
-  Sparkles, 
+  Target, 
   CheckCircle2, 
   AlertTriangle, 
-  ArrowRight, 
+  Sparkles, 
   BookOpen, 
-  TrendingUp, 
+  Clock, 
   Plus, 
-  Layers, 
-  Compass, 
-  ExternalLink,
+  ArrowRight, 
+  Briefcase,
+  Layers,
   Zap,
-  Target
+  TrendingUp,
+  ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApplicant } from "@/lib/context/ApplicantContext";
+import { useRecruiter } from "@/lib/context/RecruiterContext";
 import { useToast } from "@/components/ui/ToastProvider";
-import { 
-  SpotlightCard, 
-  InteractiveScoreGauge, 
-  LiquidButton,
-  ShimmerButton 
-} from "@/components/motion/MotionPrimitives";
-import { simulateSkillAddition } from "@/lib/services/matchingEngine";
+import { SpotlightCard } from "@/components/motion/MotionPrimitives";
 
-interface TargetRoleConfig {
-  id: string;
-  title: string;
-  department: string;
-  baseSalary: string;
-  marketDemand: "High" | "Extremely High" | "Surging";
-  requiredSkills: string[];
-  transferableSkills: { name: string; mapsTo: string }[];
-  missingSkills: { name: string; difficulty: "Easy" | "Medium" | "Advanced"; estimatedWeeks: number }[];
-}
+// Smart AI recommendation helper for common skills
+const getSkillLearningPlan = (skill: string) => {
+  const plans: Record<string, { summary: string; projectIdea: string; timeWeeks: number; difficulty: "Easy" | "Medium" | "Advanced" }> = {
+    "PyTorch": {
+      summary: "Master tensor computations, autograd mechanics, and building convolutional/transformer neural network architectures.",
+      projectIdea: "Train a custom image classifier or fine-tune a small BERT model on a Kaggle dataset.",
+      timeWeeks: 3,
+      difficulty: "Advanced"
+    },
+    "FastAPI": {
+      summary: "Understand asynchronous request handling, Pydantic data schemas, dependency injection, and auto-generated OpenAPI docs.",
+      projectIdea: "Build a high-performance REST API with async endpoints, JWT auth, and PostgreSQL connection pooling.",
+      timeWeeks: 1,
+      difficulty: "Easy"
+    },
+    "Docker": {
+      summary: "Learn containerization principles, multi-stage Dockerfiles, port mappings, and container orchestration.",
+      projectIdea: "Containerize a full-stack Next.js + FastAPI application with a docker-compose.yml setup.",
+      timeWeeks: 1,
+      difficulty: "Easy"
+    },
+    "Kubernetes": {
+      summary: "Study pods, deployments, services, ingress controllers, configMaps, and horizontal pod autoscalers.",
+      projectIdea: "Deploy a multi-service web app to a local Minikube or Kind cluster with rolling updates.",
+      timeWeeks: 2,
+      difficulty: "Medium"
+    },
+    "Next.js": {
+      summary: "Master Next.js 15 App Router, React Server Components (RSC), server actions, and edge middleware.",
+      projectIdea: "Build an SEO-optimized dashboard with streaming SSR, dynamic route handlers, and Tailwind styling.",
+      timeWeeks: 2,
+      difficulty: "Medium"
+    },
+    "TypeScript": {
+      summary: "Deepen understanding of generics, union & intersection types, utility types, and strict null checks.",
+      projectIdea: "Refactor a JavaScript library to 100% strict TypeScript with zero 'any' types.",
+      timeWeeks: 1,
+      difficulty: "Easy"
+    },
+    "Tailwind CSS": {
+      summary: "Utilize utility-first CSS, custom design tokens, responsive breakpoints, and dark mode classes.",
+      projectIdea: "Create a modern, responsive landing page with custom gradients and glassmorphism cards.",
+      timeWeeks: 1,
+      difficulty: "Easy"
+    },
+    "NLP": {
+      summary: "Understand tokenization, TF-IDF, Word2Vec, BERT/BGE embeddings, and vector similarity search.",
+      projectIdea: "Implement a semantic document search engine using sentence-transformers and cosine similarity.",
+      timeWeeks: 3,
+      difficulty: "Advanced"
+    },
+    "Transformers": {
+      summary: "Study self-attention mechanisms, encoder-decoder architectures, and Hugging Face pipelines.",
+      projectIdea: "Fine-tune a pretrained Hugging Face transformer model for multi-class text classification.",
+      timeWeeks: 3,
+      difficulty: "Advanced"
+    },
+    "AWS": {
+      summary: "Learn core cloud services: EC2, S3, RDS, Lambda, IAM policies, and VPC networking.",
+      projectIdea: "Host a serverless REST API using API Gateway + AWS Lambda + S3 static asset storage.",
+      timeWeeks: 2,
+      difficulty: "Medium"
+    },
+    "Terraform": {
+      summary: "Master Infrastructure-as-Code (IaC), provider configurations, state management, and reusable modules.",
+      projectIdea: "Write Terraform scripts to automatically provision a cloud VPC with compute instances.",
+      timeWeeks: 2,
+      difficulty: "Medium"
+    }
+  };
+
+  if (plans[skill]) return plans[skill];
+
+  return {
+    summary: `Study core documentation, architectural patterns, and production best practices for ${skill}.`,
+    projectIdea: `Build a functional proof-of-concept integrating ${skill} into your existing portfolio projects.`,
+    timeWeeks: 2,
+    difficulty: "Medium" as const
+  };
+};
 
 export default function SkillGapPage() {
   const { profile, updateProfile } = useApplicant();
+  const { jobs, isLoading: jobsLoading } = useRecruiter();
   const { success, info } = useToast();
 
-  const targetRoles: TargetRoleConfig[] = [
-    {
-      id: "role-1",
-      title: "Principal AI Systems Architect",
-      department: "AI & Distributed Compute",
-      baseSalary: "$220,000 - $280,000",
-      marketDemand: "Surging",
-      requiredSkills: ["PyTorch", "CUDA Optimization", "Distributed Vector Search", "Kubernetes", "FastAPI"],
-      transferableSkills: [
-        { name: "PostgreSQL", mapsTo: "Vector DB (pgvector / Milvus)" },
-        { name: "React / Next.js", mapsTo: "Full-Stack AI Interface Architecture" }
-      ],
-      missingSkills: [
-        { name: "CUDA Kernel Optimization", difficulty: "Advanced", estimatedWeeks: 3 },
-        { name: "Triton Inference Server", difficulty: "Medium", estimatedWeeks: 2 },
-        { name: "Distributed Ray Clusters", difficulty: "Medium", estimatedWeeks: 2 }
-      ]
-    },
-    {
-      id: "role-2",
-      title: "Staff Distributed Backend Lead",
-      department: "Core Cloud Infrastructure",
-      baseSalary: "$200,000 - $260,000",
-      marketDemand: "Extremely High",
-      requiredSkills: ["Go", "Distributed Consensus (Raft)", "gRPC", "Kubernetes", "Kafka"],
-      transferableSkills: [
-        { name: "Node.js Microservices", mapsTo: "Go High-Throughput Services" },
-        { name: "Redis Caching", mapsTo: "Distributed Memory Fabrics" }
-      ],
-      missingSkills: [
-        { name: "Raft / Paxos Consensus", difficulty: "Advanced", estimatedWeeks: 4 },
-        { name: "eBPF Kernel Tracing", difficulty: "Advanced", estimatedWeeks: 3 }
-      ]
-    },
-    {
-      id: "role-3",
-      title: "Lead Full-Stack Product Architect",
-      department: "Product Engineering",
-      baseSalary: "$185,000 - $240,000",
-      marketDemand: "High",
-      requiredSkills: ["Next.js App Router", "TypeScript", "Tailwind CSS", "GraphQL", "Edge Compute"],
-      transferableSkills: [
-        { name: "Express.js", mapsTo: "Next.js Server Actions & Edge Middleware" },
-        { name: "REST APIs", mapsTo: "GraphQL & tRPC Schema Design" }
-      ],
-      missingSkills: [
-        { name: "Cloudflare Edge Workers", difficulty: "Easy", estimatedWeeks: 1 },
-        { name: "WebAssembly (WASM)", difficulty: "Medium", estimatedWeeks: 2 }
-      ]
-    }
-  ];
-
-  const [selectedRoleId, setSelectedRoleId] = useState<string>("role-1");
-  const activeRole = targetRoles.find((r) => r.id === selectedRoleId) || targetRoles[0];
-
+  const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [simulatedSkills, setSimulatedSkills] = useState<string[]>([]);
-  const [matchScore, setMatchScore] = useState<number>(76);
+
+  // Initialize with first job when jobs load
+  useEffect(() => {
+    if (jobs.length > 0 && !selectedJobId) {
+      const timer = setTimeout(() => {
+        setSelectedJobId(jobs[0].id);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [jobs, selectedJobId]);
+
+  const activeJob = useMemo(() => {
+    return jobs.find((j) => j.id === selectedJobId) || jobs[0];
+  }, [jobs, selectedJobId]);
+
+  const currentSkills = useMemo(() => {
+    return Array.from(new Set([...(profile?.skills || []), ...simulatedSkills]));
+  }, [profile, simulatedSkills]);
+
+  // Compute matches and gaps dynamically for the selected active job
+  const { matchedSkills, missingSkills, matchPercentage } = useMemo(() => {
+    if (!activeJob) return { matchedSkills: [], missingSkills: [], matchPercentage: 0 };
+
+    const required = activeJob.requiredSkills || [];
+    const matched = required.filter((s) => currentSkills.includes(s));
+    const missing = required.filter((s) => !currentSkills.includes(s));
+
+    const skillScore = required.length > 0 ? (matched.length / required.length) * 100 : 100;
+    const expScore = activeJob.minimumExperience && profile?.experienceYears
+      ? Math.min((profile.experienceYears / activeJob.minimumExperience) * 100, 100)
+      : 80;
+
+    const overall = Math.round(skillScore * 0.7 + expScore * 0.3);
+
+    return {
+      matchedSkills: matched,
+      missingSkills: missing,
+      matchPercentage: overall
+    };
+  }, [activeJob, currentSkills, profile]);
 
   const handleSimulateSkill = (skillName: string) => {
     if (simulatedSkills.includes(skillName)) return;
-
-    const result = simulateSkillAddition(
-      matchScore,
-      activeRole.requiredSkills,
-      profile?.skills || [],
-      skillName
-    );
-
     setSimulatedSkills((prev) => [...prev, skillName]);
-    setMatchScore(result.updatedScore);
     success(
       `Skill Added: ${skillName}`,
-      `Simulated Match Score increased by +${result.gainedPoints}%! Total Fit: ${result.updatedScore}%`
+      `Simulated your profile with ${skillName}. Match score recalculated!`
     );
   };
 
@@ -124,246 +166,251 @@ export default function SkillGapPage() {
     try {
       const updatedList = Array.from(new Set([...(profile?.skills || []), ...simulatedSkills]));
       await updateProfile({ skills: updatedList });
-      success("Profile Synchronized", `${simulatedSkills.length} new skills permanently added to your profile!`);
+      success("Profile Synchronized", `${simulatedSkills.length} new skill(s) permanently added to your profile.`);
       setSimulatedSkills([]);
     } catch {
       info("Error", "Could not synchronize skills.");
     }
   };
 
+  if (jobsLoading || !activeJob) {
+    return (
+      <div className="h-48 w-full flex items-center justify-center">
+        <p className="text-xs text-text-secondary animate-pulse">Loading Job & Skill Matrix...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 pb-16">
-      
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-aperture-500/15 text-aperture-500 text-xs font-mono border border-aperture-500/30">
+    <div className="space-y-6 max-w-5xl mx-auto text-left">
+      {/* Header */}
+      <div className="border-b border-ink-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-aperture-500/10 text-aperture-500 text-xs font-semibold mb-1">
             <Target className="w-3.5 h-3.5" />
-            <span>AI Career Optimizer</span>
+            AI Skill Gap Analyzer
           </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-text-primary">
-            Target Role & Skill Gap Matrix
+          <h1 className="font-display font-bold text-2xl text-text-primary">
+            Job Requirement & Skill Gap Matrix
           </h1>
-          <p className="text-xs sm:text-sm text-text-secondary">
-            Select a target trajectory to simulate algorithmic compatibility and bridge required competencies.
+          <p className="text-xs text-text-secondary mt-0.5">
+            Compare your profile credentials against active job requisitions and get AI-guided learning roadmaps.
           </p>
         </div>
 
         {simulatedSkills.length > 0 && (
-          <LiquidButton variant="cyber" onClick={handleSaveToProfile} className="shrink-0">
-            <Zap className="w-4 h-4 mr-1.5" />
-            Commit {simulatedSkills.length} Skills to Resume
-          </LiquidButton>
+          <button
+            onClick={handleSaveToProfile}
+            className="px-4 py-2 bg-success hover:bg-success/90 text-white font-semibold text-xs rounded transition flex items-center gap-1.5 shadow-sm self-start sm:self-auto"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Save {simulatedSkills.length} Simulated Skill(s) to Profile
+          </button>
         )}
       </div>
 
-      {/* Target Role Selector Tabs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {targetRoles.map((role) => {
-          const isSelected = role.id === selectedRoleId;
-          return (
-            <button
-              key={role.id}
-              onClick={() => {
-                setSelectedRoleId(role.id);
-                setSimulatedSkills([]);
-                setMatchScore(role.id === "role-1" ? 76 : role.id === "role-2" ? 82 : 91);
-              }}
-              className={`text-left p-5 rounded-2xl glass-card border transition-all duration-200 ${
-                isSelected
-                  ? "border-aperture-500 bg-aperture-500/15 shadow-glass-lg"
-                  : "border-ink-border hover:border-white/20 hover:bg-white/5"
-              }`}
-            >
-              <div className="flex items-center justify-between text-xs text-text-tertiary mb-2">
-                <span className="font-mono">{role.department}</span>
-                <span className="font-mono text-success">{role.marketDemand} Demand</span>
-              </div>
-              <h3 className="font-display font-bold text-base text-text-primary mb-1">{role.title}</h3>
-              <p className="font-mono text-xs text-text-secondary">{role.baseSalary}</p>
-            </button>
-          );
-        })}
+      {/* Role / Job Selector */}
+      <div className="bg-ink-surface border border-ink-border rounded p-4 space-y-3">
+        <label className="text-xs font-semibold text-text-primary uppercase tracking-wider block">
+          Select Target Job Requisition to Evaluate
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+          {jobs.map((job) => {
+            const isSelected = job.id === activeJob.id;
+            return (
+              <button
+                key={job.id}
+                onClick={() => {
+                  setSelectedJobId(job.id);
+                  setSimulatedSkills([]);
+                }}
+                className={`p-3 text-left rounded border transition cursor-pointer flex flex-col justify-between ${
+                  isSelected
+                    ? "bg-signal-500/10 border-signal-500 text-signal-500"
+                    : "bg-ink-base border-ink-border text-text-secondary hover:border-ink-border/80 hover:text-text-primary"
+                }`}
+              >
+                <div>
+                  <h4 className="font-semibold text-xs text-text-primary truncate">{job.title}</h4>
+                  <p className="text-[11px] text-text-tertiary mt-0.5">{job.department} &bull; {job.location}</p>
+                </div>
+                <div className="mt-2 pt-2 border-t border-ink-border/50 flex items-center justify-between text-[11px]">
+                  <span>Min {job.minimumExperience} yrs exp</span>
+                  <span className="font-semibold text-text-primary">{job.requiredSkills.length} core skills</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Trajectory Simulation Arena */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column (2 Cols): Skill Breakdown & Bridge Actions */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Critical Missing Skills Section */}
-          <SpotlightCard className="p-6 space-y-5 border-amber-500/20">
-            <div className="flex items-center justify-between pb-3 border-b border-ink-border">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-warning" />
-                <h3 className="font-display text-base font-bold text-text-primary">
-                  Identified Skill Gaps for {activeRole.title}
-                </h3>
-              </div>
-              <span className="text-xs text-text-tertiary font-mono">
-                Click + to simulate closure
-              </span>
-            </div>
+      {/* Match Summary Banner */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <SpotlightCard className="p-5 bg-ink-surface border border-ink-border rounded flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-signal-500/10 border border-signal-500/30 flex items-center justify-center font-display font-bold text-xl text-signal-500 shrink-0">
+            {matchPercentage}%
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm text-text-primary">Estimated Fit Score</h3>
+            <p className="text-xs text-text-secondary mt-0.5">
+              {matchPercentage >= 80 ? "High Match — Strong Candidate" : matchPercentage >= 50 ? "Moderate Match — Skill Gaps Detected" : "Low Match — Significant Requirements Missing"}
+            </p>
+          </div>
+        </SpotlightCard>
 
+        <SpotlightCard className="p-5 bg-ink-surface border border-ink-border rounded flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-success/10 border border-success/30 flex items-center justify-center font-bold text-lg text-success shrink-0">
+            {matchedSkills.length}
+          </div>
+          <div>
+            <h3 className="font-semibold text-xs text-text-primary uppercase tracking-wider">Matched Core Skills</h3>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Verified credentials matching role requirements.
+            </p>
+          </div>
+        </SpotlightCard>
+
+        <SpotlightCard className="p-5 bg-ink-surface border border-ink-border rounded flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-warning/10 border border-warning/30 flex items-center justify-center font-bold text-lg text-warning shrink-0">
+            {missingSkills.length}
+          </div>
+          <div>
+            <h3 className="font-semibold text-xs text-text-primary uppercase tracking-wider">Detected Skill Gaps</h3>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Competencies needed to maximize interview selection.
+            </p>
+          </div>
+        </SpotlightCard>
+      </div>
+
+      {/* Side-by-Side Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Matched Skills List */}
+        <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-ink-border pb-3">
+            <h3 className="font-semibold text-sm text-text-primary flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-success" />
+              Matched Requirements ({matchedSkills.length})
+            </h3>
+            <span className="text-[11px] text-success bg-success/10 px-2 py-0.5 rounded font-semibold">
+              Satisfied
+            </span>
+          </div>
+
+          {matchedSkills.length === 0 ? (
+            <p className="text-xs text-text-tertiary py-4 text-center">
+              No matching required skills detected yet. Check the recommendations on the right.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {matchedSkills.map((skill, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 bg-ink-base border border-ink-border rounded flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-xs text-text-primary">{skill}</h4>
+                      <p className="text-[11px] text-text-tertiary">Verified in profile credentials</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 bg-success/10 text-success rounded font-semibold uppercase">
+                    100% Fit
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="pt-2 border-t border-ink-border/50 flex items-center justify-between text-xs text-text-secondary">
+            <span>Minimum Experience Required:</span>
+            <span className="font-semibold text-text-primary">
+              {activeJob.minimumExperience} Years (You have {profile?.experienceYears || 0} Yrs)
+            </span>
+          </div>
+        </div>
+
+        {/* AI Skill Development Recommendations */}
+        <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-ink-border pb-3">
+            <h3 className="font-semibold text-sm text-text-primary flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-signal-500" />
+              AI Skill Recommendations ({missingSkills.length})
+            </h3>
+            <span className="text-[11px] text-warning bg-warning/10 px-2 py-0.5 rounded font-semibold">
+              Actionable Plan
+            </span>
+          </div>
+
+          {missingSkills.length === 0 ? (
+            <div className="p-8 text-center bg-success/5 border border-success/20 rounded">
+              <CheckCircle2 className="w-8 h-8 text-success mx-auto mb-2" />
+              <h4 className="font-semibold text-xs text-text-primary">You satisfy all core requirements!</h4>
+              <p className="text-[11px] text-text-secondary mt-1">
+                Your profile matches all required competencies for {activeJob.title}.
+              </p>
+              <Link
+                href={`/app/jobs/${activeJob.id}`}
+                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-signal-500 hover:underline"
+              >
+                Apply to this Requisition <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : (
             <div className="space-y-3">
-              {activeRole.missingSkills.map((skill) => {
-                const isAdded = simulatedSkills.includes(skill.name);
+              {missingSkills.map((skill, idx) => {
+                const plan = getSkillLearningPlan(skill);
+                const isSimulated = simulatedSkills.includes(skill);
+
                 return (
                   <div
-                    key={skill.name}
-                    className={`p-4 rounded-xl border transition-all flex items-center justify-between gap-4 ${
-                      isAdded 
-                        ? "bg-success/10 border-success/30" 
-                        : "bg-white/5 border-ink-border hover:border-white/20"
-                    }`}
+                    key={idx}
+                    className="p-3.5 bg-ink-base border border-ink-border rounded space-y-2"
                   >
-                    <div className="space-y-1">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-text-primary">{skill.name}</span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-text-tertiary border border-ink-border">
-                          {skill.difficulty}
-                        </span>
+                        <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+                        <h4 className="font-semibold text-xs text-text-primary">{skill}</h4>
                       </div>
-                      <p className="text-xs text-text-secondary">
-                        Estimated effort: ~{skill.estimatedWeeks} weeks to production readiness.
-                      </p>
+                      <span className="text-[10px] px-2 py-0.5 bg-warning/10 text-warning rounded font-semibold uppercase">
+                        Missing Requirement
+                      </span>
                     </div>
 
-                    <button
-                      onClick={() => handleSimulateSkill(skill.name)}
-                      disabled={isAdded}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
-                        isAdded
-                          ? "bg-success text-white cursor-default"
-                          : "glass-card border border-ink-border hover:border-signal-500 hover:text-signal-500 text-text-primary"
-                      }`}
-                    >
-                      {isAdded ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Added (+8%)
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-3.5 h-3.5" /> Bridge Skill
-                        </>
-                      )}
-                    </button>
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      {plan.summary}
+                    </p>
+
+                    <div className="p-2 bg-ink-surface rounded text-[11px] text-text-secondary border border-ink-border/50 space-y-1">
+                      <p className="font-semibold text-text-primary flex items-center gap-1">
+                        <BookOpen className="w-3 h-3 text-signal-500" />
+                        Recommended Hands-on Project:
+                      </p>
+                      <p className="text-text-tertiary">{plan.projectIdea}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-[11px]">
+                      <span className="text-text-tertiary flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        Estimated effort: ~{plan.timeWeeks} week(s)
+                      </span>
+
+                      <button
+                        onClick={() => handleSimulateSkill(skill)}
+                        disabled={isSimulated}
+                        className="px-2.5 py-1 bg-signal-500/10 hover:bg-signal-500/20 text-signal-500 border border-signal-500/30 rounded font-semibold text-[11px] transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        <Plus className="w-3 h-3" />
+                        {isSimulated ? "Simulated" : "Simulate Learning"}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </SpotlightCard>
-
-          {/* Transferable Skills Detected */}
-          <SpotlightCard className="p-6 space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-ink-border">
-              <Layers className="w-4 h-4 text-signal-500" />
-              <h3 className="font-display text-base font-bold text-text-primary">
-                Semantic Transferable Skills Detected
-              </h3>
-            </div>
-            <p className="text-xs text-text-secondary">
-              CareerSync AI identified that your existing proficiency maps directly to this role&apos;s architecture:
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {activeRole.transferableSkills.map((t, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-white/5 border border-ink-border space-y-1">
-                  <div className="text-xs font-mono text-text-tertiary">Your experience:</div>
-                  <div className="text-xs font-bold text-text-primary">{t.name}</div>
-                  <div className="text-xs text-signal-500 flex items-center gap-1 font-mono pt-1">
-                    &rarr; Maps to {t.mapsTo}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SpotlightCard>
-
-          {/* Curated Learning Roadmap */}
-          <SpotlightCard className="p-6 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-ink-border">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-aperture-500" />
-                <h3 className="font-display text-base font-bold text-text-primary">
-                  Fast-Track Learning Path
-                </h3>
-              </div>
-              <span className="text-xs font-mono text-text-tertiary">Curated by AI</span>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { title: "DeepLearning.AI: Distributed GPU Computing & Triton", duration: "12 Hours", url: "#" },
-                { title: "Building Production Vector Databases with pgvector", duration: "8 Hours", url: "#" },
-                { title: "Kubernetes Operator Architecture for AI Workloads", duration: "16 Hours", url: "#" }
-              ].map((res, idx) => (
-                <div key={idx} className="p-3.5 rounded-xl bg-white/5 border border-ink-border flex items-center justify-between hover:border-aperture-500/30 transition-colors">
-                  <div className="space-y-0.5">
-                    <h4 className="text-xs font-bold text-text-primary">{res.title}</h4>
-                    <p className="text-[11px] text-text-secondary font-mono">{res.duration} of coursework & lab</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-text-tertiary hover:text-aperture-500 cursor-pointer transition-colors" />
-                </div>
-              ))}
-            </div>
-          </SpotlightCard>
-        </div>
-
-        {/* Right Column (1 Col): Live Score Gauge & Action Widget */}
-        <div className="space-y-6">
-          <SpotlightCard className="p-6 text-center space-y-6 border border-ink-border sticky top-24">
-            <div className="space-y-1">
-              <span className="text-xs font-mono uppercase tracking-wider text-text-tertiary">
-                Projected Compatibility
-              </span>
-              <h3 className="font-display text-lg font-bold text-text-primary">
-                {activeRole.title}
-              </h3>
-            </div>
-
-            {/* Circular Gauge */}
-            <div className="flex justify-center py-2">
-              <InteractiveScoreGauge score={matchScore} size={130} strokeWidth={10} />
-            </div>
-
-            {/* Score Delta Badge */}
-            {simulatedSkills.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-3 rounded-xl bg-success/15 border border-success/30 text-xs text-success font-medium space-y-0.5"
-              >
-                <div className="font-bold flex items-center justify-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5" /> +{matchScore - 76}% Match Score Jump!
-                </div>
-                <div className="text-[11px] text-text-secondary">
-                  Based on {simulatedSkills.length} bridged competency milestones.
-                </div>
-              </motion.div>
-            )}
-
-            <div className="space-y-2 pt-2 border-t border-ink-border text-left text-xs">
-              <div className="flex justify-between py-1 border-b border-white/5">
-                <span className="text-text-secondary">Core Skills Fit:</span>
-                <span className="font-mono text-text-primary font-bold">{matchScore >= 85 ? "Strong" : "Moderate"}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-white/5">
-                <span className="text-text-secondary">Experience Alignment:</span>
-                <span className="font-mono text-text-primary font-bold">4.5 Years</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-text-secondary">Salary Bracket:</span>
-                <span className="font-mono text-success font-bold">{activeRole.baseSalary.split("-")[0]}</span>
-              </div>
-            </div>
-
-            <Link href="/app/jobs" className="block pt-2">
-              <ShimmerButton className="w-full text-xs">
-                Browse Matching Jobs Now &rarr;
-              </ShimmerButton>
-            </Link>
-          </SpotlightCard>
+          )}
         </div>
       </div>
     </div>

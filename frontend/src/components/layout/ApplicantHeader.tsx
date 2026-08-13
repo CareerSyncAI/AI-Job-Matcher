@@ -110,6 +110,17 @@ export const ApplicantHeader: React.FC = () => {
           {/* Right Action Icons & Profile */}
           <div className="flex items-center gap-2.5">
             
+            {/* Switch to Recruiter Portal */}
+            <Link
+              href="/recruiter"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-signal-500/10 border border-signal-500/30 text-xs font-semibold text-signal-500 hover:bg-signal-500/20 transition-all cursor-pointer"
+              title="Switch to Recruiter Dashboard"
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Recruiter View</span>
+              <ArrowRight className="w-3 h-3 hidden sm:inline" />
+            </Link>
+            
             {/* Quick Command Launcher (Cmd+K) */}
             <button
               onClick={() => {
