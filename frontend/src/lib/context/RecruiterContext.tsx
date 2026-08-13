@@ -2,14 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Job, Candidate, Activity } from "@/types";
-import { jobsAPI } from "@/lib/api/jobs";
-import { resumesAPI } from "@/lib/api/resumes";
-import { env } from "@/lib/config/env";
-import { initialJobs, initialCandidates, initialActivities } from "@/lib/mocks/mockData";
-import { useTheme, ThemeMode } from "@/lib/context/ThemeContext";
+import { recruiterService } from "@/lib/services/mock";
 
 interface RecruiterContextType {
-  theme: ThemeMode;
+  theme: "dark" | "light";
   toggleTheme: () => void;
   selectedJobId: string;
   setSelectedJobId: (id: string) => void;
@@ -28,13 +24,34 @@ interface RecruiterContextType {
 const RecruiterContext = createContext<RecruiterContextType | undefined>(undefined);
 
 export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { theme, cycleTheme: toggleTheme } = useTheme();
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [selectedJobId, setSelectedJobIdState] = useState<string>("job-1");
-  const [jobs, setJobs] = useState<Job[]>(initialJobs);
-  const [currentJob, setCurrentJob] = useState<Job | null>(initialJobs[0] || null);
-  const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates);
-  const [activities, setActivities] = useState<Activity[]>(initialActivities);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [currentJob, setCurrentJob] = useState<Job | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Initialize theme from local storage if available
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("careersync_theme") as "dark" | "light";
+    if (savedTheme) {
+      const timer = setTimeout(() => {
+        setTheme(savedTheme);
+      }, 0);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+      return () => clearTimeout(timer);
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("careersync_theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+  };
 
   const setSelectedJobId = (id: string) => {
     setSelectedJobIdState(id);
@@ -43,6 +60,7 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // Load saved selected job ID from session storage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedJobId = sessionStorage.getItem("careersync_selected_job_id");
@@ -58,119 +76,74 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (!env.useMock) {
-        const backendJobs = await jobsAPI.getJobs();
-        if (backendJobs && backendJobs.length > 0) {
-          const mappedJobs: Job[] = backendJobs.map((bj) => ({
-            id: bj.id,
-            title: bj.title,
-            department: bj.department || "Engineering",
-            location: bj.location || "Remote",
-            employmentType: bj.employment_type,
-            description: bj.description,
-            requiredSkills: bj.skills.filter((s) => s.required).map((s) => s.name),
-            preferredSkills: bj.skills.filter((s) => !s.required).map((s) => s.name),
-            minimumExperience: bj.experience_min_years,
-            educationRequirement: bj.education_required,
-            applicantCount: 0,
-            status: bj.status === "open" ? "open" : "closed",
-            createdAt: bj.created_at,
-          }));
-          setJobs(mappedJobs);
-          const activeJob = mappedJobs.find((j) => j.id === selectedJobId) || mappedJobs[0];
-          setCurrentJob(activeJob);
+      const allJobs = await recruiterService.getJobs();
+      setJobs(allJobs);
 
-          if (activeJob) {
-            try {
-              const liveCands = await jobsAPI.getCandidates(activeJob.id);
-              setCandidates(liveCands);
-            } catch {
-              setCandidates(initialCandidates.filter((c) => c.jobId === activeJob.id));
-            }
-          }
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      setJobs(initialJobs);
-      const job = initialJobs.find((j) => j.id === selectedJobId) || initialJobs[0] || null;
+      const job = allJobs.find((j) => j.id === selectedJobId) || allJobs[0] || null;
       setCurrentJob(job);
+
       if (job) {
-        setCandidates(initialCandidates.filter((c) => c.jobId === job.id));
+        const matchingCandidates = await recruiterService.getCandidates(job.id);
+        setCandidates(matchingCandidates);
+      } else {
+        setCandidates([]);
       }
-      setActivities(initialActivities);
-    } catch {
-      setJobs(initialJobs);
-      setCurrentJob(initialJobs[0] || null);
-      setCandidates(initialCandidates);
+
+      const allActivities = await recruiterService.getActivities();
+      setActivities(allActivities);
+    } catch (e) {
+      console.error("Failed to load recruiter context data", e);
     } finally {
       setIsLoading(false);
     }
   }, [selectedJobId]);
 
   useEffect(() => {
-    refreshData();
+    const timer = setTimeout(() => {
+      refreshData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [selectedJobId, refreshData]);
 
   const updateCandidateStatus = async (candidateId: string, status: Candidate["status"]) => {
-    setCandidates((prev) =>
-      prev.map((c) => (c.id === candidateId ? { ...c, status } : c))
-    );
+    try {
+      await recruiterService.updateCandidateStatus(candidateId, status);
+      await refreshData();
+    } catch (e) {
+      console.error("Failed to update candidate status", e);
+    }
   };
 
   const updateCandidateNotes = async (candidateId: string, notes: string) => {
-    setCandidates((prev) =>
-      prev.map((c) => (c.id === candidateId ? { ...c, recruiterNotes: notes } : c))
-    );
+    try {
+      await recruiterService.updateCandidateNotes(candidateId, notes);
+      await refreshData();
+    } catch (e) {
+      console.error("Failed to update candidate notes", e);
+    }
   };
 
   const addJob = async (jobData: Omit<Job, "id" | "createdAt" | "applicantCount">) => {
-    const newJob: Job = {
-      ...jobData,
-      id: `job-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      applicantCount: 0,
-    };
-    setJobs((prev) => [newJob, ...prev]);
-    setSelectedJobId(newJob.id);
-    return newJob;
+    try {
+      const newJob = await recruiterService.createJob(jobData);
+      await refreshData();
+      setSelectedJobId(newJob.id);
+      return newJob;
+    } catch (e) {
+      console.error("Failed to create job", e);
+      throw e;
+    }
   };
 
   const uploadResume = async (file: File, onProgress: (progress: number, stage: string) => void) => {
-    if (!env.useMock && currentJob) {
-      try {
-        await resumesAPI.uploadResume(currentJob.id, file, onProgress);
-      } catch {
-        // Fallback to mock behavior if offline
-      }
+    try {
+      const newCand = await recruiterService.uploadResume(selectedJobId, file, onProgress);
+      await refreshData();
+      return newCand;
+    } catch (e) {
+      console.error("Failed to upload resume", e);
+      throw e;
     }
-
-    const mockCand: Candidate = {
-      id: `cand-${Date.now()}`,
-      jobId: selectedJobId,
-      name: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
-      currentRole: "Software Engineer",
-      location: "San Jose, CA",
-      experienceYears: 5,
-      education: "B.S. in Computer Science",
-      skills: ["React", "TypeScript", "Tailwind CSS"],
-      certifications: [],
-      matchScore: 88,
-      skillScore: 90,
-      experienceScore: 85,
-      educationScore: 90,
-      semanticScore: 88,
-      matchedSkills: ["React", "TypeScript"],
-      transferableSkills: ["Tailwind CSS"],
-      missingSkills: [],
-      status: "screened",
-      recruiterNotes: "Uploaded candidate resume.",
-      evidence: [],
-    };
-
-    setCandidates((prev) => [...prev, mockCand]);
-    return mockCand;
   };
 
   return (
@@ -189,7 +162,7 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateCandidateStatus,
         updateCandidateNotes,
         addJob,
-        uploadResume,
+        uploadResume
       }}
     >
       {children}
@@ -204,4 +177,3 @@ export const useRecruiter = () => {
   }
   return context;
 };
-

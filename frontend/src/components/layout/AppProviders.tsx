@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "@/lib/context/ThemeContext";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { RecruiterProvider } from "@/lib/context/RecruiterContext";
-import { AuthProvider } from "@/features/auth/AuthContext";
 import { CommandMenu } from "@/components/ui/CommandMenu";
 
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -23,14 +22,12 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <RecruiterProvider>
-            {children}
-            <CommandMenu isOpen={commandMenuOpen} onClose={() => setCommandMenuOpen(false)} />
-          </RecruiterProvider>
-        </ToastProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <RecruiterProvider>
+          {children}
+          <CommandMenu isOpen={commandMenuOpen} onClose={() => setCommandMenuOpen(false)} />
+        </RecruiterProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 };

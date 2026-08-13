@@ -12,16 +12,13 @@ import {
   Plus, 
   Bell, 
   Sliders, 
-  ChevronDown,
-  LogOut 
+  ChevronDown 
 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/features/auth/AuthContext";
 
 export const Topbar: React.FC = () => {
   const { currentJob, jobs, setSelectedJobId } = useRecruiter();
   const { theme, cycleTheme } = useTheme();
-  const { user, logout } = useAuth();
 
   return (
     <header className="h-16 glass-panel rounded-none border-t-0 border-l-0 border-r-0 border-b border-ink-border sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between bg-ink-surface/90 backdrop-blur-xl select-none">
@@ -87,25 +84,6 @@ export const Topbar: React.FC = () => {
           <Plus className="w-3.5 h-3.5" />
           <span>New Requisition</span>
         </Link>
-
-        {/* Auth / Logout Button */}
-        {user ? (
-          <button
-            onClick={() => logout()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-gray-300 hover:text-white hover:border-white/30 transition"
-            title={`Signed in as ${user.email}`}
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Sign Out</span>
-          </button>
-        ) : (
-          <Link
-            href="/login"
-            className="px-3 py-1.5 rounded-xl bg-white text-black text-xs font-bold hover:bg-gray-200 transition"
-          >
-            Sign In
-          </Link>
-        )}
       </div>
     </header>
   );

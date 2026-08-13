@@ -16,8 +16,7 @@ but it never decides access, recruiter ownership, or final ranking policy.
 
 ## Repository mapping
 
-- `frontend/`: active Next.js application.
-- `frontend2/`: preserved reference copy of the pre-consolidation frontend.
+- `frontend/`: active Next.js 16 application with Hybrid Glassmorphism.
 - `backend/`: FastAPI API, SQLAlchemy models, Alembic migrations, security, and domain services.
 - `database/`: reserved for database fixtures/seeds; schema migrations live with the backend.
 - `ai-services/`: reserved AI worker/service implementation; currently an explicit integration boundary.

@@ -77,19 +77,6 @@ export default function EntryPortal() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary transition"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/register"
-            className="px-3 py-1.5 rounded-xl bg-white text-black text-xs font-bold hover:bg-gray-200 transition"
-          >
-            Create Account
-          </Link>
-
           {/* Quick theme selector button */}
           <button
             onClick={cycleTheme}

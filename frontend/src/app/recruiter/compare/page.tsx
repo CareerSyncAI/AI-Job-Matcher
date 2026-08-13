@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, Suspense } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { 
   ArrowLeftRight, 
@@ -30,31 +30,16 @@ import {
   reRankCandidates 
 } from "@/lib/services/matchingEngine";
 
-import { useSearchParams } from "next/navigation";
-
-function CompareMatrixContent() {
-  const searchParams = useSearchParams();
+export default function CompareMatrixPage() {
   const { candidates, currentJob, updateCandidateStatus } = useRecruiter();
   const { success, info } = useToast();
 
   const [weights, setWeights] = useState<ScoringWeights>(DEFAULT_SCORING_WEIGHTS);
 
-  // Parse selected candidate IDs from search query if present
-  const selectedIds = useMemo(() => {
-    const param = searchParams.get("selected");
-    if (!param) return null;
-    return new Set(param.split(",").map((s) => s.trim()).filter(Boolean));
-  }, [searchParams]);
-
-  const targetCandidates = useMemo(() => {
-    if (!selectedIds || selectedIds.size === 0) return candidates;
-    return candidates.filter((c) => selectedIds.has(c.id));
-  }, [candidates, selectedIds]);
-
   // Compute live re-ranked candidates
   const rankedCandidates = useMemo(() => {
-    return reRankCandidates(targetCandidates, weights);
-  }, [targetCandidates, weights]);
+    return reRankCandidates(candidates, weights);
+  }, [candidates, weights]);
 
   const handleAdvance = async (candidateId: string, name: string) => {
     try {
@@ -316,12 +301,3 @@ function CompareMatrixContent() {
     </div>
   );
 }
-
-export default function CompareMatrixPage() {
-  return (
-    <Suspense fallback={<div className="p-8 text-center text-sm text-text-tertiary">Loading matrix...</div>}>
-      <CompareMatrixContent />
-    </Suspense>
-  );
-}
-

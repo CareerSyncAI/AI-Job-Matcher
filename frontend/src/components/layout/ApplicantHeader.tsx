@@ -25,14 +25,10 @@ import {
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { useAuth } from "@/features/auth/AuthContext";
-import { LogOut } from "lucide-react";
-
 export const ApplicantHeader: React.FC = () => {
   const pathname = usePathname();
   const { profile } = useApplicant();
   const { theme, cycleTheme } = useTheme();
-  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -222,24 +218,6 @@ export const ApplicantHeader: React.FC = () => {
                 {profile?.name || "Dhruv G."}
               </span>
             </Link>
-
-            {user ? (
-              <button
-                onClick={() => logout()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-gray-300 hover:text-white hover:border-white/30 transition"
-                title={`Signed in as ${user.email}`}
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Sign Out</span>
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                className="px-3 py-1.5 rounded-xl bg-white text-black text-xs font-bold hover:bg-gray-200 transition"
-              >
-                Sign In
-              </Link>
-            )}
 
             {/* Mobile Menu Toggle Button */}
             <button
