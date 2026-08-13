@@ -20,7 +20,8 @@ import {
   Search, 
   Menu, 
   X,
-  ArrowRight
+  ArrowRight,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -59,32 +60,33 @@ export const ApplicantHeader: React.FC = () => {
     }
   ];
 
+  // Clean, non-wrapping navigation items
   const navItems = [
     { label: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
     { label: "Find Jobs", href: "/app/jobs", icon: Compass },
-    { label: "My Applications", href: "/app/applications", icon: Briefcase },
-    { label: "Skill Gap Matrix", href: "/app/skill-gap", icon: Award },
+    { label: "Applications", href: "/app/applications", icon: Briefcase },
+    { label: "Skill Gap", href: "/app/skill-gap", icon: Award },
     { label: "Resume Vault", href: "/app/resume", icon: FileText }
   ];
 
   return (
-    <header className="glass-panel rounded-none border-t-0 border-l-0 border-r-0 border-b border-ink-border sticky top-0 z-50 select-none bg-ink-surface/90 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="glass-panel rounded-none border-t-0 border-l-0 border-r-0 border-b border-ink-border sticky top-0 z-50 select-none bg-ink-surface/95 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
+        <div className="flex items-center justify-between h-16 gap-2">
           
-          {/* Brand & Left Navigation */}
-          <div className="flex items-center gap-8">
-            <Link href="/app/dashboard" className="flex items-center gap-2.5 group">
+          {/* Left Side: Logo & Main Navigation */}
+          <div className="flex items-center gap-3 lg:gap-6 min-w-0">
+            <Link href="/app/dashboard" className="flex items-center gap-2 group shrink-0">
               <div className="w-8 h-8 rounded-lg bg-aperture-500/15 border border-aperture-500/30 flex items-center justify-center text-aperture-500 group-hover:scale-105 transition-transform">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <span className="font-display font-bold text-base tracking-tight text-text-primary">
+              <span className="font-display font-bold text-base tracking-tight text-text-primary hidden sm:inline">
                 CareerSync <span className="text-xs text-aperture-500 font-mono">Hub</span>
               </span>
             </Link>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1">
+            {/* Desktop Navigation Bar */}
+            <nav className="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar">
               {navItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== "/app/dashboard" && pathname.startsWith(item.href));
                 const IconComponent = item.icon;
@@ -93,7 +95,7 @@ export const ApplicantHeader: React.FC = () => {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150",
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 shrink-0",
                       isActive
                         ? "bg-aperture-500/15 text-aperture-500 border border-aperture-500/30 shadow-sm"
                         : "text-text-secondary hover:text-text-primary hover:bg-white/5"
@@ -107,36 +109,36 @@ export const ApplicantHeader: React.FC = () => {
             </nav>
           </div>
 
-          {/* Right Action Icons & Profile */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Side: Tools & Profile Actions */}
+          <div className="flex items-center gap-2 shrink-0">
             
-            {/* Switch to Recruiter Portal */}
+            {/* Recruiter Switch Pill */}
             <Link
               href="/recruiter"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-signal-500/10 border border-signal-500/30 text-xs font-semibold text-signal-500 hover:bg-signal-500/20 transition-all cursor-pointer"
-              title="Switch to Recruiter Dashboard"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-signal-500/10 border border-signal-500/25 text-xs font-semibold text-signal-500 hover:bg-signal-500/20 transition-all whitespace-nowrap"
+              title="Switch to Recruiter Center"
             >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Recruiter View</span>
-              <ArrowRight className="w-3 h-3 hidden sm:inline" />
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Recruiter View</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
-            
+
             {/* Quick Command Launcher (Cmd+K) */}
             <button
               onClick={() => {
                 window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
               }}
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-ink-border text-xs text-text-secondary hover:text-text-primary hover:border-signal-500/40 transition-all font-mono"
+              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 border border-ink-border text-xs text-text-secondary hover:text-text-primary hover:border-signal-500/40 transition-all font-mono whitespace-nowrap"
             >
               <Search className="w-3.5 h-3.5 text-signal-500" />
               <span>Search</span>
-              <kbd className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-ink-border">Cmd+K</kbd>
+              <kbd className="text-[10px] bg-white/5 px-1 py-0.5 rounded border border-ink-border">Cmd+K</kbd>
             </button>
 
-            {/* Theme Toggle Button */}
+            {/* Theme Switcher Button */}
             <button
               onClick={cycleTheme}
-              className="p-2 rounded-xl border border-ink-border glass-card text-text-secondary hover:text-text-primary transition-all"
+              className="p-2 rounded-xl border border-ink-border glass-card text-text-secondary hover:text-text-primary transition-all shrink-0"
               title={`Switch Theme (Current: ${theme})`}
             >
               {theme === "light" ? (
@@ -148,8 +150,8 @@ export const ApplicantHeader: React.FC = () => {
               )}
             </button>
 
-            {/* Notifications Popover */}
-            <div className="relative">
+            {/* Notifications Dropdown */}
+            <div className="relative shrink-0">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className={cn(
@@ -214,26 +216,26 @@ export const ApplicantHeader: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* Profile Avatar / Link */}
+            {/* User Profile Badge */}
             <Link
               href="/app/profile"
               className={cn(
-                "flex items-center gap-2.5 pl-2 pr-3 py-1 rounded-xl glass-card border border-ink-border hover:border-aperture-500/40 transition-all",
+                "flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl glass-card border border-ink-border hover:border-aperture-500/40 transition-all shrink-0",
                 pathname === "/app/profile" && "border-aperture-500/40 bg-aperture-500/10"
               )}
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-aperture-600 to-signal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-aperture-600 to-signal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
                 {profile?.name ? profile.name.charAt(0) : "D"}
               </div>
-              <span className="text-xs font-medium text-text-primary hidden sm:inline truncate max-w-[100px]">
+              <span className="text-xs font-semibold text-text-primary hidden sm:inline truncate max-w-[100px]">
                 {profile?.name || "Dhruv G."}
               </span>
             </Link>
 
-            {/* Mobile Menu Toggle Button */}
+            {/* Mobile Drawer Trigger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl glass-card border border-ink-border text-text-secondary hover:text-text-primary md:hidden"
+              className="p-2 rounded-xl glass-card border border-ink-border text-text-secondary hover:text-text-primary md:hidden shrink-0"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -248,7 +250,7 @@ export const ApplicantHeader: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-ink-border px-4 py-3 space-y-1 bg-ink-surface/95 backdrop-blur-2xl"
+            className="md:hidden border-t border-ink-border px-4 py-3 space-y-1 bg-ink-surface/98 backdrop-blur-2xl"
           >
             {navItems.map((item) => {
               const isActive = pathname === item.href;
@@ -259,9 +261,9 @@ export const ApplicantHeader: React.FC = () => {
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-aperture-500/15 text-aperture-500 border border-aperture-500/30"
+                      ? "bg-aperture-500/15 text-aperture-500 border border-aperture-500/30 font-semibold"
                       : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
                   )}
                 >
@@ -270,6 +272,17 @@ export const ApplicantHeader: React.FC = () => {
                 </Link>
               );
             })}
+
+            <div className="pt-2 border-t border-ink-border mt-2">
+              <Link
+                href="/recruiter"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold text-signal-500 bg-signal-500/10 border border-signal-500/20"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Switch to Recruiter Center</span>
+              </Link>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
