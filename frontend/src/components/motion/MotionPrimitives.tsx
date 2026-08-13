@@ -106,7 +106,7 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "relative rounded-2xl glass-card border border-ink-border overflow-hidden group transition-all duration-300",
+        "relative rounded-2xl glass-card border border-ink-border overflow-hidden group card-hover",
         className
       )}
       {...props}
@@ -115,7 +115,7 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
       <div
         className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100"
         style={{
-          background: `radial-gradient(400px circle at ${position.x}px ${position.y}px, ${
+          background: `radial-gradient(500px circle at ${position.x}px ${position.y}px, ${
             spotlightColor || "var(--spotlight-color)"
           }, transparent 80%)`,
         }}
@@ -296,18 +296,20 @@ export const LiquidButton: React.FC<LiquidButtonProps> = ({
 }) => {
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
+      whileHover={{ y: -1.5, scale: 1.02 }}
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 400, damping: 22 }}
       className={cn(
-        "relative overflow-hidden soft-button px-5 py-2.5 font-medium text-sm text-text-primary group inline-flex items-center justify-center gap-2",
-        variant === 'primary' && 'bg-signal-500/15 border-signal-500/30 text-signal-500 hover:bg-signal-500/25',
-        variant === 'cyber' && 'bg-success/15 border-success/30 text-success hover:bg-success/25',
-        variant === 'danger' && 'bg-danger/15 border-danger/30 text-danger hover:bg-danger/25',
+        "relative overflow-hidden px-4 py-2 rounded-full font-medium text-xs text-text-primary group inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none",
+        variant === 'primary' && 'bg-signal-500 hover:bg-signal-600 text-white font-semibold shadow-sm hover:shadow-signal-500/25',
+        variant === 'secondary' && 'bg-white/5 hover:bg-white/10 text-text-primary border border-ink-border hover:border-signal-500/40',
+        variant === 'cyber' && 'bg-success/15 border border-success/30 text-success hover:bg-success/25',
+        variant === 'danger' && 'bg-danger/15 border border-danger/30 text-danger hover:bg-danger/25',
         className
       )}
       {...props}
     >
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 flex items-center gap-1.5">{children}</span>
     </motion.button>
   );
 };
