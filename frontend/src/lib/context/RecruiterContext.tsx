@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { Job, Candidate, Activity } from "@/types";
 import { recruiterService } from "@/lib/services/mock";
 
@@ -36,39 +36,35 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     const savedTheme = localStorage.getItem("careersync_theme") as "dark" | "light";
     if (savedTheme) {
-      const timer = setTimeout(() => {
-        setTheme(savedTheme);
-      }, 0);
+      setTheme(savedTheme);
       document.documentElement.setAttribute("data-theme", savedTheme);
-      return () => clearTimeout(timer);
     } else {
       document.documentElement.setAttribute("data-theme", "light");
     }
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("careersync_theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-  };
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const newTheme = prev === "dark" ? "light" : "dark";
+      localStorage.setItem("careersync_theme", newTheme);
+      document.documentElement.setAttribute("data-theme", newTheme);
+      return newTheme;
+    });
+  }, []);
 
-  const setSelectedJobId = (id: string) => {
+  const setSelectedJobId = useCallback((id: string) => {
     setSelectedJobIdState(id);
     if (typeof window !== "undefined") {
       sessionStorage.setItem("careersync_selected_job_id", id);
     }
-  };
+  }, []);
 
   // Load saved selected job ID from session storage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedJobId = sessionStorage.getItem("careersync_selected_job_id");
       if (savedJobId) {
-        const timer = setTimeout(() => {
-          setSelectedJobIdState(savedJobId);
-        }, 0);
-        return () => clearTimeout(timer);
+        setSelectedJobIdState(savedJobId);
       }
     }
   }, []);
@@ -99,72 +95,83 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [selectedJobId]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      refreshData();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [selectedJobId, refreshData]);
+    refreshData();
+  }, [refreshData]);
 
-  const updateCandidateStatus = async (candidateId: string, status: Candidate["status"]) => {
+  const updateCandidateStatus = useCallback(async (candidateId: string, status: Candidate["status"]) => {
     try {
       await recruiterService.updateCandidateStatus(candidateId, status);
       await refreshData();
     } catch (e) {
       console.error("Failed to update candidate status", e);
     }
-  };
+  }, [refreshData]);
 
-  const updateCandidateNotes = async (candidateId: string, notes: string) => {
+  const updateCandidateNotes = useCallback(async (candidateId: string, notes: string) => {
     try {
       await recruiterService.updateCandidateNotes(candidateId, notes);
       await refreshData();
     } catch (e) {
       console.error("Failed to update candidate notes", e);
     }
-  };
+  }, [refreshData]);
 
-  const addJob = async (jobData: Omit<Job, "id" | "createdAt" | "applicantCount">) => {
+  const addJob = useCallback(async (jobData: Omit<Job, "id" | "createdAt" | "applicantCount">) => {
     try {
       const newJob = await recruiterService.createJob(jobData);
       await refreshData();
-      setSelectedJobId(newJob.id);
       return newJob;
     } catch (e) {
-      console.error("Failed to create job", e);
+      console.error("Failed to add job", e);
       throw e;
     }
-  };
+  }, [refreshData]);
 
-  const uploadResume = async (file: File, onProgress: (progress: number, stage: string) => void) => {
+  const uploadResume = useCallback(async (file: File, onProgress: (progress: number, stage: string) => void) => {
     try {
-      const newCand = await recruiterService.uploadResume(selectedJobId, file, onProgress);
+      const newCandidate = await recruiterService.uploadResume(selectedJobId, file, onProgress);
       await refreshData();
-      return newCand;
+      return newCandidate;
     } catch (e) {
       console.error("Failed to upload resume", e);
       throw e;
     }
-  };
+  }, [selectedJobId, refreshData]);
+
+  const value = useMemo<RecruiterContextType>(() => ({
+    theme,
+    toggleTheme,
+    selectedJobId,
+    setSelectedJobId,
+    jobs,
+    currentJob,
+    candidates,
+    activities,
+    isLoading,
+    refreshData,
+    updateCandidateStatus,
+    updateCandidateNotes,
+    addJob,
+    uploadResume
+  }), [
+    theme,
+    toggleTheme,
+    selectedJobId,
+    setSelectedJobId,
+    jobs,
+    currentJob,
+    candidates,
+    activities,
+    isLoading,
+    refreshData,
+    updateCandidateStatus,
+    updateCandidateNotes,
+    addJob,
+    uploadResume
+  ]);
 
   return (
-    <RecruiterContext.Provider
-      value={{
-        theme,
-        toggleTheme,
-        selectedJobId,
-        setSelectedJobId,
-        jobs,
-        currentJob,
-        candidates,
-        activities,
-        isLoading,
-        refreshData,
-        updateCandidateStatus,
-        updateCandidateNotes,
-        addJob,
-        uploadResume
-      }}
-    >
+    <RecruiterContext.Provider value={value}>
       {children}
     </RecruiterContext.Provider>
   );
@@ -172,7 +179,7 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 export const useRecruiter = () => {
   const context = useContext(RecruiterContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useRecruiter must be used within a RecruiterProvider");
   }
   return context;

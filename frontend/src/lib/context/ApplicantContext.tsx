@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { ApplicantProfile, JobApplication, ResumeVersion } from "@/types";
 import { applicantService } from "@/lib/services/mock";
 
@@ -25,7 +25,7 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isLoading, setIsLoading] = useState(true);
   const [profileCompleteness, setProfileCompleteness] = useState(0);
 
-  const calculateCompleteness = (prof: ApplicantProfile): number => {
+  const calculateCompleteness = useCallback((prof: ApplicantProfile): number => {
     let score = 0;
     if (prof.name) score += 10;
     if (prof.headline) score += 15;
@@ -39,7 +39,7 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     score += Math.min(skillsCount * 3, 15);
 
     return Math.min(score, 100);
-  };
+  }, []);
 
   const refreshData = useCallback(async () => {
     setIsLoading(true);
@@ -55,16 +55,13 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [calculateCompleteness]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      refreshData();
-    }, 0);
-    return () => clearTimeout(timer);
+    refreshData();
   }, [refreshData]);
 
-  const updateProfile = async (profileData: Partial<ApplicantProfile>) => {
+  const updateProfile = useCallback(async (profileData: Partial<ApplicantProfile>) => {
     try {
       const updated = await applicantService.updateApplicantProfile(profileData);
       setProfile(updated);
@@ -73,9 +70,9 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Failed to update profile", e);
       throw e;
     }
-  };
+  }, [calculateCompleteness]);
 
-  const applyToJob = async (jobId: string) => {
+  const applyToJob = useCallback(async (jobId: string) => {
     try {
       const newApp = await applicantService.applyToJob(jobId);
       await refreshData();
@@ -84,9 +81,9 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Failed to apply to job", e);
       throw e;
     }
-  };
+  }, [refreshData]);
 
-  const uploadResume = async (file: File, onProgress: (progress: number, stage: string) => void) => {
+  const uploadResume = useCallback(async (file: File, onProgress: (progress: number, stage: string) => void) => {
     try {
       const result = await applicantService.uploadResumeVersion(file, onProgress);
       await refreshData();
@@ -95,9 +92,9 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Failed to upload resume", e);
       throw e;
     }
-  };
+  }, [refreshData]);
 
-  const setPrimaryResume = async (resumeId: string) => {
+  const setPrimaryResume = useCallback(async (resumeId: string) => {
     try {
       await applicantService.setPrimaryResume(resumeId);
       await refreshData();
@@ -105,9 +102,9 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Failed to set primary resume", e);
       throw e;
     }
-  };
+  }, [refreshData]);
 
-  const deleteResume = async (resumeId: string) => {
+  const deleteResume = useCallback(async (resumeId: string) => {
     try {
       await applicantService.deleteResumeVersion(resumeId);
       await refreshData();
@@ -115,23 +112,34 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Failed to delete resume", e);
       throw e;
     }
-  };
+  }, [refreshData]);
+
+  const value = useMemo<ApplicantContextType>(() => ({
+    profile,
+    applications,
+    isLoading,
+    profileCompleteness,
+    refreshData,
+    updateProfile,
+    applyToJob,
+    uploadResume,
+    setPrimaryResume,
+    deleteResume
+  }), [
+    profile,
+    applications,
+    isLoading,
+    profileCompleteness,
+    refreshData,
+    updateProfile,
+    applyToJob,
+    uploadResume,
+    setPrimaryResume,
+    deleteResume
+  ]);
 
   return (
-    <ApplicantContext.Provider
-      value={{
-        profile,
-        applications,
-        isLoading,
-        profileCompleteness,
-        refreshData,
-        updateProfile,
-        applyToJob,
-        uploadResume,
-        setPrimaryResume,
-        deleteResume
-      }}
-    >
+    <ApplicantContext.Provider value={value}>
       {children}
     </ApplicantContext.Provider>
   );
