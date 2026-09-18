@@ -2,7 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { ApplicantProfile, JobApplication, ResumeVersion } from "@/types";
-import { applicantService } from "@/lib/services/mock";
+import { applicantService as mockApplicantService } from "@/lib/services/mock";
+import { LiveApplicantService } from "@/lib/services/api";
+import { shouldFallbackToMock } from "@/lib/utils/fallback";
+
+const liveApplicantService = new LiveApplicantService();
 
 interface ApplicantContextType {
   profile: ApplicantProfile | null;
@@ -44,11 +48,29 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const prof = await applicantService.getApplicantProfile();
+      let prof: ApplicantProfile;
+      try {
+        prof = await liveApplicantService.getApplicantProfile();
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          prof = await mockApplicantService.getApplicantProfile();
+        } else {
+          throw e;
+        }
+      }
       setProfile(prof);
       setProfileCompleteness(calculateCompleteness(prof));
 
-      const apps = await applicantService.getApplications();
+      let apps: JobApplication[] = [];
+      try {
+        apps = await liveApplicantService.getApplications();
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          apps = await mockApplicantService.getApplications();
+        } else {
+          throw e;
+        }
+      }
       setApplications(apps);
     } catch (e) {
       console.error("Failed to load applicant context data", e);
@@ -63,7 +85,16 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateProfile = useCallback(async (profileData: Partial<ApplicantProfile>) => {
     try {
-      const updated = await applicantService.updateApplicantProfile(profileData);
+      let updated: ApplicantProfile;
+      try {
+        updated = await liveApplicantService.updateApplicantProfile(profileData);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          updated = await mockApplicantService.updateApplicantProfile(profileData);
+        } else {
+          throw e;
+        }
+      }
       setProfile(updated);
       setProfileCompleteness(calculateCompleteness(updated));
     } catch (e) {
@@ -74,7 +105,16 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const applyToJob = useCallback(async (jobId: string) => {
     try {
-      const newApp = await applicantService.applyToJob(jobId);
+      let newApp: JobApplication;
+      try {
+        newApp = await liveApplicantService.applyToJob(jobId);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          newApp = await mockApplicantService.applyToJob(jobId);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
       return newApp;
     } catch (e) {
@@ -85,7 +125,16 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const uploadResume = useCallback(async (file: File, onProgress: (progress: number, stage: string) => void) => {
     try {
-      const result = await applicantService.uploadResumeVersion(file, onProgress);
+      let result: ResumeVersion;
+      try {
+        result = await liveApplicantService.uploadResumeVersion(file, onProgress);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          result = await mockApplicantService.uploadResumeVersion(file, onProgress);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
       return result;
     } catch (e) {
@@ -96,7 +145,15 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const setPrimaryResume = useCallback(async (resumeId: string) => {
     try {
-      await applicantService.setPrimaryResume(resumeId);
+      try {
+        await liveApplicantService.setPrimaryResume(resumeId);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          await mockApplicantService.setPrimaryResume(resumeId);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
     } catch (e) {
       console.error("Failed to set primary resume", e);
@@ -106,7 +163,15 @@ export const ApplicantProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const deleteResume = useCallback(async (resumeId: string) => {
     try {
-      await applicantService.deleteResumeVersion(resumeId);
+      try {
+        await liveApplicantService.deleteResumeVersion(resumeId);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          await mockApplicantService.deleteResumeVersion(resumeId);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
     } catch (e) {
       console.error("Failed to delete resume", e);

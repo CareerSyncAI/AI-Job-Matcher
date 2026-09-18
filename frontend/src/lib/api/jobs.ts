@@ -64,4 +64,26 @@ export const jobsAPI = {
     const res = await apiClient.get<Candidate[]>(`/jobs/${jobId}/candidates`);
     return res.data;
   },
+
+  async getCandidate(jobId: string, candidateId: string): Promise<Candidate | null> {
+    const res = await apiClient.get<Candidate>(`/jobs/${jobId}/candidates/${candidateId}`);
+    return res.data;
+  },
+
+  async getPublicOpenJobs(): Promise<BackendJobDTO[]> {
+    const res = await apiClient.get<BackendJobDTO[]>("/jobs/public/open");
+    return res.data;
+  },
+
+  async updateCandidateStatus(applicationId: string, status: string): Promise<void> {
+    await apiClient.patch(`/applications/${applicationId}/status`, { status });
+  },
+
+  async updateCandidateNotes(applicationId: string, body: string): Promise<void> {
+    await apiClient.post(`/applications/${applicationId}/notes`, { body });
+  },
+
+  async evaluateCandidate(applicationId: string): Promise<void> {
+    await apiClient.post(`/applications/${applicationId}/evaluate`);
+  },
 };

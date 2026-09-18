@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.api.deps import get_current_user, get_recruiter_profile
 from app.db.session import get_db
 from app.models.entities import Job, RecruiterProfile, User
-from app.models.enums import UserRole, JobStatus
+from app.models.enums import JobStatus
 from app.schemas.jobs import JobCreate, JobResponse, JobUpdate
 from app.services.audit import record_audit_event
 from app.services.jobs import JobService
@@ -88,3 +88,16 @@ def update_job(
     db.commit()
     db.refresh(job)
     return JobService.response(job)
+
+
+@router.get("/public/open", response_model=list[JobResponse])
+def list_public_open_jobs(db: Session = Depends(get_db)) -> list[JobResponse]:
+    """Public/candidate directory of currently open jobs."""
+    jobs = (
+        db.query(Job)
+        .options(selectinload(Job.skills))
+        .filter(Job.status == JobStatus.OPEN)
+        .order_by(Job.created_at.desc())
+        .all()
+    )
+    return [JobService.response(job) for job in jobs]

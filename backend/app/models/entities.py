@@ -26,8 +26,8 @@ from app.db.base import Base
 from app.models.enums import (
     ApplicationStatus,
     AttentionReason,
-    EvaluationStatus,
     EvaluatedSkillStatus,
+    EvaluationStatus,
     EvidenceConfidence,
     EvidenceKind,
     JobStatus,

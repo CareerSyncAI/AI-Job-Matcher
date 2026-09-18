@@ -32,6 +32,23 @@ var/
 *.tar.gz
 *.log
 
-# OS
+# OS & Duplicates
 .DS_Store
 Thumbs.db
+* (1).*
+
+# AI Services & Real Resume Evaluation Fixtures (Strict Privacy)
+ai-services/fixtures/real/
+ai-services/fixtures/data/
+ai-services/.venv/
+ai-services/.pytest_cache/
+*.onnx
+*.pt
+*.bin
+
+# Database & Storage
+*.db
+*.sqlite
+*.sqlite3
+career-sync-storage/uploads/
+

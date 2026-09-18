@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-import pytest
-from fastapi import HTTPException
-
 from app.models.enums import UserRole
 from app.security.passwords import hash_password, verify_password
-from app.security.tokens import create_access_token, decode_access_token, hash_refresh_token, new_refresh_token
+from app.security.tokens import (
+    create_access_token,
+    decode_access_token,
+    hash_refresh_token,
+    new_refresh_token,
+)
 
 
 def test_password_hashing():

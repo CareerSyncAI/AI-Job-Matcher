@@ -2,7 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { Job, Candidate, Activity } from "@/types";
-import { recruiterService } from "@/lib/services/mock";
+import { recruiterService as mockRecruiterService } from "@/lib/services/mock";
+import { LiveRecruiterService } from "@/lib/services/api";
+import { shouldFallbackToMock } from "@/lib/utils/fallback";
+
+const liveRecruiterService = new LiveRecruiterService();
 
 interface RecruiterContextType {
   theme: "dark" | "light";
@@ -72,20 +76,50 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const allJobs = await recruiterService.getJobs();
+      let allJobs: Job[] = [];
+      try {
+        allJobs = await liveRecruiterService.getJobs();
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          allJobs = await mockRecruiterService.getJobs();
+        } else {
+          throw e;
+        }
+      }
       setJobs(allJobs);
 
       const job = allJobs.find((j) => j.id === selectedJobId) || allJobs[0] || null;
       setCurrentJob(job);
 
       if (job) {
-        const matchingCandidates = await recruiterService.getCandidates(job.id);
+        let matchingCandidates: Candidate[] = [];
+        try {
+          matchingCandidates = await liveRecruiterService.getCandidates(job.id);
+        } catch (e) {
+          if (shouldFallbackToMock(e)) {
+            matchingCandidates = await mockRecruiterService.getCandidates(job.id);
+          } else {
+            throw e;
+          }
+        }
         setCandidates(matchingCandidates);
       } else {
         setCandidates([]);
       }
 
-      const allActivities = await recruiterService.getActivities();
+      let allActivities: Activity[] = [];
+      try {
+        allActivities = await liveRecruiterService.getActivities();
+        if (allActivities.length === 0) {
+          allActivities = await mockRecruiterService.getActivities();
+        }
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          allActivities = await mockRecruiterService.getActivities();
+        } else {
+          throw e;
+        }
+      }
       setActivities(allActivities);
     } catch (e) {
       console.error("Failed to load recruiter context data", e);
@@ -100,25 +134,52 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateCandidateStatus = useCallback(async (candidateId: string, status: Candidate["status"]) => {
     try {
-      await recruiterService.updateCandidateStatus(candidateId, status);
+      try {
+        await liveRecruiterService.updateCandidateStatus(candidateId, status);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          await mockRecruiterService.updateCandidateStatus(candidateId, status);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
     } catch (e) {
       console.error("Failed to update candidate status", e);
+      throw e;
     }
   }, [refreshData]);
 
   const updateCandidateNotes = useCallback(async (candidateId: string, notes: string) => {
     try {
-      await recruiterService.updateCandidateNotes(candidateId, notes);
+      try {
+        await liveRecruiterService.updateCandidateNotes(candidateId, notes);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          await mockRecruiterService.updateCandidateNotes(candidateId, notes);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
     } catch (e) {
       console.error("Failed to update candidate notes", e);
+      throw e;
     }
   }, [refreshData]);
 
   const addJob = useCallback(async (jobData: Omit<Job, "id" | "createdAt" | "applicantCount">) => {
     try {
-      const newJob = await recruiterService.createJob(jobData);
+      let newJob: Job;
+      try {
+        newJob = await liveRecruiterService.createJob(jobData);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          newJob = await mockRecruiterService.createJob(jobData);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
       return newJob;
     } catch (e) {
@@ -129,7 +190,16 @@ export const RecruiterProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const uploadResume = useCallback(async (file: File, onProgress: (progress: number, stage: string) => void) => {
     try {
-      const newCandidate = await recruiterService.uploadResume(selectedJobId, file, onProgress);
+      let newCandidate: Candidate;
+      try {
+        newCandidate = await liveRecruiterService.uploadResume(selectedJobId, file, onProgress);
+      } catch (e) {
+        if (shouldFallbackToMock(e)) {
+          newCandidate = await mockRecruiterService.uploadResume(selectedJobId, file, onProgress);
+        } else {
+          throw e;
+        }
+      }
       await refreshData();
       return newCandidate;
     } catch (e) {

@@ -1,0 +1,24 @@
+Elena Rostova
+New York, NY • elena.rostova@example.com • linkedin.com/in/elena-rostova
+
+PROFILE
+Full Stack Developer experienced in modern web application engineering, reactive UI design systems, and resilient RESTful microservices.
+
+CORE COMPETENCIES
+React, Next.js, TypeScript, JavaScript, Tailwind CSS, Node.js, Express.js, PostgreSQL, MongoDB, Redis, Docker, Jest, Git
+
+PROFESSIONAL EXPERIENCE
+Senior Full Stack Engineer at FinTech Horizons
+03/2021 to Present
+- Built real-time trading dashboards using React, Next.js, and TypeScript with WebSocket data feeds.
+- Engineered backend payment settlement APIs using Node.js, Express.js, and PostgreSQL.
+- Implemented state management using Redux Toolkit and streamlined styling with Tailwind CSS.
+
+Frontend Developer at CloudScale Agency
+01/2019 to 02/2021
+- Created responsive client web portals using Vue.js, JavaScript, and HTML5/CSS3.
+- Integrated third-party analytics and payment APIs via RESTful architectures.
+
+ACADEMIC BACKGROUND
+Bachelor of Technology in Information Technology
+Columbia University (2015 - 2019)
