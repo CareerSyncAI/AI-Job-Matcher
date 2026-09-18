@@ -1,0 +1,31 @@
+Alex Mercer
+San Francisco, CA | alex.mercer@example.com | (555) 234-5678 | github.com/alexmercer
+
+PROFESSIONAL SUMMARY
+Senior AI & Machine Learning Systems Architect with 7+ years of experience engineering high-throughput distributed model inference pipelines and large-scale vector retrieval systems.
+
+TECHNICAL SKILLS
+- Programming Languages: Python, Go, C++, SQL
+- AI/ML & NLP: PyTorch, Hugging Face, Transformers, spaCy, Scikit-Learn, LangChain, Vector Databases, pgvector
+- Data & Storage: PostgreSQL, Redis, Apache Kafka, Apache Spark
+- Cloud & Infrastructure: AWS, Docker, Kubernetes, Terraform, Linux, CI/CD, Git
+
+WORK EXPERIENCE
+Senior AI Systems Engineer | Anthropic Scaling Labs
+Jan 2022 - Present
+- Architected distributed inference gateway serving 50M tokens/day with FastAPI and PyTorch.
+- Engineered hybrid semantic search cluster utilizing PostgreSQL and pgvector with sub-15ms p99 latency.
+- Containerized model evaluation microservices using Docker and deployed across Kubernetes clusters on AWS.
+
+Machine Learning Engineer | Datadog
+June 2018 - Dec 2021
+- Developed real-time anomaly detection pipelines using Python, Scikit-Learn, and Apache Kafka.
+- Scaled feature extraction pipelines processing 2TB daily log telemetry using Apache Spark.
+- Automated model CI/CD validation gates with GitHub Actions and Docker.
+
+EDUCATION
+Master of Science in Computer Science | Stanford University
+2016 - 2018
+
+Bachelor of Science in Electrical Engineering & Computer Science | UC Berkeley
+2012 - 2016

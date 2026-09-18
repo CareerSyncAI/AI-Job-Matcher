@@ -565,11 +565,11 @@ To ensure trustworthiness, distinguish AI inference from deterministic computati
 
 * **Phase 0**: Repository Setup & Governance ✅ **100% Completed**
 * **Phase 1**: Requirement Analysis ✅ **100% Completed**
-* **Phase 2**: Architecture & Data Contracts ⏳ **Planned**
-* **Phase 3**: Database Schemas & Migrations ⏳ **Planned**
-* **Phase 4**: Backend API & Fast-Pipeline Ingestion ⏳ **Planned**
-* **Phase 5**: AI Microservices & NLP Pipeline ⏳ **Planned**
-* **Phase 6**: Frontend Workstation & UI Integration ⏳ **Planned**
+* **Phase 2**: Architecture & Data Contracts ✅ **100% Completed** (AI Service contract v1.0.0, CandidateCardDTO, Evaluation schemas)
+* **Phase 3**: Database Schemas & Migrations ✅ **100% Completed** (Idempotent seed, SQLite & PostgreSQL relational integrity)
+* **Phase 4**: Backend API & Deterministic Pipeline Ingestion ✅ **100% Completed** (FastAPI v1 endpoints, Tier-1 Evaluation engine, Worker isolation)
+* **Phase 5**: AI Microservices & NLP Pipeline ⏳ **Planned / In-Progress (Owned by AI track agent)**
+* **Phase 6**: Frontend Workstation & UI Integration ✅ **100% Completed** (Next.js 16.3.0, 14 routes compiled, Zustand cleanly removed, live API adapters with graceful offline fallback)
 
 ---
 

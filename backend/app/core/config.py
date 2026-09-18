@@ -25,16 +25,24 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = Field(default=15, ge=5, le=60)
     refresh_token_days: int = Field(default=14, ge=1, le=30)
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] | str = ["http://localhost:3000"]
     upload_directory: Path = Path("../career-sync-storage/uploads")
     max_upload_bytes: int = 10 * 1024 * 1024
     secure_cookies: bool = False
     enable_worker: bool = False
+    ai_service_url: str = "http://localhost:8001"
 
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_origins(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):
+            value = value.strip()
+            if value.startswith("[") and value.endswith("]"):
+                import json
+                try:
+                    return json.loads(value)
+                except Exception:
+                    pass
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 

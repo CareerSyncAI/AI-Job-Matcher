@@ -3,7 +3,12 @@ from __future__ import annotations
 import pytest
 from fastapi import HTTPException
 
-from app.services.storage import PDF_MAGIC, ZIP_MAGIC, safe_filename, store_upload, validate_file_type
+from app.services.storage import (
+    PDF_MAGIC,
+    safe_filename,
+    store_upload,
+    validate_file_type,
+)
 
 
 def test_safe_filename():
@@ -30,7 +35,7 @@ def test_file_type_validation():
 
 
 def test_store_upload_sha256(tmp_path, monkeypatch):
-    from app.core.config import Settings, get_settings
+    from app.core.config import Settings
 
     monkeypatch.setattr("app.services.storage.get_settings", lambda: Settings(
         jwt_secret="a" * 32,

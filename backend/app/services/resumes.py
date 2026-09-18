@@ -50,6 +50,14 @@ class ResumeService:
             db.rollback()
             ResumeService.delete_storage_key(stored.storage_key)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Duplicate resume upload.") from error
+
+        from app.core.config import get_settings
+        if get_settings().enable_worker:
+            from app.workers.tasks import process_resume
+            try:
+                process_resume.delay(str(resume.id))
+            except Exception:
+                pass
         return resume
 
     @staticmethod

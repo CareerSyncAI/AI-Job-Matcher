@@ -3,11 +3,19 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from app.api.deps import get_current_user, get_recruiter_profile, require_roles
+from app.api.deps import get_recruiter_profile, require_roles
 from app.db.session import get_db
-from app.models.entities import Application, CandidateProfile, Job, RecruiterNote, RecruiterProfile, Resume, User
+from app.models.entities import (
+    Application,
+    CandidateProfile,
+    Job,
+    RecruiterNote,
+    RecruiterProfile,
+    Resume,
+    User,
+)
 from app.models.enums import JobStatus, UserRole
 from app.schemas.applications import (
     ApplicationCreate,
@@ -17,7 +25,9 @@ from app.schemas.applications import (
     RecruiterNoteResponse,
 )
 from app.schemas.resumes import ResumeResponse
+from app.schemas.evaluations import CandidateCardDTO, EvaluationRunSchema
 from app.services.audit import record_audit_event
+from app.services.evaluation import EvaluationService
 from app.services.jobs import JobService
 from app.services.resumes import ResumeService
 
@@ -107,6 +117,7 @@ async def upload_profile_resume(
 
 
 @router.get("/applications", response_model=list[ApplicationResponse])
+@router.get("/applications/me", response_model=list[ApplicationResponse])
 def list_my_applications(
     current_user: User = Depends(require_roles(UserRole.CANDIDATE)), db: Session = Depends(get_db)
 ) -> list[ApplicationResponse]:
@@ -170,3 +181,66 @@ def add_recruiter_note(
     db.commit()
     db.refresh(note)
     return RecruiterNoteResponse(id=note.id, application_id=note.application_id, body=note.body, created_at=note.created_at)
+
+
+@router.get("/jobs/{job_id}/candidates", response_model=list[CandidateCardDTO])
+def list_job_candidates(
+    job_id: UUID,
+    recruiter: RecruiterProfile = Depends(get_recruiter_profile),
+    db: Session = Depends(get_db),
+) -> list[CandidateCardDTO]:
+    """Get candidate application cards for a job, ranked by deterministic score."""
+    JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
+    applications = (
+        db.query(Application)
+        .options(
+            selectinload(Application.job).selectinload(Job.skills),
+            selectinload(Application.candidate),
+            selectinload(Application.resume),
+        )
+        .filter(Application.job_id == job_id)
+        .all()
+    )
+    cards = [
+        EvaluationService.get_candidate_card(db, application=app, recruiter_id=recruiter.id)
+        for app in applications
+    ]
+    # Sort by match score descending
+    cards.sort(key=lambda c: c.matchScore, reverse=True)
+    return cards
+
+
+@router.get("/jobs/{job_id}/candidates/{candidate_id}", response_model=CandidateCardDTO)
+def get_job_candidate_detail(
+    job_id: UUID,
+    candidate_id: UUID,
+    recruiter: RecruiterProfile = Depends(get_recruiter_profile),
+    db: Session = Depends(get_db),
+) -> CandidateCardDTO:
+    """Get single candidate evaluation details and evidence for a job."""
+    JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
+    application = (
+        db.query(Application)
+        .options(
+            selectinload(Application.job).selectinload(Job.skills),
+            selectinload(Application.candidate),
+            selectinload(Application.resume),
+        )
+        .filter(Application.job_id == job_id, Application.candidate_id == candidate_id)
+        .one_or_none()
+    )
+    if not application:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate application not found.")
+    return EvaluationService.get_candidate_card(db, application=application, recruiter_id=recruiter.id)
+
+
+@router.post("/applications/{application_id}/evaluate", response_model=EvaluationRunSchema)
+def evaluate_candidate_application(
+    application_id: UUID,
+    recruiter: RecruiterProfile = Depends(get_recruiter_profile),
+    db: Session = Depends(get_db),
+) -> EvaluationRun:
+    """Run deterministic evaluation engine on application, producing EvaluationRun and MatchResult."""
+    service = EvaluationService()
+    run = service.evaluate_application(db, application_id=application_id, recruiter_id=recruiter.id)
+    return run

@@ -1,0 +1,495 @@
+{
+  "resumes_evaluated": 18,
+  "section_detection": {
+    "total": 0,
+    "detected_sections_distribution": {
+      "contact": 18,
+      "summary": 16,
+      "skills": 18,
+      "experience": 16,
+      "education": 12,
+      "certifications": 1
+    }
+  },
+  "skills": {
+    "total_extracted": 19,
+    "false_positives_detected": [],
+    "category_distribution": {
+      "Security & Systems": 6,
+      "Databases & Storage": 2,
+      "Frontend Engineering": 4,
+      "Cloud & DevOps": 3,
+      "Core CS & Methodologies": 1,
+      "Backend Engineering": 2,
+      "AI & Machine Learning": 1
+    }
+  },
+  "experience": {
+    "entries_extracted": 24,
+    "avg_tenure_years": 10.5,
+    "zero_tenure_count": 0
+  },
+  "education": {
+    "degrees_extracted": 23,
+    "degree_levels": {
+      "Associate": 5,
+      "Master": 5,
+      "Bachelor": 11,
+      "Doctorate": 2
+    }
+  },
+  "semantic_similarity": [
+    {
+      "id": "16852973",
+      "category": "HR",
+      "score": 5.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "22323967",
+      "category": "HR",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "37058472",
+      "category": "DESIGNER",
+      "score": 6.3,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "68240723",
+      "category": "DESIGNER",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "36856210",
+      "category": "INFORMATION-TECHNOLOGY",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "21780877",
+      "category": "INFORMATION-TECHNOLOGY",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "33241454",
+      "category": "INFORMATION-TECHNOLOGY",
+      "score": 9.9,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "25990239",
+      "category": "INFORMATION-TECHNOLOGY",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "16899268",
+      "category": "INFORMATION-TECHNOLOGY",
+      "score": 4.7,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "91635250",
+      "category": "INFORMATION-TECHNOLOGY",
+      "score": 9.5,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "87118391",
+      "category": "SALES",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "13837784",
+      "category": "DIGITAL-MEDIA",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "16509761",
+      "category": "DIGITAL-MEDIA",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "11877150",
+      "category": "FINANCE",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "86549455",
+      "category": "FINANCE",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "14206561",
+      "category": "ENGINEERING",
+      "score": 8.9,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "15139979",
+      "category": "ENGINEERING",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    },
+    {
+      "id": "44624796",
+      "category": "ENGINEERING",
+      "score": 0.0,
+      "grade": "Low",
+      "matched_concepts": []
+    }
+  ],
+  "per_resume_details": [
+    {
+      "id": "16852973",
+      "category": "HR",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 12.8,
+      "education_entries": 1,
+      "match_score": 5.0
+    },
+    {
+      "id": "22323967",
+      "category": "HR",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 1,
+      "top_skills": [
+        "Networking"
+      ],
+      "experience_entries": 1,
+      "tenure_years": 11.0,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "37058472",
+      "category": "DESIGNER",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 1.7,
+      "education_entries": 1,
+      "match_score": 6.3
+    },
+    {
+      "id": "68240723",
+      "category": "DESIGNER",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 1,
+      "top_skills": [
+        "Oracle"
+      ],
+      "experience_entries": 1,
+      "tenure_years": 1.7,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "36856210",
+      "category": "INFORMATION-TECHNOLOGY",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience"
+      ],
+      "skills_count": 6,
+      "top_skills": [
+        "Cybersecurity",
+        "HTML5",
+        "Linux",
+        "Active Directory",
+        "Networking",
+        "Next.js"
+      ],
+      "experience_entries": 2,
+      "tenure_years": 20.6,
+      "education_entries": 3,
+      "match_score": 0.0
+    },
+    {
+      "id": "21780877",
+      "category": "INFORMATION-TECHNOLOGY",
+      "sections_found": [
+        "contact",
+        "skills",
+        "experience"
+      ],
+      "skills_count": 2,
+      "top_skills": [
+        "Networking",
+        "System Design"
+      ],
+      "experience_entries": 3,
+      "tenure_years": 25.6,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "33241454",
+      "category": "INFORMATION-TECHNOLOGY",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 3.3,
+      "education_entries": 1,
+      "match_score": 9.9
+    },
+    {
+      "id": "25990239",
+      "category": "INFORMATION-TECHNOLOGY",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 4,
+      "top_skills": [
+        "PHP",
+        "HTML5",
+        "Networking",
+        "Virtualization"
+      ],
+      "experience_entries": 1,
+      "tenure_years": 14.7,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "16899268",
+      "category": "INFORMATION-TECHNOLOGY",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "education"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 2,
+      "tenure_years": 23.2,
+      "education_entries": 2,
+      "match_score": 4.7
+    },
+    {
+      "id": "91635250",
+      "category": "INFORMATION-TECHNOLOGY",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 6.0,
+      "education_entries": 1,
+      "match_score": 9.5
+    },
+    {
+      "id": "87118391",
+      "category": "SALES",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 0.4,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "13837784",
+      "category": "DIGITAL-MEDIA",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 1,
+      "top_skills": [
+        "HTML5"
+      ],
+      "experience_entries": 1,
+      "tenure_years": 10.5,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "16509761",
+      "category": "DIGITAL-MEDIA",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 3,
+      "tenure_years": 11.2,
+      "education_entries": 4,
+      "match_score": 0.0
+    },
+    {
+      "id": "11877150",
+      "category": "FINANCE",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "education",
+        "certifications"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 13.2,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "86549455",
+      "category": "FINANCE",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 7.2,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "14206561",
+      "category": "ENGINEERING",
+      "sections_found": [
+        "contact",
+        "skills",
+        "experience",
+        "education"
+      ],
+      "skills_count": 2,
+      "top_skills": [
+        "Oracle",
+        "Networking"
+      ],
+      "experience_entries": 1,
+      "tenure_years": 12.7,
+      "education_entries": 1,
+      "match_score": 8.9
+    },
+    {
+      "id": "15139979",
+      "category": "ENGINEERING",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience"
+      ],
+      "skills_count": 2,
+      "top_skills": [
+        "C++",
+        "Hugging Face"
+      ],
+      "experience_entries": 1,
+      "tenure_years": 7.7,
+      "education_entries": 1,
+      "match_score": 0.0
+    },
+    {
+      "id": "44624796",
+      "category": "ENGINEERING",
+      "sections_found": [
+        "contact",
+        "summary",
+        "skills",
+        "experience"
+      ],
+      "skills_count": 0,
+      "top_skills": [],
+      "experience_entries": 1,
+      "tenure_years": 5.2,
+      "education_entries": 0,
+      "match_score": 0.0
+    }
+  ]
+}
