@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { 
-  Sparkles, 
+  Target, 
   Briefcase, 
   Award, 
   FileText, 
@@ -91,9 +91,9 @@ export default function ApplicantDashboard() {
       >
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-aperture-500/15 text-aperture-500 text-xs font-mono border border-aperture-500/30 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Career Trajectory Optimizer</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-text-secondary text-xs font-mono border border-ink-border">
+              <Compass className="w-3.5 h-3.5 text-signal-500" />
+              <span>Candidate Career Overview</span>
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">
               Welcome back, {profile?.name || "Dhruv"} 👋

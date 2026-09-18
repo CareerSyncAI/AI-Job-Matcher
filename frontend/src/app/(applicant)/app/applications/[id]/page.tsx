@@ -10,7 +10,6 @@ import {
   AlertCircle, 
   Calendar, 
   MessageSquare, 
-  Sparkles, 
   AlertTriangle, 
   BookOpen, 
   ArrowRight,
@@ -130,17 +129,17 @@ export default function ApplicationDetailPage({
         <SpotlightCard className="p-6 bg-ink-surface border border-warning/30 rounded-lg space-y-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-warning/10 border border-warning/30 flex items-center justify-center text-warning shrink-0">
-              <Sparkles className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5" />
             </div>
             <div>
               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-warning/10 text-warning text-[11px] font-semibold uppercase tracking-wider mb-1">
-                AI Transparent Feedback & Gap Analysis
+                Objective Qualification Breakdown
               </div>
-              <h3 className="font-display font-bold text-base text-text-primary">
-                Why This Application Was Not Selected
+              <h3 className="font-display font-semibold text-base text-text-primary">
+                Requisition Evaluation Summary
               </h3>
               <p className="text-xs text-text-secondary mt-1 leading-relaxed">
-                CareerSync AI analyzed your resume against the recruiter&apos;s hard requirements. Here is the objective breakdown of why other candidates ranked higher for this specific requisition:
+                Here is the objective breakdown of how your profile credentials aligned against this requisition&apos;s specific criteria:
               </p>
             </div>
           </div>

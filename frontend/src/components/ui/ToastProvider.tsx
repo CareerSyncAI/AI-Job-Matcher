@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, AlertCircle, Info, Sparkles, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, Info, Cpu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ToastType = "success" | "error" | "info" | "ai";
@@ -63,7 +63,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       case "error":
         return <AlertCircle className="w-5 h-5 text-danger shrink-0" />;
       case "ai":
-        return <Sparkles className="w-5 h-5 text-aperture-500 shrink-0 animate-pulse" />;
+        return <Cpu className="w-5 h-5 text-signal-500 shrink-0" />;
       default:
         return <Info className="w-5 h-5 text-signal-500 shrink-0" />;
     }

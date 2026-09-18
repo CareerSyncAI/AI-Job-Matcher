@@ -13,7 +13,6 @@ import {
   ArrowLeftRight, 
   Sun, 
   Moon, 
-  Sparkles, 
   Upload, 
   User, 
   X,
@@ -100,11 +99,11 @@ export const CommandMenu: React.FC<{ isOpen: boolean; onClose: () => void }> = (
       id: "action-upload",
       category: "Actions",
       title: "Upload & Parse Resume",
-      subtitle: "Run 4-stage AI OCR and vector embedding extraction",
+      subtitle: "Layout-aware parsing and structured skill extraction",
       icon: Upload,
       perform: () => { 
         router.push("/app/resume"); 
-        info("Resume Vault", "Drop your resume to start AI extraction");
+        info("Resume Vault", "Select your resume to start extraction");
         onClose(); 
       }
     },
@@ -112,7 +111,7 @@ export const CommandMenu: React.FC<{ isOpen: boolean; onClose: () => void }> = (
       id: "action-profile",
       category: "Actions",
       title: "Edit Profile & Preferences",
-      subtitle: "Update career headline, skills, and target salary",
+      subtitle: "Update career headline, skills, and target role",
       icon: User,
       perform: () => { router.push("/app/profile"); onClose(); }
     },
@@ -120,36 +119,24 @@ export const CommandMenu: React.FC<{ isOpen: boolean; onClose: () => void }> = (
     {
       id: "theme-dark",
       category: "Themes",
-      title: "Theme: Obsidian Aurora",
-      subtitle: "Deep space black with royal indigo & blue glow",
+      title: "Theme: Dark Mode",
+      subtitle: "Refined obsidian slate with soft accents",
       icon: Moon,
       perform: () => { 
         setTheme("dark"); 
-        success("Theme Changed", "Switched to Obsidian Aurora");
-        onClose(); 
-      }
-    },
-    {
-      id: "theme-cyber",
-      category: "Themes",
-      title: "Theme: Emerald Cyber",
-      subtitle: "High-tech slate matrix with electric emerald accents",
-      icon: Sparkles,
-      perform: () => { 
-        setTheme("cyber"); 
-        success("Theme Changed", "Switched to Emerald Cyber");
+        success("Theme Changed", "Switched to Dark Mode");
         onClose(); 
       }
     },
     {
       id: "theme-light",
       category: "Themes",
-      title: "Theme: Titanium Frost",
-      subtitle: "Crisp porcelain white with polished sapphire glass",
+      title: "Theme: Light Mode",
+      subtitle: "Clean titanium white with high contrast",
       icon: Sun,
       perform: () => { 
         setTheme("light"); 
-        success("Theme Changed", "Switched to Titanium Frost");
+        success("Theme Changed", "Switched to Light Mode");
         onClose(); 
       }
     }

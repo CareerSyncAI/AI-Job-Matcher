@@ -34,7 +34,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cycleTheme = () => {
-    const next: ThemeMode = theme === "dark" ? "cyber" : theme === "cyber" ? "light" : "dark";
+    const next: ThemeMode = theme === "dark" ? "light" : "dark";
     setTheme(next);
   };
 

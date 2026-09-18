@@ -4,7 +4,6 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { 
   ArrowLeftRight, 
-  Sparkles, 
   Sliders, 
   CheckCircle2, 
   TrendingUp, 
@@ -78,8 +77,8 @@ export default function CompareMatrixPage() {
         <div className="flex items-center justify-between pb-4 border-b border-ink-border mb-6">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-signal-500" />
-            <h3 className="font-display text-base font-bold text-text-primary">
-              AI Multi-Factor Sensitivity Sliders
+            <h3 className="font-display text-base font-semibold text-text-primary">
+              Scoring Weight Sensitivity Tuner
             </h3>
           </div>
           <button
@@ -156,7 +155,7 @@ export default function CompareMatrixPage() {
               onChange={(e) => setWeights({ ...weights, semanticWeight: Number(e.target.value) })}
               className="w-full accent-success h-1.5 bg-white/10 rounded-lg cursor-pointer"
             />
-            <div className="text-[11px] text-text-tertiary">Vector embedding correlation</div>
+            <div className="text-[11px] text-text-tertiary">Contextual domain relevance</div>
           </div>
         </div>
       </SpotlightCard>

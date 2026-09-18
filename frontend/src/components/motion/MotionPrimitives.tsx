@@ -194,7 +194,7 @@ export const InteractiveScoreGauge: React.FC<ScoreGaugeProps> = ({
       {/* Center Label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <span className="font-display font-bold text-2xl tracking-tight text-text-primary">
-          {score}%
+          <AnimatedNumber value={score} suffix="%" duration={0.4} />
         </span>
         {showGrade && (
           <span className={cn("text-[11px] font-mono font-semibold uppercase tracking-wider", getColor(score))}>
@@ -207,7 +207,7 @@ export const InteractiveScoreGauge: React.FC<ScoreGaugeProps> = ({
 };
 
 // =========================================================================
-// 4. Aperture High-Tech Scanner
+// 4. Precision Status Glyph / Loader
 // =========================================================================
 
 interface ApertureLoaderProps {
@@ -221,66 +221,41 @@ export const ApertureLoader: React.FC<ApertureLoaderProps> = ({
   size = "md",
   className
 }) => {
-  const shouldReduceMotion = useReducedMotion();
-
   const dimensions = {
-    sm: "w-6 h-6",
-    md: "w-10 h-10",
-    lg: "w-16 h-16"
+    sm: "w-5 h-5",
+    md: "w-8 h-8",
+    lg: "w-12 h-12"
   };
-
-  const blades = [
-    "M12 2L4.3 6.5L12 12V2Z",
-    "M22 12L17.5 4.3L12 12H22Z",
-    "M12 22L19.7 17.5L12 12V22Z",
-    "M2 12L6.5 19.7L12 12H2Z"
-  ];
 
   const getColor = () => {
     switch (state) {
       case "error": return "text-danger";
       case "settled": return "text-success";
-      default: return "text-aperture-500";
+      default: return "text-signal-500";
     }
-  };
-
-  const getRotation = () => {
-    if (shouldReduceMotion) return 0;
-    if (state === "processing") return [0, 360];
-    if (state === "opening") return [45, 0];
-    return 0;
-  };
-
-  const getTransition = (): any => {
-    if (state === "processing" && !shouldReduceMotion) {
-      return { repeat: Infinity, duration: 3, ease: "linear" };
-    }
-    return { duration: MOTION_DURATIONS.signature, ease: MOTION_EASINGS.standard };
   };
 
   return (
-    <motion.div
-      animate={{ rotate: getRotation() }}
-      transition={getTransition()}
-      className={cn("relative shrink-0 flex items-center justify-center", dimensions[size], getColor(), className)}
-    >
+    <div className={cn("relative shrink-0 flex items-center justify-center", dimensions[size], getColor(), className)}>
       <svg
         viewBox="0 0 24 24"
-        fill="currentColor"
-        className="w-full h-full stroke-ink-surface"
-        strokeWidth="0.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={cn("w-full h-full", state === "processing" ? "animate-spin" : "")}
       >
-        {blades.map((d, index) => (
-          <path key={index} d={d} className="opacity-90" />
-        ))}
-        <circle cx="12" cy="12" r="2.5" className="fill-ink-surface stroke-current" strokeWidth="0.5" />
+        <circle cx="12" cy="12" r="9" className="opacity-25" />
+        <path d="M12 3a9 9 0 0 1 9 9" className="opacity-90 stroke-current" />
+        <circle cx="12" cy="12" r="3" className="fill-current stroke-none" />
       </svg>
-    </motion.div>
+    </div>
   );
 };
 
 // =========================================================================
-// 5. Liquid & Shimmer Buttons
+// 5. Tactile Buttons (Linear / Stripe Craft)
 // =========================================================================
 
 interface LiquidButtonProps extends HTMLMotionProps<"button"> {
@@ -296,15 +271,15 @@ export const LiquidButton: React.FC<LiquidButtonProps> = ({
 }) => {
   return (
     <motion.button
-      whileHover={{ y: -1.5, scale: 1.02 }}
-      whileTap={{ scale: 0.96 }}
-      transition={{ type: "spring", stiffness: 400, damping: 22 }}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.12 }}
       className={cn(
-        "relative overflow-hidden px-4 py-2 rounded-full font-medium text-xs text-text-primary group inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none",
-        variant === 'primary' && 'bg-signal-500 hover:bg-signal-600 text-white font-semibold shadow-sm hover:shadow-signal-500/25',
-        variant === 'secondary' && 'bg-white/5 hover:bg-white/10 text-text-primary border border-ink-border hover:border-signal-500/40',
-        variant === 'cyber' && 'bg-success/15 border border-success/30 text-success hover:bg-success/25',
-        variant === 'danger' && 'bg-danger/15 border border-danger/30 text-danger hover:bg-danger/25',
+        "relative overflow-hidden px-3.5 py-1.5 rounded-lg font-medium text-xs group inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none border",
+        variant === 'primary' && 'bg-signal-500 hover:bg-signal-600 text-white border-signal-500 shadow-sm',
+        variant === 'secondary' && 'bg-white/5 hover:bg-white/10 text-text-primary border-ink-border hover:border-white/20',
+        variant === 'cyber' && 'bg-white/5 hover:bg-white/10 text-text-primary border-ink-border',
+        variant === 'danger' && 'bg-danger/10 border-danger/25 text-danger hover:bg-danger/20',
         className
       )}
       {...props}
@@ -321,16 +296,15 @@ export const ShimmerButton: React.FC<LiquidButtonProps> = ({
 }) => {
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ y: -1 }}
       whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.12 }}
       className={cn(
-        "relative inline-flex items-center justify-center px-6 py-3 overflow-hidden rounded-full font-medium text-sm text-white shadow-glass-lg group bg-gradient-to-r from-signal-600 to-aperture-600 border border-white/20",
+        "relative inline-flex items-center justify-center px-5 py-2.5 rounded-lg font-semibold text-xs sm:text-sm text-white bg-signal-600 hover:bg-signal-500 border border-signal-500/50 shadow-sm transition-all cursor-pointer",
         className
       )}
       {...props}
     >
-      {/* Specular shimmer overlay */}
-      <span className="absolute top-0 right-0 w-12 -mt-1 h-32 transition-all duration-1000 transform translate-x-12 bg-white opacity-20 rotate-12 group-hover:-translate-x-60 ease" />
       <span className="relative z-10 flex items-center gap-2">{children}</span>
     </motion.button>
   );
@@ -362,3 +336,177 @@ export const staggerItem: Variants = {
     }
   }
 };
+
+// =========================================================================
+// 7. Dynamic Animated Counter with Ease-Out Physics
+// =========================================================================
+
+export const AnimatedNumber: React.FC<{
+  value: number;
+  duration?: number;
+  className?: string;
+  suffix?: string;
+  prefix?: string;
+}> = ({ value, duration = 0.8, className, suffix = "", prefix = "" }) => {
+  const [displayValue, setDisplayValue] = useState(value);
+  const prevValue = useRef(value);
+
+  React.useEffect(() => {
+    let startTimestamp: number | null = null;
+    const startVal = prevValue.current;
+    const endVal = value;
+    prevValue.current = value;
+
+    if (startVal === endVal) {
+      setDisplayValue(endVal);
+      return;
+    }
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / (duration * 1000), 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startVal + (endVal - startVal) * easeProgress);
+      setDisplayValue(current);
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    const animId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(animId);
+  }, [value, duration]);
+
+  return (
+    <span className={cn("tabular-nums inline-block font-mono", className)}>
+      {prefix}{displayValue}{suffix}
+    </span>
+  );
+};
+
+// =========================================================================
+// 8. Live Status Pulse Indicator
+// =========================================================================
+
+export const LiveIndicator: React.FC<{
+  color?: "green" | "blue" | "amber" | "rose";
+  label?: string;
+  className?: string;
+}> = ({ color = "green", label, className }) => {
+  const colors = {
+    green: { ping: "bg-emerald-500", dot: "bg-emerald-500", text: "text-emerald-500" },
+    blue: { ping: "bg-blue-500", dot: "bg-blue-500", text: "text-blue-500" },
+    amber: { ping: "bg-amber-500", dot: "bg-amber-500", text: "text-amber-500" },
+    rose: { ping: "bg-rose-500", dot: "bg-rose-500", text: "text-rose-500" },
+  }[color];
+
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 text-xs font-mono select-none", className)}>
+      <span className="relative flex h-2 w-2">
+        <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", colors.ping)} />
+        <span className={cn("relative inline-flex rounded-full h-2 w-2", colors.dot)} />
+      </span>
+      {label && <span className={colors.text}>{label}</span>}
+    </span>
+  );
+};
+
+// =========================================================================
+// 9. 3D Perspective Tilt Card with Glare Reflection
+// =========================================================================
+
+export const TiltCard: React.FC<React.HTMLAttributes<HTMLDivElement> & {
+  children: React.ReactNode;
+  maxTilt?: number;
+}> = ({ children, className, maxTilt = 5, ...props }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const tiltX = ((y - centerY) / centerY) * -maxTilt;
+    const tiltY = ((x - centerX) / centerX) * maxTilt;
+    setTilt({ x: tiltX, y: tiltY });
+    setGlare({ x: (x / rect.width) * 100, y: (y / rect.height) * 100, opacity: 0.12 });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setGlare((prev) => ({ ...prev, opacity: 0 }));
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        transition: "transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+        transformStyle: "preserve-3d"
+      }}
+      className={cn("relative overflow-hidden rounded-xl", className)}
+      {...props}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-300 z-20"
+        style={{
+          background: `radial-gradient(circle 350px at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.08), transparent 70%)`,
+          opacity: glare.opacity
+        }}
+      />
+      <div className="relative z-10 h-full">{children}</div>
+    </div>
+  );
+};
+
+// =========================================================================
+// 10. Segmented Pill Dock with Fluid Sliding Pill
+// =========================================================================
+
+export const SegmentedPillDock: React.FC<{
+  tabs: { id: string; label: string; icon?: React.ElementType; badge?: string }[];
+  activeId: string;
+  onChange: (id: string) => void;
+  className?: string;
+}> = ({ tabs, activeId, onChange, className }) => {
+  return (
+    <div className={cn("inline-flex items-center p-1 rounded-lg bg-ink-surface border border-ink-border gap-1", className)}>
+      {tabs.map((tab) => {
+        const isActive = tab.id === activeId;
+        const Icon = tab.icon;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={cn(
+              "relative px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer select-none flex items-center gap-1.5 z-10",
+              isActive ? "text-text-primary font-semibold" : "text-text-secondary hover:text-text-primary"
+            )}
+          >
+            {isActive && (
+              <motion.div
+                layoutId="segmentedPillActive"
+                transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                className="absolute inset-0 bg-white/10 rounded-md border border-ink-border shadow-sm -z-10"
+              />
+            )}
+            {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
+            <span>{tab.label}</span>
+            {tab.badge && (
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/10 border border-ink-border text-text-tertiary">
+                {tab.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+

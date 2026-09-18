@@ -6,7 +6,6 @@ import {
   Target, 
   CheckCircle2, 
   AlertTriangle, 
-  Sparkles, 
   BookOpen, 
   Clock, 
   Plus, 
@@ -186,15 +185,15 @@ export default function SkillGapPage() {
       {/* Header */}
       <div className="border-b border-ink-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-aperture-500/10 text-aperture-500 text-xs font-semibold mb-1">
-            <Target className="w-3.5 h-3.5" />
-            AI Skill Gap Analyzer
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-ink-border text-text-secondary text-xs font-medium mb-1">
+            <Target className="w-3.5 h-3.5 text-signal-500" />
+            Qualification & Skill Bridge
           </div>
-          <h1 className="font-display font-bold text-2xl text-text-primary">
-            Job Requirement & Skill Gap Matrix
+          <h1 className="font-display font-semibold text-2xl text-text-primary">
+            Job Requirements & Skill Overlap
           </h1>
           <p className="text-xs text-text-secondary mt-0.5">
-            Compare your profile credentials against active job requisitions and get AI-guided learning roadmaps.
+            Compare your profile against active role criteria and review targeted bridge roadmaps.
           </p>
         </div>
 
@@ -332,12 +331,12 @@ export default function SkillGapPage() {
           </div>
         </div>
 
-        {/* AI Skill Development Recommendations */}
+        {/* Targeted Skill Development Roadmaps */}
         <div className="bg-ink-surface border border-ink-border rounded p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-ink-border pb-3">
             <h3 className="font-semibold text-sm text-text-primary flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-signal-500" />
-              AI Skill Recommendations ({missingSkills.length})
+              <BookOpen className="w-4 h-4 text-signal-500" />
+              Skill Acquisition Roadmaps ({missingSkills.length})
             </h3>
             <span className="text-[11px] text-warning bg-warning/10 px-2 py-0.5 rounded font-semibold">
               Actionable Plan

@@ -6,7 +6,6 @@ import {
   Upload, 
   CheckCircle2, 
   Trash2, 
-  Sparkles, 
   Layers, 
   ShieldCheck, 
   Clock, 
@@ -82,29 +81,29 @@ export default function ResumeVaultPage() {
             <Cpu className="w-3.5 h-3.5" />
             <span>Deep Semantic Parser</span>
           </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-text-primary">
-            Resume Intelligence Vault
+          <h1 className="font-display font-semibold text-2xl sm:text-3xl text-text-primary">
+            Resume Management & Document Parser
           </h1>
           <p className="text-xs sm:text-sm text-text-secondary">
-            Upload PDF/DOCX documents to execute deterministic OCR, entity extraction, and vector embedding.
+            Upload PDF or DOCX files to extract structured skills, work history, and verified education.
           </p>
         </div>
       </div>
 
-      {/* Upload Dropzone & Live 4-Stage Progress */}
-      <SpotlightCard className="p-8 border-dashed border-2 border-ink-border hover:border-aperture-500/50 transition-colors">
+      {/* Upload Dropzone & Live Progress */}
+      <SpotlightCard className="p-8 border-dashed border-2 border-ink-border hover:border-signal-500/50 transition-colors">
         {isUploading ? (
           <div className="space-y-6 py-4 max-w-lg mx-auto text-center">
-            <div className="w-12 h-12 rounded-full bg-aperture-500/20 text-aperture-500 flex items-center justify-center mx-auto animate-pulse">
-              <Sparkles className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-full bg-signal-500/10 text-signal-500 flex items-center justify-center mx-auto">
+              <FileText className="w-6 h-6 animate-pulse" />
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-display font-bold text-lg text-text-primary">
-                Processing Document Intelligence
+              <h3 className="font-display font-semibold text-lg text-text-primary">
+                Parsing Document Structure
               </h3>
               <p className="text-xs text-text-secondary font-mono">
-                {uploadStage || "Executing optical character recognition..."}
+                {uploadStage || "Extracting section text and competencies..."}
               </p>
             </div>
 
