@@ -6,17 +6,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import {
-  CareerSyncLogo,
+  CareerSyncBrand,
   IconDashboard,
   IconBriefcase,
   IconDocument,
   IconUser,
   IconLogout,
-  IconCheckCircle,
   IconSun,
   IconMoon,
   IconChevronDown,
-  IconSettings,
   IconTarget,
   IconUsers,
   IconLayers,
@@ -40,7 +38,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme, setTheme, isDark } = useTheme();
+  const { toggleTheme, setTheme, isDark } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -95,18 +93,15 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
       >
         {/* Brand Header */}
         <div
-          className={`h-16 px-5 flex items-center gap-3 border-b shrink-0 ${
+          className={`h-16 px-4 flex items-center justify-between border-b shrink-0 ${
             isDark ? "border-slate-800" : "border-slate-200"
           }`}
         >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] border border-emerald-500/30 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
-            <CareerSyncLogo size={18} className="text-white" />
-          </div>
-          <span className="font-display font-bold text-base tracking-tight">
-            Career<span className="text-[#059669]">Sync</span>
-          </span>
+          <Link href="/dashboard" className="flex items-center gap-2 group">
+            <CareerSyncBrand size={28} showTagline={true} isLight={!isDark} />
+          </Link>
           {user?.role === "recruiter" && (
-            <span className="ml-auto px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20">
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20">
               RECRUITER
             </span>
           )}

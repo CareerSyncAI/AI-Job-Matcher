@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth, UserRole } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import {
-  CareerSyncLogo,
+  CareerSyncBrand,
   IconUser,
   IconBuilding,
   IconAlertTriangle,
@@ -80,12 +80,7 @@ function RegisterForm() {
       {/* Header Logo */}
       <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-6">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
-            <CareerSyncLogo size={18} className="text-white" />
-          </div>
-          <span className="font-display font-bold text-lg text-slate-100 tracking-tight">
-            Career<span className="text-[#059669]">Sync</span>
-          </span>
+          <CareerSyncBrand size={32} showTagline={true} isLight={!isDark} />
         </Link>
         <div className="flex items-center gap-3">
           <button

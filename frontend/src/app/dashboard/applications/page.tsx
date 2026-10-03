@@ -3,14 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
-import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import {
   IconTarget,
   IconBriefcase,
   IconBuilding,
   IconMapPin,
-  IconCheckCircle,
   IconSearch,
 } from "@/components/Icons";
 
@@ -63,7 +61,6 @@ const mockApplications: ApplicationItem[] = [
 ];
 
 export default function CandidateApplicationsPage() {
-  const { user } = useAuth();
   const { isDark } = useTheme();
 
   const [applications, setApplications] = useState<ApplicationItem[]>(mockApplications);
@@ -254,7 +251,11 @@ export default function CandidateApplicationsPage() {
 
       {/* Applications List */}
       <div className="space-y-4">
-        {filteredApps.length === 0 ? (
+        {loading ? (
+          <div className={`p-10 text-center rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-500"} animate-pulse`}>
+            Loading your applications...
+          </div>
+        ) : filteredApps.length === 0 ? (
           <div
             className={`p-12 text-center rounded-2xl border ${
               isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"

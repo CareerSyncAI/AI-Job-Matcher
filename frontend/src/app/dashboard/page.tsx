@@ -7,11 +7,8 @@ import {
   IconSearch,
   IconBriefcase,
   IconDocument,
-  IconTrendUp,
   IconCheckCircle,
   IconNetwork,
-  IconUser,
-  IconBuilding,
   IconUsers,
   IconLayers,
 } from "@/components/Icons";

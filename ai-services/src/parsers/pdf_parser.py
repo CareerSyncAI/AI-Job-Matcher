@@ -8,7 +8,12 @@ from __future__ import annotations
 import io
 import re
 from typing import Dict, List, Tuple
-import pypdf
+
+try:
+    import pypdf
+    HAS_PYPDF = True
+except ImportError:
+    HAS_PYPDF = False
 
 try:
     import pdfplumber
@@ -21,7 +26,12 @@ class PDFParser:
     """Extracts text and layout elements from PDF binary streams."""
 
     def __init__(self):
-        self.engine = "pdfplumber" if HAS_PDFPLUMBER else "pypdf"
+        if HAS_PDFPLUMBER:
+            self.engine = "pdfplumber"
+        elif HAS_PYPDF:
+            self.engine = "pypdf"
+        else:
+            self.engine = "none"
 
     def parse_stream(self, stream: io.BytesIO) -> Dict[str, any]:
         """Extract clean text, page count, and diagnostic metadata from a PDF stream."""
@@ -49,6 +59,8 @@ class PDFParser:
 
         # Fallback to pypdf if pdfplumber was unavailable or failed
         if not extracted_pages:
+            if not HAS_PYPDF:
+                raise ValueError("Neither pdfplumber nor pypdf is installed to extract PDF text.")
             try:
                 stream.seek(0)
                 reader = pypdf.PdfReader(stream)

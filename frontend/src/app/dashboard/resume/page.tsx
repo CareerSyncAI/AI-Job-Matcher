@@ -3,9 +3,6 @@
 import React, { useState } from "react";
 import {
   IconDocument,
-  IconCheckCircle,
-  IconShieldCheck,
-  IconNetwork,
 } from "@/components/Icons";
 
 export default function ResumePage() {

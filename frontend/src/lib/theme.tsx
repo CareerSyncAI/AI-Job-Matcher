@@ -15,44 +15,39 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const THEME_STORAGE_KEY = "careersync_theme";
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to 'dark' as requested (default theme before login and across system)
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
+const applyTheme = (t: Theme) => {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (t === "dark") {
+    root.classList.add("dark");
+    root.classList.remove("light");
+    root.setAttribute("data-theme", "dark");
+    root.style.colorScheme = "dark";
+  } else {
+    root.classList.add("light");
+    root.classList.remove("dark");
+    root.setAttribute("data-theme", "light");
+    root.style.colorScheme = "light";
+  }
+};
 
-  useEffect(() => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "dark";
     try {
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
       if (stored === "light" || stored === "dark") {
-        setThemeState(stored);
-        applyTheme(stored);
-      } else {
-        // Default theme is dark
-        setThemeState("dark");
-        applyTheme("dark");
+        return stored;
       }
     } catch {
-      applyTheme("dark");
-    } finally {
-      setMounted(true);
+      // ignore
     }
-  }, []);
+    return "dark";
+  });
 
-  const applyTheme = (t: Theme) => {
-    if (typeof document === "undefined") return;
-    const root = document.documentElement;
-    if (t === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-      root.setAttribute("data-theme", "dark");
-      root.style.colorScheme = "dark";
-    } else {
-      root.classList.add("light");
-      root.classList.remove("dark");
-      root.setAttribute("data-theme", "light");
-      root.style.colorScheme = "light";
-    }
-  };
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
@@ -61,7 +56,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       // ignore
     }
-    applyTheme(newTheme);
   };
 
   const toggleTheme = () => {

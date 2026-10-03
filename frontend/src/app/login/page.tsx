@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import api from "@/lib/api";
 import {
-  CareerSyncLogo,
+  CareerSyncBrand,
   IconUser,
   IconBuilding,
   IconAlertTriangle,
@@ -25,10 +25,21 @@ export default function LoginPage() {
   const { login, user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("careersync_remember_email") || "";
+    }
+    return "";
+  });
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedRemember = localStorage.getItem("careersync_remember_me");
+      return savedRemember !== null ? savedRemember === "true" : true;
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,20 +56,6 @@ export default function LoginPage() {
       router.replace("/dashboard");
     }
   }, [authLoading, isAuthenticated, user, router]);
-
-  // Load remembered email on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedEmail = localStorage.getItem("careersync_remember_email");
-      const savedRemember = localStorage.getItem("careersync_remember_me");
-      if (savedEmail) {
-        setEmail(savedEmail);
-      }
-      if (savedRemember !== null) {
-        setRememberMe(savedRemember === "true");
-      }
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,12 +124,7 @@ export default function LoginPage() {
       {/* Top Header Logo */}
       <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-8">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
-            <CareerSyncLogo size={18} className="text-white" />
-          </div>
-          <span className="font-display font-bold text-lg text-slate-100 tracking-tight">
-            Career<span className="text-[#059669]">Sync</span>
-          </span>
+          <CareerSyncBrand size={32} showTagline={true} isLight={!isDark} />
         </Link>
         <div className="flex items-center gap-3">
           <button

@@ -82,7 +82,7 @@ export default function JobsPage() {
 
   // Dynamic Filtering & Sorting
   const filteredJobs = useMemo(() => {
-    let result = jobs.filter((job) => {
+    const result = jobs.filter((job) => {
       const query = searchTerm.toLowerCase().trim();
       const matchSearch =
         !query ||

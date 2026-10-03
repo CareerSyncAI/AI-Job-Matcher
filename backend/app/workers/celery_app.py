@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.core.config import get_settings
+
 try:
     from celery import Celery
     settings = get_settings()

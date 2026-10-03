@@ -2,15 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import api from "@/lib/api";
-import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import {
   IconBriefcase,
   IconBuilding,
   IconMapPin,
-  IconCheckCircle,
-  IconAlertTriangle,
-  IconSearch,
   IconX,
 } from "@/components/Icons";
 
@@ -30,13 +26,45 @@ interface JobPosting {
   created_at: string;
 }
 
+const DEMO_RECRUITER_JOBS: JobPosting[] = [
+  {
+    id: "job-demo-1",
+    title: "Senior Full-Stack Engineer",
+    department: "Platform Engineering",
+    location: "San Francisco, CA / Remote",
+    employment_type: "Full-time",
+    work_arrangement: "Remote",
+    experience_min_years: 4,
+    education_required: "Bachelor's",
+    description: "Design and scale cloud services using FastAPI, Next.js, and distributed vector matching systems.",
+    status: "OPEN",
+    skills: [{ name: "Python", required: true }, { name: "React", required: true }, { name: "FastAPI", required: true }],
+    applicant_count: 14,
+    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+  },
+  {
+    id: "job-demo-2",
+    title: "Staff Machine Learning Engineer",
+    department: "AI Research",
+    location: "New York, NY / Hybrid",
+    employment_type: "Full-time",
+    work_arrangement: "Hybrid",
+    experience_min_years: 6,
+    education_required: "Master's",
+    description: "Lead development of semantic embedding pipelines, fine-tuned transformer models, and real-time inference.",
+    status: "OPEN",
+    skills: [{ name: "PyTorch", required: true }, { name: "Python", required: true }, { name: "Docker", required: true }],
+    applicant_count: 22,
+    created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+  },
+];
+
 export default function RecruiterJobsPage() {
-  const { user } = useAuth();
   const { isDark } = useTheme();
 
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,54 +83,26 @@ export default function RecruiterJobsPage() {
   const [skillsInput, setSkillsInput] = useState("");
   const [skillsList, setSkillsList] = useState<string[]>(["Python", "TypeScript"]);
 
-  const fetchJobs = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/jobs");
-      setJobs(res.data);
-    } catch (err: unknown) {
-      console.warn("Could not fetch recruiter jobs:", err);
-      // Demo jobs for immediate UX preview if database is fresh
-      setJobs([
-        {
-          id: "job-demo-1",
-          title: "Senior Full-Stack Engineer",
-          department: "Platform Engineering",
-          location: "San Francisco, CA / Remote",
-          employment_type: "Full-time",
-          work_arrangement: "Remote",
-          experience_min_years: 4,
-          education_required: "Bachelor's",
-          description: "Design and scale cloud services using FastAPI, Next.js, and distributed vector matching systems.",
-          status: "OPEN",
-          skills: [{ name: "Python", required: true }, { name: "React", required: true }, { name: "FastAPI", required: true }],
-          applicant_count: 14,
-          created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-        },
-        {
-          id: "job-demo-2",
-          title: "Staff Machine Learning Engineer",
-          department: "AI Research",
-          location: "New York, NY / Hybrid",
-          employment_type: "Full-time",
-          work_arrangement: "Hybrid",
-          experience_min_years: 6,
-          education_required: "Master's",
-          description: "Lead development of semantic embedding pipelines, fine-tuned transformer models, and real-time inference.",
-          status: "OPEN",
-          skills: [{ name: "PyTorch", required: true }, { name: "Python", required: true }, { name: "Docker", required: true }],
-          applicant_count: 22,
-          created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchJobs();
-  }, []);
+    let isMounted = true;
+    const loadJobs = async () => {
+      try {
+        const res = await api.get("/jobs");
+        if (isMounted) setJobs(res.data);
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        console.warn("Could not fetch recruiter jobs:", err);
+        setJobs(DEMO_RECRUITER_JOBS);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadJobs();
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshKey]);
 
   const handleAddSkill = (e: React.KeyboardEvent | React.MouseEvent) => {
     if ("key" in e && e.key !== "Enter") return;
@@ -141,7 +141,7 @@ export default function RecruiterJobsPage() {
       setDepartment("");
       setLocation("");
       setDescription("");
-      await fetchJobs();
+      setRefreshKey((prev) => prev + 1);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setFormError(err.message);
@@ -153,13 +153,13 @@ export default function RecruiterJobsPage() {
     }
   };
 
-  const handleStatusChange = async (jobId: string, newStatus: string) => {
+  const handleStatusChange = async (jobId: string, newStatus: JobPosting["status"]) => {
     try {
       await api.patch(`/jobs/${jobId}`, { status: newStatus });
-      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus as any } : j)));
+      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
     } catch {
       // optimistic update
-      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus as any } : j)));
+      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
     }
   };
 
@@ -240,7 +240,15 @@ export default function RecruiterJobsPage() {
 
       {/* Jobs List */}
       <div className="space-y-4">
-        {jobs.length === 0 ? (
+        {loading && jobs.length === 0 ? (
+          <div
+            className={`p-12 text-center rounded-2xl border ${
+              isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-500"
+            } animate-pulse`}
+          >
+            Loading job requisitions...
+          </div>
+        ) : jobs.length === 0 ? (
           <div
             className={`p-12 text-center rounded-2xl border ${
               isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
@@ -274,7 +282,7 @@ export default function RecruiterJobsPage() {
                     <h3 className="font-semibold text-lg">{job.title}</h3>
                     <select
                       value={job.status}
-                      onChange={(e) => handleStatusChange(job.id, e.target.value)}
+                      onChange={(e) => handleStatusChange(job.id, e.target.value as JobPosting["status"])}
                       className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer ${
                         job.status === "OPEN"
                           ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
@@ -414,7 +422,7 @@ export default function RecruiterJobsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium">Work Arrangement</label>
                   <select
@@ -456,6 +464,23 @@ export default function RecruiterJobsPage() {
                       isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                     }`}
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium">Education Level</label>
+                  <select
+                    value={educationRequired}
+                    onChange={(e) => setEducationRequired(e.target.value)}
+                    className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:border-emerald-500 ${
+                      isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                    }`}
+                  >
+                    <option value="Bachelor's">Bachelor&apos;s</option>
+                    <option value="Master's">Master&apos;s</option>
+                    <option value="PhD">Doctorate / PhD</option>
+                    <option value="Associate / Diploma">Associate / Diploma</option>
+                    <option value="Any">Any Level</option>
+                  </select>
                 </div>
               </div>
 

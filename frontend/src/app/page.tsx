@@ -3,14 +3,13 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  CareerSyncLogo,
+  CareerSyncBrand,
   IconNetwork,
   IconDocument,
   IconTarget,
 } from "@/components/Icons";
 
 export default function LandingPage() {
-  const [activeTab, setActiveTab] = useState<"candidate" | "recruiter">("candidate");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -21,17 +20,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform duration-300">
-              <CareerSyncLogo size={20} className="text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-lg text-slate-900 tracking-tight leading-none">
-                Career<span className="text-[#059669]">Sync</span>
-              </span>
-              <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase mt-0.5">
-                Free Career Intelligence
-              </span>
-            </div>
+            <CareerSyncBrand size={32} showTagline={true} isLight={true} />
           </Link>
 
           {/* Nav Links */}
@@ -374,14 +363,9 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer className="py-12 bg-white border-t border-slate-200 text-xs text-slate-500">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-[#059669] text-white flex items-center justify-center shadow-sm">
-              <CareerSyncLogo size={14} className="text-white" />
-            </div>
-            <span className="font-display font-bold text-slate-900 text-sm">
-              CareerSync
-            </span>
-            <span>© {new Date().getFullYear()} CareerSync Platform</span>
+          <div className="flex items-center gap-3">
+            <CareerSyncBrand size={24} showTagline={false} isLight={true} />
+            <span className="text-slate-400">© {new Date().getFullYear()} CareerSync Platform</span>
           </div>
           <p className="max-w-md text-[11px] leading-relaxed">
             Enterprise Semantic Matching &amp; ATS Resume Intelligence Environment.

@@ -1,15 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import api from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import React, { useState } from "react";
 import { useTheme } from "@/lib/theme";
 import {
   IconLayers,
-  IconBriefcase,
-  IconCheckCircle,
   IconX,
-  IconSearch,
 } from "@/components/Icons";
 
 interface PipelineCandidate {

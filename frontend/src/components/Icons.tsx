@@ -5,34 +5,138 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
 }
 
-// Enterprise CareerSync Geometric Brand Logo Mark (Synchronized Career Node)
-export const CareerSyncLogo: React.FC<IconProps> = ({ size = 24, className = "", ...props }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    {...props}
-  >
-    <path
-      d="M4.5 12C4.5 7.85786 7.85786 4.5 12 4.5C14.7614 4.5 17.1585 5.99264 18.4239 8.2"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
-    <path
-      d="M19.5 12C19.5 16.1421 16.1421 19.5 12 19.5C9.23858 19.5 6.84149 18.0074 5.57611 15.8"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
-    <circle cx="12" cy="12" r="2.75" fill="currentColor" />
-    <path d="M19.5 5.5V8.5H16.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M4.5 18.5V15.5H7.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+// CareerSync Modern Brand Logo Mark (Glowing 3D Crescent 'C' + Supersonic Paper Plane + Radiant Sparkle Star)
+export const CareerSyncLogo: React.FC<IconProps> = ({ size = 32, className = "", ...props }) => {
+  const id = React.useId();
+  const gradC = `cs-grad-c-${id}`;
+  const gradPlaneL = `cs-pl-l-${id}`;
+  const gradPlaneR = `cs-pl-r-${id}`;
+  const glow = `cs-glow-${id}`;
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      {...props}
+    >
+      <defs>
+        {/* Luminous Neon Cyan / Teal 3D Gradient for Crescent 'C' */}
+        <linearGradient id={gradC} x1="10" y1="52" x2="40" y2="12" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#00b4d8" />
+          <stop offset="30%" stopColor="#00c49f" />
+          <stop offset="70%" stopColor="#05e6b0" />
+          <stop offset="100%" stopColor="#00f5c4" />
+        </linearGradient>
+
+        {/* Paper Plane - Illuminated Left Wing */}
+        <linearGradient id={gradPlaneL} x1="18" y1="34" x2="44" y2="18" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#6ee7b7" />
+          <stop offset="60%" stopColor="#a7f3d0" />
+          <stop offset="100%" stopColor="#ffffff" />
+        </linearGradient>
+
+        {/* Paper Plane - Shaded Right Wing */}
+        <linearGradient id={gradPlaneR} x1="26" y1="38" x2="44" y2="18" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#047857" />
+          <stop offset="50%" stopColor="#0d9488" />
+          <stop offset="100%" stopColor="#10b981" />
+        </linearGradient>
+
+        {/* Neon Bloom Glow Filter */}
+        <filter id={glow} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="0" stdDeviation="2.2" floodColor="#00f5c4" floodOpacity="0.6" />
+        </filter>
+      </defs>
+
+      {/* Dimensional Ribbon Crescent 'C' */}
+      <path
+        d="M36 12.5C21.5 12.5 10 22.5 10 34C10 45 18.5 53 31 53C39.5 53 45.5 48.5 47.5 42C48 40.5 46.5 39.5 45.2 40.2C41.2 42.2 36.5 43 31.5 41.5C21 38.5 16.5 28.5 22 18.5C24.5 14 29.5 13 34.5 13C36.2 13 37.2 11.2 36 12.5Z"
+        fill={`url(#${gradC})`}
+        filter={`url(#${glow})`}
+      />
+
+      {/* Volumetric Under-Curve Shading */}
+      <path
+        d="M11 34C11 44.5 19 51.5 30.5 51.5C38 51.5 43.5 47.5 46 42C41 45 35 45 29.5 43C19 39.5 15.5 29.5 20.5 19C14.5 23 11 28 11 34Z"
+        fill="#022c22"
+        opacity="0.35"
+      />
+
+      {/* Ascending Supersonic Paper Plane / Arrow pointing Up-Right */}
+      <g filter={`url(#${glow})`}>
+        {/* Left Wing (Highlight) */}
+        <path
+          d="M44 18L18 32.5L25.5 33.5L44 18Z"
+          fill={`url(#${gradPlaneL})`}
+        />
+        {/* Right Wing (Shading) */}
+        <path
+          d="M44 18L25.5 33.5L29.5 41L44 18Z"
+          fill={`url(#${gradPlaneR})`}
+        />
+        {/* Center Fold Line */}
+        <path
+          d="M44 18L25.5 33.5"
+          stroke="#ffffff"
+          strokeWidth="0.75"
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Radiant 4-Pointed Sparkle Star at Top Right (✦) */}
+      <g filter={`url(#${glow})`}>
+        <path
+          d="M48 2Q48 8 54 8Q48 8 48 14Q48 8 42 8Q48 8 48 2Z"
+          fill="#ffffff"
+        />
+        <circle cx="48" cy="8" r="1.5" fill="#00f5c4" />
+      </g>
+    </svg>
+  );
+};
+
+// Full Brand Unit (Mark + Typographic Wordmark + Tagline)
+export interface CareerSyncBrandProps {
+  size?: number;
+  showTagline?: boolean;
+  className?: string;
+  isLight?: boolean;
+}
+
+export const CareerSyncBrand: React.FC<CareerSyncBrandProps> = ({
+  size = 32,
+  showTagline = true,
+  className = "",
+  isLight = false,
+}) => {
+  return (
+    <div className={`flex items-center gap-3 ${className}`}>
+      <CareerSyncLogo size={size} className="shrink-0 drop-shadow-[0_0_10px_rgba(0,245,196,0.45)]" />
+      <div className="flex flex-col">
+        <div className="flex items-center leading-none">
+          <span
+            className={`font-black tracking-tight font-display text-lg sm:text-xl ${
+              isLight ? "text-slate-900" : "text-white"
+            }`}
+          >
+            Career<span className="text-[#00f5c4]">Sync</span>
+          </span>
+        </div>
+        {showTagline && (
+          <span className={`text-[8px] sm:text-[9px] font-bold tracking-[0.24em] uppercase mt-1 whitespace-nowrap ${
+            isLight ? "text-slate-500" : "text-cyan-400/90"
+          }`}>
+            AI-POWERED CAREER MATCHING
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const IconDashboard: React.FC<IconProps> = ({ size = 20, className = "", ...props }) => (
   <svg

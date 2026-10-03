@@ -87,17 +87,15 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // Remember me toggle
-  const [isRemembered, setIsRemembered] = useState(false);
+  const [isRemembered, setIsRemembered] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("careersync_remember_me") === "true";
+    }
+    return false;
+  });
 
   // Sign out confirmation dialog
   const [confirmSignOutOpen, setConfirmSignOutOpen] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const rem = localStorage.getItem("careersync_remember_me") === "true";
-      setIsRemembered(rem);
-    }
-  }, []);
 
   const handleToggleRemember = (val: boolean) => {
     setIsRemembered(val);
@@ -115,7 +113,6 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        setLoading(true);
         const res = await api.get("/auth/profile");
         const data: UserProfileData = res.data;
         setProfile(data);

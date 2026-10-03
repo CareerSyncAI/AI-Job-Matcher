@@ -6,10 +6,7 @@ import {
   IconUsers,
   IconSearch,
   IconMapPin,
-  IconCheckCircle,
-  IconBriefcase,
   IconX,
-  IconUser,
 } from "@/components/Icons";
 
 interface CandidateProfileSummary {
