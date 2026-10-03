@@ -15,12 +15,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-lg shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform duration-300">
-              T
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-sm shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform duration-300">
+              CS
             </div>
             <div className="flex flex-col">
               <span className="font-display font-bold text-lg text-slate-900 tracking-tight leading-none">
-                Talent<span className="text-[#059669]">IQ</span> AI
+                Career<span className="text-[#059669]">Sync</span> AI
               </span>
               <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase mt-0.5">
                 100% Free Career Intelligence
@@ -142,7 +142,7 @@ export default function LandingPage() {
 
             {/* Subtitle */}
             <p className="text-base sm:text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto mb-10">
-              Upload your CV once. <strong>TalentIQ AI</strong> parses your skill graph, matches high-affinity tech jobs, and optimizes your resume for ATS screening — completely free without hidden fees.
+              Upload your CV once. <strong>CareerSync AI</strong> parses your skill graph, matches high-affinity tech jobs, and optimizes your resume for ATS screening — completely free without hidden fees.
             </p>
 
             {/* Hero Actions */}
@@ -306,7 +306,7 @@ export default function LandingPage() {
                 No Paid Subscriptions. No Gated Features.
               </h2>
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                Whether you are a job candidate tailoring resumes or a recruiter screening applicants, TalentIQ AI is completely free to use.
+                Whether you are a job candidate tailoring resumes or a recruiter screening applicants, CareerSync AI is completely free to use.
               </p>
               <div className="pt-2">
                 <Link
@@ -366,11 +366,11 @@ export default function LandingPage() {
       <footer className="py-12 bg-white border-t border-slate-200 text-xs text-slate-500">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-[#059669] text-white flex items-center justify-center font-display font-bold text-xs">
-              T
+            <div className="w-6 h-6 rounded bg-[#059669] text-white flex items-center justify-center font-display font-bold text-[10px]">
+              CS
             </div>
             <span className="font-display font-bold text-slate-900 text-sm">
-              TalentIQ AI
+              CareerSync AI
             </span>
             <span>© {new Date().getFullYear()} CareerSync Intelligence</span>
           </div>
@@ -430,7 +430,7 @@ const stepsList = [
 
 const faqList = [
   {
-    q: "Is TalentIQ AI really 100% free?",
+    q: "Is CareerSync AI really 100% free?",
     a: "Yes! Both job candidates and recruiters can use all features—including resume parsing, ATS scoring, and vector job matching—completely free.",
   },
   {

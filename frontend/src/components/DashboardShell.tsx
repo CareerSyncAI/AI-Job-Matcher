@@ -42,11 +42,11 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
       >
         {/* Brand */}
         <div className="h-16 px-5 flex items-center gap-3 border-b border-slate-800 shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] border border-emerald-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-emerald-600/20">
-            T
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] border border-emerald-500/30 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-emerald-600/20">
+            CS
           </div>
           <span className="font-display font-bold text-base tracking-tight text-slate-100">
-            Talent<span className="text-[#059669]">IQ</span> AI
+            Career<span className="text-[#059669]">Sync</span> AI
           </span>
           <span className="ml-auto px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/20">
             {user?.role === "recruiter" ? "REC" : "FREE"}

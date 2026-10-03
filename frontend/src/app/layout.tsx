@@ -23,9 +23,9 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TalentAIQ Career — AI Job Application Agent for India",
+  title: "CareerSync AI — Next-Gen Semantic Job Matching & AI Resume Studio",
   description:
-    "TalentAIQ Career finds relevant roles, tailors your resume, and applies on your behalf. Built for job seekers in India.",
+    "CareerSync AI matches candidate skill vectors with open opportunities, optimizes ATS resumes, and streamlines recruiter pipelines.",
 };
 
 export default function RootLayout({

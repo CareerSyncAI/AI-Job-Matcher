@@ -67,11 +67,11 @@ function RegisterForm() {
       {/* Header Logo */}
       <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-6">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-base shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
-            T
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-xs shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+            CS
           </div>
           <span className="font-display font-bold text-lg text-slate-100 tracking-tight">
-            Talent<span className="text-[#059669]">IQ</span> AI
+            Career<span className="text-[#059669]">Sync</span> AI
           </span>
         </Link>
         <Link href="/login" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
@@ -191,7 +191,7 @@ function RegisterForm() {
 
       {/* Footer */}
       <div className="relative z-10 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} TalentIQ AI • 100% Free Platform
+        © {new Date().getFullYear()} CareerSync AI • 100% Free Platform
       </div>
     </div>
   );

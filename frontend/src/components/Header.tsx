@@ -28,10 +28,10 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="material-symbols-outlined text-xl">neurology</span>
             </div>
             <span className="font-headline font-bold text-xl text-[#dae2fd] tracking-tight">
-              TalentIQ AI
+              CareerSync AI
             </span>
-            <span className="px-2 py-0.5 rounded bg-[#8083ff]/20 text-[#c0c1ff] text-[11px] uppercase tracking-wider font-semibold">
-              PRO
+            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] uppercase tracking-wider font-semibold border border-emerald-500/30">
+              FREE
             </span>
           </div>
 
