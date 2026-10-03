@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardShell } from "@/components/DashboardShell";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import api from "@/lib/api";
@@ -239,89 +238,92 @@ export default function ProfilePage() {
     { id: "session", label: "Session & Account", icon: IconKey },
   ] as const;
 
+  const rawId = String(user?.id || profile?.id || "1");
+  const shortId = rawId.length > 10 ? `${rawId.slice(0, 8)}...` : rawId;
+
   return (
-    <DashboardShell>
-      <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
-        {/* Profile Hero Header */}
-        <div
-          className={`p-6 sm:p-8 rounded-2xl border transition-all relative overflow-hidden ${
-            isDark
-              ? "bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border-slate-800 text-slate-100 shadow-xl"
-              : "bg-white border-slate-200 text-slate-900 shadow-sm"
-          }`}
-        >
-          <div className="absolute right-0 top-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
+      {/* Profile Hero Header */}
+      <div
+        className={`p-6 sm:p-8 rounded-2xl border transition-all relative overflow-hidden ${
+          isDark
+            ? "bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border-slate-800 text-slate-100 shadow-xl"
+            : "bg-white border-slate-200 text-slate-900 shadow-sm"
+        }`}
+      >
+        <div className="absolute right-0 top-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-bold text-2xl shadow-lg shadow-emerald-600/30 shrink-0">
-                {(fullName ? fullName.charAt(0) : user?.email?.charAt(0) || "U").toUpperCase()}
-              </div>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="font-display text-2xl font-bold tracking-tight">
-                    {fullName || user?.email?.split("@")[0] || "My Profile"}
-                  </h1>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-mono font-bold border border-emerald-500/20 uppercase">
-                    {user?.role || "Candidate"}
-                  </span>
-                </div>
-                <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                  {headline || (user?.role === "recruiter" ? "Hiring Manager" : "Professional Job Seeker")}{" "}
-                  {location ? `• ${location}` : ""}
-                </p>
-                <div className="flex items-center gap-2 pt-1 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                    Live Account • Authenticated Session
-                  </span>
-                </div>
-              </div>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-bold text-2xl shadow-lg shadow-emerald-600/30 shrink-0">
+              {(fullName ? fullName.charAt(0) : user?.email?.charAt(0) || "U").toUpperCase()}
             </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div
-                className={`px-3.5 py-2 rounded-xl border text-xs font-mono ${
-                  isDark ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-slate-100 border-slate-200 text-slate-700"
-                }`}
-              >
-                <span className={isDark ? "text-slate-500" : "text-slate-400"}>ID:</span> #{user?.id || profile?.id || 1}
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="font-display text-2xl font-bold tracking-tight">
+                  {fullName || user?.email?.split("@")[0] || "My Profile"}
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-mono font-bold border border-emerald-500/20 uppercase">
+                  {user?.role || "Candidate"}
+                </span>
               </div>
-              <div className="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-500">
-                100% Free Platform Tier
+              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                {headline || (user?.role === "recruiter" ? "Hiring Manager" : "Professional Job Seeker")}{" "}
+                {location ? `• ${location}` : ""}
+              </p>
+              <div className="flex items-center gap-2 pt-1 text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                  Live Account • Authenticated Session
+                </span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Section Navigation Tabs */}
-        <div
-          className={`flex gap-1.5 overflow-x-auto p-1.5 rounded-2xl border ${
-            isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
-          }`}
-        >
-          {sectionTabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as ProfileSectionTab)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
-                  isActive
-                    ? "bg-[#059669] text-white shadow-md shadow-emerald-600/20"
-                    : isDark
-                    ? "text-slate-400 hover:text-slate-100 hover:bg-slate-800/60"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <Icon size={16} className={isActive ? "text-white" : isDark ? "text-slate-400" : "text-slate-500"} />
-                {tab.label}
-              </button>
-            );
-          })}
+          <div className="flex flex-wrap items-center gap-3">
+            <div
+              title={`Full Account ID: ${rawId}`}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-mono select-all ${
+                isDark ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-slate-100 border-slate-200 text-slate-700"
+              }`}
+            >
+              <span className={isDark ? "text-slate-500" : "text-slate-400"}>ID:</span> #{shortId}
+            </div>
+            <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-500">
+              100% Free Platform Tier
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Section Navigation Tabs - Responsive Grid with Zero Scrollbar */}
+      <div
+        className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-1.5 rounded-2xl border ${
+          isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
+        }`}
+      >
+        {sectionTabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as ProfileSectionTab)}
+              className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                isActive
+                  ? "bg-[#059669] text-white shadow-md shadow-emerald-600/20"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-100 hover:bg-slate-800/60"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+            >
+              <Icon size={16} className={isActive ? "text-white" : isDark ? "text-slate-400" : "text-slate-500"} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
         {loading ? (
           <div className="p-16 text-center text-slate-500 text-sm">
@@ -987,6 +989,5 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
-    </DashboardShell>
   );
 }

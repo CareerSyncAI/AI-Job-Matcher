@@ -23,7 +23,6 @@ const navItemsList = [
   { label: "Overview", icon: IconDashboard, href: "/dashboard" },
   { label: "Job Matches", icon: IconBriefcase, href: "/dashboard/jobs" },
   { label: "Resume Studio", icon: IconDocument, href: "/dashboard/resume" },
-  { label: "Profile & Settings", icon: IconUser, href: "/dashboard/profile" },
 ];
 
 export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
@@ -125,7 +124,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
 
         {/* User Mini-Card linking cleanly to Profile */}
         <div
-          className={`border-t p-3 ${
+          className={`border-t p-3 pb-12 sm:pb-6 ${
             isDark ? "border-slate-800" : "border-slate-200"
           }`}
         >
