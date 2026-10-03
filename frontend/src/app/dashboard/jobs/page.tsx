@@ -2,6 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import api from "@/lib/api";
+import {
+  IconSearch,
+  IconTarget,
+  IconBuilding,
+  IconBriefcase,
+  IconMapPin,
+  IconCheckCircle,
+} from "@/components/Icons";
 
 interface JobSkill {
   id: string;
@@ -123,21 +131,21 @@ export default function JobsPage() {
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
-                CareerSync AI • Live Vector Radar
+                CareerSync • Role Directory
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-100 tracking-tight">
-              Semantic Job Matcher
+              Opportunities &amp; Job Matches
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl">
-              Match candidate skill graphs with real-time requirements using high-dimensional cosine similarity.
+              Real-time engineering positions matched against your candidate skill matrix and experience level.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             <div className="px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-semibold shadow-inner flex items-center gap-2">
-              <span>🎯</span>
-              <span>{filteredJobs.length} Live Matches</span>
+              <IconTarget size={15} />
+              <span>{filteredJobs.length} Verified Roles</span>
             </div>
           </div>
         </div>
@@ -147,10 +155,10 @@ export default function JobsPage() {
       {statusMessage && (
         <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs font-medium flex items-center justify-between shadow-xl shadow-emerald-950/50 animate-fadeIn">
           <div className="flex items-center gap-2.5">
-            <span className="text-base">🎉</span>
+            <IconCheckCircle size={18} className="text-emerald-300 shrink-0" />
             <p className="font-semibold">{statusMessage}</p>
           </div>
-          <button onClick={() => setStatusMessage(null)} className="text-emerald-300 hover:text-white text-sm font-bold">✕</button>
+          <button onClick={() => setStatusMessage(null)} className="text-emerald-300 hover:text-white text-sm font-bold cursor-pointer">✕</button>
         </div>
       )}
 
@@ -261,7 +269,9 @@ export default function JobsPage() {
         ) : filteredJobs.length === 0 ? (
           /* Empty Search State */
           <div className="p-12 text-center text-slate-400 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <div className="text-3xl">🔍</div>
+            <div className="w-12 h-12 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400">
+              <IconSearch size={22} />
+            </div>
             <p className="text-base font-bold text-slate-200">No matching jobs found</p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               We couldn&apos;t find any roles matching &quot;{searchTerm}&quot;. Try clearing filters or searching for skills like React, Python, or Docker.
@@ -272,7 +282,7 @@ export default function JobsPage() {
                 setSelectedCategory("all");
                 setSelectedArrangement("all");
               }}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold rounded-xl border border-slate-700 transition"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold rounded-xl border border-slate-700 transition cursor-pointer"
             >
               Reset All Filters
             </button>
@@ -298,7 +308,7 @@ export default function JobsPage() {
                       {job.matchScore && (
                         <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-full shadow-sm">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>{job.matchScore}% Match Score</span>
+                          <span>{job.matchScore}% Match Affinity</span>
                         </div>
                       )}
                       <span className="px-2.5 py-0.5 text-[11px] font-mono font-medium text-teal-300 bg-teal-500/10 border border-teal-500/20 rounded-md">
@@ -306,14 +316,25 @@ export default function JobsPage() {
                       </span>
                     </div>
 
-                    {/* Metadata line */}
+                    {/* Metadata line with SVG icons */}
                     <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                      <span className="font-medium text-slate-300 flex items-center gap-1">
-                        🏢 {job.department || "Engineering"}
+                      <span className="font-medium text-slate-300 flex items-center gap-1.5">
+                        <IconBuilding size={14} className="text-slate-400" />
+                        {job.department || "Engineering"}
                       </span>
-                      <span>📍 {job.location || "Remote"}</span>
-                      {job.salary && <span className="text-emerald-400/90 font-medium">💰 {job.salary}</span>}
-                      <span>💼 {job.employment_type || "Full-time"}</span>
+                      <span className="flex items-center gap-1.5">
+                        <IconMapPin size={14} className="text-slate-400" />
+                        {job.location || "Remote"}
+                      </span>
+                      {job.salary && (
+                        <span className="text-emerald-400/90 font-medium font-mono">
+                          {job.salary}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1.5">
+                        <IconBriefcase size={14} className="text-slate-400" />
+                        {job.employment_type || "Full-time"}
+                      </span>
                     </div>
 
                     <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
@@ -347,13 +368,13 @@ export default function JobsPage() {
                           : "bg-[#059669] hover:bg-[#047857] text-white hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5"
                       }`}
                     >
-                      {isApplied ? "✓ Application Sent" : "Quick Apply Free"}
+                      {isApplied ? "✓ Application Sent" : "Quick Apply"}
                     </button>
                     <button
                       onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                      className="px-4 py-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 text-xs font-semibold rounded-xl transition"
+                      className="px-4 py-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 text-xs font-semibold rounded-xl transition cursor-pointer"
                     >
-                      {isExpanded ? "Hide Details ▲" : "Match Insights ▼"}
+                      {isExpanded ? "Hide Details" : "Match Insights"}
                     </button>
                   </div>
                 </div>
@@ -363,7 +384,7 @@ export default function JobsPage() {
                   <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs animate-fadeIn">
                     <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
                       <span className="font-mono text-[10px] text-emerald-400 font-bold uppercase block mb-1">
-                        AI Semantic Affinity Rationale
+                        Semantic Profile Alignment
                       </span>
                       <p className="text-slate-300 text-xs leading-relaxed">
                         Vector cosine alignment indicates a <strong>{job.matchScore}% overlap</strong> between your recent project scope and this role&apos;s tech stack.

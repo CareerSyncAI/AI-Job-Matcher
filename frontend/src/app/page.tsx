@@ -2,6 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import {
+  CareerSyncLogo,
+  IconNetwork,
+  IconDocument,
+  IconTarget,
+} from "@/components/Icons";
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<"candidate" | "recruiter">("candidate");
@@ -15,15 +21,15 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-sm shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform duration-300">
-              CS
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform duration-300">
+              <CareerSyncLogo size={20} className="text-white" />
             </div>
             <div className="flex flex-col">
               <span className="font-display font-bold text-lg text-slate-900 tracking-tight leading-none">
-                Career<span className="text-[#059669]">Sync</span> AI
+                Career<span className="text-[#059669]">Sync</span>
               </span>
               <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase mt-0.5">
-                100% Free Career Intelligence
+                Free Career Intelligence
               </span>
             </div>
           </Link>
@@ -243,22 +249,25 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuresList.map((feat, idx) => (
-              <div
-                key={idx}
-                className="p-8 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500/40 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#059669] border border-emerald-500/20 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                  {feat.icon}
+            {featuresList.map((feat, idx) => {
+              const IconComp = feat.icon;
+              return (
+                <div
+                  key={idx}
+                  className="p-8 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500/40 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#059669] border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <IconComp size={24} className="text-[#059669]" />
+                  </div>
+                  <h3 className="font-display font-bold text-slate-900 text-lg mb-2">
+                    {feat.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    {feat.description}
+                  </p>
                 </div>
-                <h3 className="font-display font-bold text-slate-900 text-lg mb-2">
-                  {feat.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {feat.description}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -366,16 +375,16 @@ export default function LandingPage() {
       <footer className="py-12 bg-white border-t border-slate-200 text-xs text-slate-500">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-[#059669] text-white flex items-center justify-center font-display font-bold text-[10px]">
-              CS
+            <div className="w-6 h-6 rounded bg-[#059669] text-white flex items-center justify-center shadow-sm">
+              <CareerSyncLogo size={14} className="text-white" />
             </div>
             <span className="font-display font-bold text-slate-900 text-sm">
-              CareerSync AI
+              CareerSync
             </span>
-            <span>© {new Date().getFullYear()} CareerSync Intelligence</span>
+            <span>© {new Date().getFullYear()} CareerSync Platform</span>
           </div>
           <p className="max-w-md text-[11px] leading-relaxed">
-            Free AI Vector Matching &amp; ATS Resume Intelligence Environment.
+            Enterprise Semantic Matching &amp; ATS Resume Intelligence Environment.
           </p>
           <div className="flex items-center gap-4">
             <a href="#privacy" className="hover:text-slate-900 transition">Privacy</a>
@@ -389,17 +398,17 @@ export default function LandingPage() {
 
 const featuresList = [
   {
-    icon: "🧠",
-    title: "Vector Embeddings",
-    description: "Semantic matching model analyzes deep candidate experience vectors rather than rigid string keywords.",
+    icon: IconNetwork,
+    title: "Semantic Vector Embeddings",
+    description: "Multi-dimensional matching model analyzes verified candidate experience profiles rather than brittle keyword queries.",
   },
   {
-    icon: "📄",
+    icon: IconDocument,
     title: "ATS Resume Studio",
     description: "Extract skill entities from PDF/DOCX resumes and get keyword density and formatting scores instantly.",
   },
   {
-    icon: "🎯",
+    icon: IconTarget,
     title: "Recruiter Radar",
     description: "Recruiters evaluate applicants across customizable scoring weights for skills, experience, and education.",
   },

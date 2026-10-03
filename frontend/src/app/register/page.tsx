@@ -4,6 +4,12 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, UserRole } from "@/lib/auth";
+import {
+  CareerSyncLogo,
+  IconUser,
+  IconBuilding,
+  IconAlertTriangle,
+} from "@/components/Icons";
 
 function RegisterForm() {
   const router = useRouter();
@@ -67,11 +73,11 @@ function RegisterForm() {
       {/* Header Logo */}
       <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-6">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-xs shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
-            CS
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+            <CareerSyncLogo size={18} className="text-white" />
           </div>
           <span className="font-display font-bold text-lg text-slate-100 tracking-tight">
-            Career<span className="text-[#059669]">Sync</span> AI
+            Career<span className="text-[#059669]">Sync</span>
           </span>
         </Link>
         <Link href="/login" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
@@ -84,13 +90,13 @@ function RegisterForm() {
         <div className="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-6">
           <div className="text-center space-y-1">
             <h1 className="font-display text-2xl font-bold text-slate-100">Create Free Account</h1>
-            <p className="text-slate-400 text-xs">100% free access for Candidates &amp; Recruiters</p>
+            <p className="text-slate-400 text-xs">Full platform access for Candidates &amp; Recruiters</p>
           </div>
 
           {/* Error Alert */}
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-2">
-              <span>⚠️</span>
+              <IconAlertTriangle size={16} className="text-rose-400 shrink-0" />
               <p>{error}</p>
             </div>
           )}
@@ -102,24 +108,26 @@ function RegisterForm() {
               <button
                 type="button"
                 onClick={() => setRole("candidate")}
-                className={`py-2 rounded-lg text-xs font-semibold transition ${
+                className={`py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer ${
                   role === "candidate"
                     ? "bg-[#059669] text-white shadow-sm"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                👤 Job Candidate
+                <IconUser size={15} />
+                Job Candidate
               </button>
               <button
                 type="button"
                 onClick={() => setRole("recruiter")}
-                className={`py-2 rounded-lg text-xs font-semibold transition ${
+                className={`py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer ${
                   role === "recruiter"
                     ? "bg-[#059669] text-white shadow-sm"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                🏢 Recruiter
+                <IconBuilding size={15} />
+                Recruiter
               </button>
             </div>
           </div>
@@ -191,7 +199,7 @@ function RegisterForm() {
 
       {/* Footer */}
       <div className="relative z-10 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} CareerSync AI • 100% Free Platform
+        © {new Date().getFullYear()} CareerSync • 100% Free Platform
       </div>
     </div>
   );

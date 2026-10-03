@@ -3,6 +3,16 @@
 import React from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import {
+  IconSearch,
+  IconBriefcase,
+  IconDocument,
+  IconTrendUp,
+  IconCheckCircle,
+  IconNetwork,
+  IconUser,
+  IconBuilding,
+} from "@/components/Icons";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -16,15 +26,15 @@ export default function DashboardPage() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <span className="px-3 py-1 text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full inline-block mb-3">
-              {isCandidate ? "Candidate Free Workspace" : "Recruiter Command Center"}
+              {isCandidate ? "Candidate Workspace" : "Recruiter Command Center"}
             </span>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{user?.full_name || user?.email?.split('@')[0] || "User"}</span> 👋
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{user?.full_name || user?.email?.split('@')[0] || "User"}</span>
             </h1>
             <p className="text-slate-400 text-sm mt-1 max-w-xl">
               {isCandidate
-                ? "Your AI agent has scanned 1,420 jobs matching your skillset this week. 12 high-affinity matches are waiting."
-                : "Your AI talent matcher has analyzed 84 incoming applications with average 91% skill alignment."}
+                ? "Your vector profile matched 1,420 open engineering roles this week. 12 high-affinity positions are ready for review."
+                : "Your talent matcher has screened 84 incoming applicants with an average 91% skill alignment."}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -32,10 +42,8 @@ export default function DashboardPage() {
               href="/dashboard/jobs"
               className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-2"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Find AI Matches
+              <IconSearch size={16} />
+              Explore Matches
             </Link>
           </div>
         </div>
@@ -75,14 +83,14 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-100">
-                  {isCandidate ? "Top Free AI Job Recommendations" : "Recent High-Match Candidates"}
+                  {isCandidate ? "Recommended Positions" : "High-Affinity Applicants"}
                 </h2>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  {isCandidate ? "Based on vector profile & skill embeddings" : "Candidates with >85% match confidence"}
+                  {isCandidate ? "Ranked by skill matrix overlap & experience affinity" : "Screened candidates with >85% alignment"}
                 </p>
               </div>
               <Link href="/dashboard/jobs" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
-                View All →
+                View All Directory →
               </Link>
             </div>
 
@@ -94,7 +102,7 @@ export default function DashboardPage() {
                       className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/40 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg font-bold text-emerald-400 shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-bold text-emerald-400 shrink-0">
                           {job.company[0]}
                         </div>
                         <div>
@@ -102,8 +110,8 @@ export default function DashboardPage() {
                             <h3 className="font-semibold text-slate-100 group-hover:text-emerald-300 transition">
                               {job.title}
                             </h3>
-                            <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                              {job.match}% AI Match
+                            <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-mono">
+                              {job.match}% Affinity
                             </span>
                           </div>
                           <p className="text-slate-400 text-xs mt-1">
@@ -118,9 +126,12 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </div>
-                      <button className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold rounded-xl transition shrink-0 self-start sm:self-center">
-                        Quick Apply Free
-                      </button>
+                      <Link
+                        href="/dashboard/jobs"
+                        className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold rounded-xl transition shrink-0 self-start sm:self-center"
+                      >
+                        Apply Position
+                      </Link>
                     </div>
                   ))
                 : mockCandidates.map((cand) => (
@@ -129,7 +140,7 @@ export default function DashboardPage() {
                       className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/40 transition group flex items-center justify-between"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#059669] to-[#0d9488] flex items-center justify-center font-bold text-white text-sm">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#059669] to-[#0d9488] flex items-center justify-center font-bold text-white text-xs">
                           {cand.name.split(" ").map(n => n[0]).join("")}
                         </div>
                         <div>
@@ -137,8 +148,8 @@ export default function DashboardPage() {
                             <h3 className="font-semibold text-slate-100 group-hover:text-emerald-300 transition">
                               {cand.name}
                             </h3>
-                            <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                              {cand.match}% Score
+                            <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-mono">
+                              {cand.match}% Alignment
                             </span>
                           </div>
                           <p className="text-slate-400 text-xs mt-0.5">
@@ -146,7 +157,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <button className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                      <button className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition cursor-pointer">
                         View Profile
                       </button>
                     </div>
@@ -157,45 +168,49 @@ export default function DashboardPage() {
 
         {/* Right Column (1 col) */}
         <div className="space-y-6">
-          {/* AI Insights Widget */}
+          {/* Skill Matrix Insights Widget */}
           <div className="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 backdrop-blur-md space-y-4">
             <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
-              <span>⚡</span>
-              AI Career Copilot Suggestion
+              <IconNetwork size={16} />
+              Skill Matrix Optimization
             </div>
             <p className="text-slate-300 text-xs leading-relaxed">
               {isCandidate
-                ? "Adding 'Docker' and 'Kubernetes' to your resume skills section will boost your AI matching score for Senior Frontend roles by an estimated +18%."
-                : "Job posts with video overview clips receive 3.2x higher qualified application rate in the Tech sector."}
+                ? "Integrating verified proficiencies in 'Docker' and 'Kubernetes' in your profile increases affinity rankings for Senior Infrastructure roles by an estimated +18%."
+                : "Listings specifying exact testing frameworks and CI/CD stacks receive 3.2x higher qualified candidate submissions."}
             </p>
             <Link href="/dashboard/resume" className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold rounded-xl transition text-center block">
-              {isCandidate ? "Optimize Resume Now (Free)" : "Optimize Job Listing"}
+              {isCandidate ? "Review Resume Keywords" : "Update Job Requirements"}
             </Link>
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Tools */}
           <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
-            <h3 className="text-sm font-bold text-slate-200 mb-4">Quick Tools</h3>
+            <h3 className="text-sm font-bold text-slate-200 mb-4">Workspace Tools</h3>
             <div className="space-y-2.5">
               <Link
                 href="/dashboard/resume"
                 className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
               >
                 <div className="flex items-center gap-3">
-                  <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">📄</span>
-                  Free Resume Studio &amp; Parser
+                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                    <IconDocument size={16} />
+                  </div>
+                  Resume Studio &amp; ATS Scanner
                 </div>
-                <span className="text-slate-500">→</span>
+                <span className="text-slate-500 font-bold">→</span>
               </Link>
               <Link
                 href="/dashboard/jobs"
                 className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
               >
                 <div className="flex items-center gap-3">
-                  <span className="p-2 rounded-lg bg-teal-500/10 text-teal-400">🎯</span>
-                  Semantic Job Search
+                  <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
+                    <IconBriefcase size={16} />
+                  </div>
+                  Open Opportunities Directory
                 </div>
-                <span className="text-slate-500">→</span>
+                <span className="text-slate-500 font-bold">→</span>
               </Link>
             </div>
           </div>
@@ -207,42 +222,42 @@ export default function DashboardPage() {
 
 const candidateStats = [
   {
-    label: "AI Match Score",
+    label: "Profile Match Affinity",
     value: "94%",
     change: "+4% this wk",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
       </svg>
     ),
   },
   {
-    label: "Resume ATS Rating",
+    label: "Resume ATS Score",
     value: "88/100",
-    change: "Strong",
+    change: "Verified",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
   {
     label: "Applications Sent",
     value: "14",
-    change: "100% Free",
+    change: "Active",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
       </svg>
     ),
   },
   {
-    label: "Interview Invites",
+    label: "Interview Requests",
     value: "3",
     change: "Active",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     ),
   },
@@ -252,10 +267,10 @@ const recruiterStats = [
   {
     label: "Active Job Listings",
     value: "8",
-    change: "Active",
+    change: "Live",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
     ),
   },
@@ -265,17 +280,17 @@ const recruiterStats = [
     change: "+24 today",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
   },
   {
-    label: "AI Match Rate",
+    label: "Candidate Alignment Rate",
     value: "89%",
     change: "High Quality",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },

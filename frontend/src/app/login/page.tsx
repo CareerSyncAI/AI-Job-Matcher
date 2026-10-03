@@ -4,6 +4,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import {
+  CareerSyncLogo,
+  IconUser,
+  IconBuilding,
+  IconAlertTriangle,
+} from "@/components/Icons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,11 +66,11 @@ export default function LoginPage() {
       {/* Top Header Logo */}
       <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-8">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-xs shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
-            CS
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+            <CareerSyncLogo size={18} className="text-white" />
           </div>
           <span className="font-display font-bold text-lg text-slate-100 tracking-tight">
-            Career<span className="text-[#059669]">Sync</span> AI
+            Career<span className="text-[#059669]">Sync</span>
           </span>
         </Link>
         <Link href="/register" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
@@ -77,13 +83,13 @@ export default function LoginPage() {
         <div className="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-6">
           <div className="text-center space-y-1">
             <h1 className="font-display text-2xl font-bold text-slate-100">Welcome Back</h1>
-            <p className="text-slate-400 text-xs">Sign in to your free CareerSync AI workspace</p>
+            <p className="text-slate-400 text-xs">Sign in to your free CareerSync workspace</p>
           </div>
 
           {/* Error Alert */}
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-2">
-              <span>⚠️</span>
+              <IconAlertTriangle size={16} className="text-rose-400 shrink-0" />
               <p>{error}</p>
             </div>
           )}
@@ -118,7 +124,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 text-xs"
+                  className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 text-xs font-medium"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
@@ -128,7 +134,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting || authLoading}
-              className="w-full py-3.5 bg-gradient-to-r from-[#059669] to-[#0d9488] hover:from-[#047857] hover:to-[#0f766e] text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+              className="w-full py-3.5 bg-gradient-to-r from-[#059669] to-[#0d9488] hover:from-[#047857] hover:to-[#0f766e] text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 disabled:opacity-50 cursor-pointer"
             >
               {submitting ? "Signing in..." : "Sign In to Account"}
             </button>
@@ -137,22 +143,24 @@ export default function LoginPage() {
           {/* Quick Demo Fill Buttons */}
           <div className="pt-4 border-t border-slate-800 text-center space-y-2">
             <span className="text-[11px] font-mono text-slate-500 uppercase tracking-wider block">
-              Quick Demo Fill
+              Quick Test Profiles
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={fillDemoCandidate}
-                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-emerald-400 transition"
+                className="px-3 py-2.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-emerald-400 transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                👤 Candidate Demo
+                <IconUser size={15} />
+                Candidate Demo
               </button>
               <button
                 type="button"
                 onClick={fillDemoRecruiter}
-                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-teal-400 transition"
+                className="px-3 py-2.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-teal-400 transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                🏢 Recruiter Demo
+                <IconBuilding size={15} />
+                Recruiter Demo
               </button>
             </div>
           </div>
@@ -161,7 +169,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <div className="relative z-10 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} CareerSync AI • 100% Free Platform
+        © {new Date().getFullYear()} CareerSync • 100% Free Platform
       </div>
     </div>
   );

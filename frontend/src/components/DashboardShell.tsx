@@ -4,17 +4,24 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import {
+  CareerSyncLogo,
+  IconDashboard,
+  IconBriefcase,
+  IconDocument,
+  IconLogout,
+} from "@/components/Icons";
 
 const candidateNav = [
-  { label: "Overview", icon: "📊", href: "/dashboard" },
-  { label: "Smart Job Matches", icon: "🎯", href: "/dashboard/jobs" },
-  { label: "Resume Studio", icon: "📄", href: "/dashboard/resume" },
+  { label: "Overview", icon: IconDashboard, href: "/dashboard" },
+  { label: "Job Matches", icon: IconBriefcase, href: "/dashboard/jobs" },
+  { label: "Resume Studio", icon: IconDocument, href: "/dashboard/resume" },
 ];
 
 const recruiterNav = [
-  { label: "Overview", icon: "📊", href: "/dashboard" },
-  { label: "Job Matches", icon: "🎯", href: "/dashboard/jobs" },
-  { label: "Resume Studio", icon: "📄", href: "/dashboard/resume" },
+  { label: "Overview", icon: IconDashboard, href: "/dashboard" },
+  { label: "Job Matches", icon: IconBriefcase, href: "/dashboard/jobs" },
+  { label: "Resume Studio", icon: IconDocument, href: "/dashboard/resume" },
 ];
 
 export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
@@ -42,14 +49,14 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
       >
         {/* Brand */}
         <div className="h-16 px-5 flex items-center gap-3 border-b border-slate-800 shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] border border-emerald-500/30 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-emerald-600/20">
-            CS
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] border border-emerald-500/30 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
+            <CareerSyncLogo size={18} className="text-white" />
           </div>
           <span className="font-display font-bold text-base tracking-tight text-slate-100">
-            Career<span className="text-[#059669]">Sync</span> AI
+            Career<span className="text-[#059669]">Sync</span>
           </span>
           <span className="ml-auto px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/20">
-            {user?.role === "recruiter" ? "REC" : "FREE"}
+            {user?.role === "recruiter" ? "RECRUITER" : "FREE"}
           </span>
         </div>
 
@@ -57,6 +64,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
         <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -68,7 +76,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                     : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/60"
                 }`}
               >
-                <span className="text-base">{item.icon}</span>
+                <Icon size={18} className={isActive ? "text-white" : "text-slate-400"} />
                 {item.label}
               </Link>
             );
@@ -84,7 +92,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-slate-200 truncate">{user?.email}</p>
               <p className="text-[10px] text-emerald-400 uppercase tracking-wider font-mono">
-                {user?.role || "Candidate"} • Free Account
+                {user?.role || "Candidate"} • Free Tier
               </p>
             </div>
           </div>
@@ -92,7 +100,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/20 transition-all cursor-pointer"
           >
-            <span>🚪</span>
+            <IconLogout size={15} />
             Sign Out
           </button>
         </div>

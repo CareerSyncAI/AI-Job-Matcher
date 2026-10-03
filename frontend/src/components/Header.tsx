@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CareerSyncLogo } from "@/components/Icons";
 
 interface HeaderProps {
   activeTab: string;
@@ -24,11 +25,11 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand & Persona Switcher */}
         <div className="flex items-center gap-6 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#8083ff]/20 border border-[#8083ff]/40 flex items-center justify-center text-[#c0c1ff] shadow-[0_0_12px_rgba(128,131,255,0.25)]">
-              <span className="material-symbols-outlined text-xl">neurology</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+              <CareerSyncLogo size={20} className="text-emerald-300" />
             </div>
             <span className="font-headline font-bold text-xl text-[#dae2fd] tracking-tight">
-              CareerSync AI
+              CareerSync
             </span>
             <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] uppercase tracking-wider font-semibold border border-emerald-500/30">
               FREE

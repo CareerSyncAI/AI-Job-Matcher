@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import {
+  IconDocument,
+  IconCheckCircle,
+  IconShieldCheck,
+  IconNetwork,
+} from "@/components/Icons";
 
 export default function ResumePage() {
   const [isUploading, setIsUploading] = useState(false);
@@ -34,18 +40,18 @@ export default function ResumePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
-              CareerSync AI Neural Parser
+              CareerSync Document Parser
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-100 font-display mt-1">Free AI Resume Studio &amp; ATS Analyzer</h1>
+          <h1 className="text-2xl font-bold text-slate-100 font-display mt-1">Resume Studio &amp; ATS Syntax Analyzer</h1>
           <p className="text-slate-400 text-xs mt-1">
-            Upload your CV to generate vector embeddings, score ATS compatibility, and extract structured skills completely free.
+            Upload your CV to extract structured skill entities, verify ATS keyword compatibility, and generate vector profile matrices.
           </p>
         </div>
         <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-semibold self-start sm:self-center">
-          100% FREE • NO GATES
+          VERIFIED ATS ENGINE
         </span>
       </div>
 
@@ -56,19 +62,17 @@ export default function ResumePage() {
       >
         {/* Animated Scanner Laser Bar */}
         {isUploading && (
-          <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] animate-[pulse_1s_infinite] top-0 animate-bounce transition-all duration-700 pointer-events-none" />
+          <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] top-0 animate-bounce transition-all duration-700 pointer-events-none" />
         )}
 
-        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition shadow-lg shadow-emerald-500/5">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition shadow-lg shadow-emerald-500/5">
           {isUploading ? (
             <svg className="w-8 h-8 animate-spin text-emerald-400" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
+            <IconDocument size={30} className="text-emerald-400" />
           )}
         </div>
 
