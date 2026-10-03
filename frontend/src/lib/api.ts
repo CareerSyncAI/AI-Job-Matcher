@@ -1,7 +1,10 @@
 import axios from "axios";
 
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
@@ -14,7 +17,7 @@ export const setAccessToken = (token: string | null) => {
 
 export const getAccessToken = () => accessToken;
 
-// Attach token to every request
+// Attach token to requests if available
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
@@ -23,27 +26,40 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-refresh on 401
+// Auto-refresh token on 401 for authenticated protected requests
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
+    const url = original?.url || "";
+
+    // Never loop or retry auth endpoints (/auth/login, /auth/refresh, /auth/register)
+    if (url.includes("/auth/")) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
         const res = await axios.post(
-          `${api.defaults.baseURL}/auth/refresh`,
+          `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
-        setAccessToken(res.data.access_token);
-        original.headers.Authorization = `Bearer ${res.data.access_token}`;
+        const newToken = res.data.access_token;
+        setAccessToken(newToken);
+        original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
-      } catch {
+      } catch (refreshErr) {
         setAccessToken(null);
-        if (typeof window !== "undefined") {
+        // Only redirect to login if currently trying to access protected dashboard routes
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname.startsWith("/dashboard")
+        ) {
           window.location.href = "/login";
         }
+        return Promise.reject(refreshErr);
       }
     }
     return Promise.reject(error);

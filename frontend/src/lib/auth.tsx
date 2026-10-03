@@ -8,7 +8,8 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import api, { setAccessToken } from "@/lib/api";
+import axios from "axios";
+import api, { API_BASE_URL, setAccessToken } from "@/lib/api";
 
 export type UserRole = "candidate" | "recruiter" | "admin";
 
@@ -43,20 +44,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session on mount via httpOnly cookie refresh
+  // Restore session on mount via httpOnly cookie refresh directly
   useEffect(() => {
     let cancelled = false;
     const restore = async () => {
       try {
-        const res = await api.post("/auth/refresh");
-        if (!cancelled) {
+        const res = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+        if (!cancelled && res.data?.access_token) {
           setAccessToken(res.data.access_token);
           setUser(res.data.user);
         }
       } catch {
-        if (!cancelled) setUser(null);
+        if (!cancelled) {
+          setAccessToken(null);
+          setUser(null);
+        }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
     restore();
@@ -95,29 +105,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
+    } catch (err) {
+      console.warn("Logout error:", err);
     } finally {
       setAccessToken(null);
       setUser(null);
     }
   }, []);
 
-  const value = useMemo<AuthContextType>(
+  const isAuthenticated = useMemo(() => !!user, [user]);
+
+  const value = useMemo(
     () => ({
       user,
-      isAuthenticated: !!user,
+      isAuthenticated,
       isLoading,
       login,
       register,
       logout,
     }),
-    [user, isLoading, login, register, logout]
+    [user, isAuthenticated, isLoading, login, register, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
