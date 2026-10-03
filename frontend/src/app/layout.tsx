@@ -1,30 +1,31 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Outfit, DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-sans-var",
+  variable: "--font-outfit",
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-headline-var",
+  variable: "--font-dmsans",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const dmMono = DM_Mono({
+  weight: ["400", "500"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-mono-var",
+  variable: "--font-dmmono",
 });
 
 export const metadata: Metadata = {
-  title: "TalentIQ AI — AI Resume & Job Matcher",
+  title: "TalentAIQ Career — AI Job Application Agent for India",
   description:
-    "Executive-tier AI Talent Intelligence environment for candidate resume tailoring, match scoring, and recruiter talent pipeline analysis.",
+    "TalentAIQ Career finds relevant roles, tailors your resume, and applies on your behalf. Built for job seekers in India.",
 };
 
 export default function RootLayout({
@@ -35,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased dark ${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
+      className={`h-full antialiased ${outfit.variable} ${dmSans.variable} ${dmMono.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -44,7 +45,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[#0b1326] text-[#dae2fd] font-sans selection:bg-[#8083ff]/30 selection:text-[#c0c1ff] antialiased">
+      <body className="min-h-full flex flex-col font-sans antialiased bg-white text-slate-900">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
