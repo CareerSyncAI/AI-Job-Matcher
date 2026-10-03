@@ -103,6 +103,7 @@ export const CareerSyncLogo: React.FC<IconProps> = ({ size = 32, className = "",
 export interface CareerSyncBrandProps {
   size?: number;
   showTagline?: boolean;
+  responsiveTagline?: boolean;
   className?: string;
   isLight?: boolean;
 }
@@ -110,16 +111,17 @@ export interface CareerSyncBrandProps {
 export const CareerSyncBrand: React.FC<CareerSyncBrandProps> = ({
   size = 32,
   showTagline = true,
+  responsiveTagline = true,
   className = "",
   isLight = false,
 }) => {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 sm:gap-3 min-w-0 select-none ${className}`}>
       <CareerSyncLogo size={size} className="shrink-0 drop-shadow-[0_0_10px_rgba(0,245,196,0.45)]" />
-      <div className="flex flex-col">
+      <div className="flex flex-col min-w-0 justify-center">
         <div className="flex items-center leading-none">
           <span
-            className={`font-black tracking-tight font-display text-lg sm:text-xl ${
+            className={`font-black tracking-tight font-display text-lg sm:text-xl leading-tight ${
               isLight ? "text-slate-900" : "text-white"
             }`}
           >
@@ -127,9 +129,11 @@ export const CareerSyncBrand: React.FC<CareerSyncBrandProps> = ({
           </span>
         </div>
         {showTagline && (
-          <span className={`text-[8px] sm:text-[9px] font-bold tracking-[0.24em] uppercase mt-1 whitespace-nowrap ${
-            isLight ? "text-slate-500" : "text-cyan-400/90"
-          }`}>
+          <span
+            className={`text-[8px] font-bold tracking-[0.14em] uppercase mt-0.5 leading-none truncate ${
+              responsiveTagline ? "hidden sm:inline-block" : "inline-block"
+            } ${isLight ? "text-slate-500" : "text-cyan-400/90"}`}
+          >
             AI-POWERED CAREER MATCHING
           </span>
         )}

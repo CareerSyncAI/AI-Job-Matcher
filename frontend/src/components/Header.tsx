@@ -17,18 +17,20 @@ export const Header: React.FC<HeaderProps> = ({
   userRole,
   setUserRole,
 }) => {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#060e20]/85 backdrop-blur-xl border-b border-[#222a3d] shadow-[0_1px_8px_rgba(0,0,0,0.35)]">
-      <div className="h-20 w-full px-6 xl:px-8 flex items-center justify-between gap-6">
+      <div className="h-20 w-full px-4 sm:px-6 xl:px-8 flex items-center justify-between gap-4 xl:gap-6">
         
         {/* Brand & Persona Switcher */}
-        <div className="flex items-center gap-6 shrink-0">
-          <Link href="/" className="flex items-center gap-3">
-            <CareerSyncBrand size={32} showTagline={true} isLight={false} />
+        <div className="flex items-center gap-4 xl:gap-6 shrink-0">
+          <Link href="/" className="flex items-center gap-3 shrink-0">
+            <CareerSyncBrand size={32} showTagline={true} responsiveTagline={true} isLight={false} />
           </Link>
 
           {/* Persona Switcher Toggle */}
-          <div className="hidden xl:flex items-center bg-[#171f33] p-1 rounded-full border border-[#222a3d]">
+          <div className="hidden 2xl:flex items-center bg-[#171f33] p-1 rounded-full border border-[#222a3d]">
             <button
               onClick={() => setUserRole("candidate")}
               type="button"
@@ -55,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="hidden lg:flex items-center gap-1 shrink-0">
+        <nav className="hidden xl:flex items-center gap-1 shrink-0">
           <button
             onClick={() => setActiveTab("smart-job-matches")}
             className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
@@ -137,8 +139,76 @@ export const Header: React.FC<HeaderProps> = ({
               keyboard_arrow_down
             </span>
           </div>
+
+          {/* Mobile menu toggle button */}
+          <button
+            type="button"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="xl:hidden p-2 rounded-lg text-[#c7c4d7] hover:text-[#dae2fd] hover:bg-[#222a3d] transition-colors"
+            aria-label="Toggle Navigation Menu"
+          >
+            <span className="material-symbols-outlined text-2xl">
+              {mobileOpen ? "close" : "menu"}
+            </span>
+          </button>
         </div>
       </div>
+
+      {/* Mobile / Tablet Navigation Drawer */}
+      {mobileOpen && (
+        <div className="xl:hidden border-t border-[#222a3d] bg-[#060e20]/95 backdrop-blur-2xl p-4 space-y-3 shadow-2xl max-h-[calc(100vh-5rem)] overflow-y-auto">
+          {/* Persona Switcher for mobile */}
+          <div className="flex items-center bg-[#171f33] p-1 rounded-full border border-[#222a3d]">
+            <button
+              onClick={() => setUserRole("candidate")}
+              type="button"
+              className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                userRole === "candidate"
+                  ? "bg-[#8083ff] text-[#0d0096] shadow-[0_0_12px_rgba(128,131,255,0.25)]"
+                  : "text-[#c7c4d7] hover:text-[#dae2fd]"
+              }`}
+            >
+              Candidate
+            </button>
+            <button
+              onClick={() => setUserRole("recruiter")}
+              type="button"
+              className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                userRole === "recruiter"
+                  ? "bg-[#8083ff] text-[#0d0096] shadow-[0_0_12px_rgba(128,131,255,0.25)]"
+                  : "text-[#c7c4d7] hover:text-[#dae2fd]"
+              }`}
+            >
+              Recruiter
+            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="flex flex-col gap-1 pt-2">
+            {[
+              { id: "smart-job-matches", label: "Smart Job Matches" },
+              { id: "resume-studio", label: "Resume Studio & ATS" },
+              { id: "recruiter-radar", label: "Talent Radar" },
+              { id: "interview-prep", label: "Interview Prep AI" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setMobileOpen(false);
+                }}
+                className={`text-left px-4 py-2.5 text-xs font-semibold rounded-xl transition-all ${
+                  activeTab === tab.id
+                    ? "bg-[#8083ff] text-[#0d0096]"
+                    : "text-[#c7c4d7] hover:bg-[#171f33] hover:text-[#dae2fd]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

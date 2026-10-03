@@ -122,11 +122,11 @@ export default function LoginPage() {
       </div>
 
       {/* Top Header Logo */}
-      <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-8">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <CareerSyncBrand size={32} showTagline={true} isLight={!isDark} />
+      <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-8 gap-3">
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+          <CareerSyncBrand size={30} showTagline={true} responsiveTagline={true} isLight={false} />
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={toggleTheme}
@@ -136,7 +136,7 @@ export default function LoginPage() {
           >
             {isDark ? <IconSun size={15} /> : <IconMoon size={15} />}
           </button>
-          <Link href="/register" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
+          <Link href="/register" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition whitespace-nowrap">
             Create account →
           </Link>
         </div>

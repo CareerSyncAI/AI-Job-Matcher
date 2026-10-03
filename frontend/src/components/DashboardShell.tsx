@@ -97,11 +97,11 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
             isDark ? "border-slate-800" : "border-slate-200"
           }`}
         >
-          <Link href="/dashboard" className="flex items-center gap-2 group">
-            <CareerSyncBrand size={28} showTagline={true} isLight={!isDark} />
+          <Link href="/dashboard" className="flex items-center gap-2 group min-w-0">
+            <CareerSyncBrand size={28} showTagline={false} isLight={!isDark} />
           </Link>
           {user?.role === "recruiter" && (
-            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20">
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20 shrink-0">
               RECRUITER
             </span>
           )}
@@ -176,18 +176,23 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
               : "bg-white/90 border-slate-200 text-slate-900 shadow-xs"
           }`}
         >
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`lg:hidden p-2 rounded-lg ${
-              isDark ? "text-slate-400 hover:text-slate-100" : "text-slate-600 hover:text-slate-900"
-            }`}
-            aria-label="Toggle Navigation Menu"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {/* Mobile hamburger & Brand */}
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`p-2 -ml-2 rounded-lg cursor-pointer ${
+                isDark ? "text-slate-400 hover:text-slate-100 hover:bg-slate-800/60" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+              aria-label="Toggle Navigation Menu"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <Link href="/dashboard" className="flex items-center">
+              <CareerSyncBrand size={26} showTagline={false} isLight={!isDark} />
+            </Link>
+          </div>
 
           {/* Right Header Navigation Items */}
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">

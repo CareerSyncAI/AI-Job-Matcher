@@ -78,11 +78,11 @@ function RegisterForm() {
       </div>
 
       {/* Header Logo */}
-      <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-6">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <CareerSyncBrand size={32} showTagline={true} isLight={!isDark} />
+      <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-6 gap-3">
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+          <CareerSyncBrand size={30} showTagline={true} responsiveTagline={true} isLight={false} />
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={toggleTheme}
@@ -92,7 +92,7 @@ function RegisterForm() {
           >
             {isDark ? <IconSun size={15} /> : <IconMoon size={15} />}
           </button>
-          <Link href="/login" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
+          <Link href="/login" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition whitespace-nowrap">
             Sign in instead →
           </Link>
         </div>
