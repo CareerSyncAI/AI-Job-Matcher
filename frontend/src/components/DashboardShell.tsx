@@ -9,19 +9,23 @@ import {
   IconDashboard,
   IconBriefcase,
   IconDocument,
+  IconUser,
   IconLogout,
+  IconCheckCircle,
 } from "@/components/Icons";
 
 const candidateNav = [
   { label: "Overview", icon: IconDashboard, href: "/dashboard" },
   { label: "Job Matches", icon: IconBriefcase, href: "/dashboard/jobs" },
   { label: "Resume Studio", icon: IconDocument, href: "/dashboard/resume" },
+  { label: "Profile & Settings", icon: IconUser, href: "/dashboard/profile" },
 ];
 
 const recruiterNav = [
   { label: "Overview", icon: IconDashboard, href: "/dashboard" },
   { label: "Job Matches", icon: IconBriefcase, href: "/dashboard/jobs" },
   { label: "Resume Studio", icon: IconDocument, href: "/dashboard/resume" },
+  { label: "Profile & Settings", icon: IconUser, href: "/dashboard/profile" },
 ];
 
 export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
@@ -120,8 +124,9 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
           </button>
 
           <div className="flex items-center gap-3 ml-auto">
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono font-semibold border border-emerald-500/20">
-              ⚡ 100% Free Intelligence Mode
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono font-semibold border border-emerald-500/20">
+              <IconCheckCircle size={13} className="text-emerald-400" />
+              100% Free Platform Access
             </span>
             <Link
               href="/"

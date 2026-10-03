@@ -58,7 +58,12 @@ class AuthenticationService:
             .filter(RefreshSession.token_hash == hash_refresh_token(refresh_token))
             .one_or_none()
         )
-        if not existing or existing.revoked_at is not None or existing.expires_at <= now:
+        if not existing or existing.revoked_at is not None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh session is invalid or expired.")
+        expires_at = existing.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=UTC)
+        if expires_at <= now:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh session is invalid or expired.")
         user = existing.user
         existing.revoked_at = now

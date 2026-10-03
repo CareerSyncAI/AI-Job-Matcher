@@ -26,14 +26,16 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (
     email: string,
     password: string,
     role: UserRole,
+    fullName?: string,
     organizationName?: string
   ) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,10 +77,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const res = await api.post("/auth/login", { email, password });
     setAccessToken(res.data.access_token);
     setUser(res.data.user);
+    if (typeof window !== "undefined") {
+      if (rememberMe) {
+        localStorage.setItem("careersync_remember_me", "true");
+        localStorage.setItem("careersync_remember_email", email);
+      } else {
+        localStorage.removeItem("careersync_remember_me");
+        localStorage.removeItem("careersync_remember_email");
+      }
+    }
   }, []);
 
   const register = useCallback(
@@ -86,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       email: string,
       password: string,
       role: UserRole,
+      fullName?: string,
       organizationName?: string
     ) => {
       await api.post("/auth/register", {
@@ -101,6 +113,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     []
   );
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await api.get("/auth/me");
+      setUser(res.data);
+    } catch (err) {
+      console.warn("Failed to refresh user:", err);
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -123,8 +144,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       login,
       register,
       logout,
+      refreshUser,
     }),
-    [user, isAuthenticated, isLoading, login, register, logout]
+    [user, isAuthenticated, isLoading, login, register, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

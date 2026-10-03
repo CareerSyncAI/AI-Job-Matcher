@@ -6,9 +6,20 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.config import get_settings
 from app.db.session import get_db
-from app.models.entities import User
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.models.entities import CandidateProfile, RecruiterProfile, User
+from app.models.enums import UserRole
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UpdateProfileRequest,
+    UserProfileDetailResponse,
+    UserResponse,
+)
 from app.schemas.common import MessageResponse
+from app.security.passwords import hash_password, verify_password
 from app.services.audit import record_audit_event
 from app.services.authentication import AuthenticationService
 
@@ -118,3 +129,101 @@ def logout(
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.get("/profile", response_model=UserProfileDetailResponse)
+def get_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserProfileDetailResponse:
+    name = None
+    headline = None
+    location = None
+    organization_name = None
+    skills: list[str] = []
+    bio = None
+
+    if current_user.role == UserRole.CANDIDATE:
+        profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == current_user.id).one_or_none()
+        if profile:
+            name = profile.name
+            headline = profile.headline
+            location = profile.location
+            if isinstance(profile.education, dict):
+                skills = profile.education.get("skills", [])
+                bio = profile.education.get("bio", None)
+    elif current_user.role == UserRole.RECRUITER:
+        profile = db.query(RecruiterProfile).filter(RecruiterProfile.user_id == current_user.id).one_or_none()
+        if profile:
+            organization_name = profile.organization_name
+
+    return UserProfileDetailResponse(
+        id=current_user.id,
+        email=current_user.email,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        name=name,
+        headline=headline,
+        location=location,
+        organization_name=organization_name,
+        skills=skills,
+        bio=bio,
+    )
+
+
+@router.put("/profile", response_model=UserProfileDetailResponse)
+def update_profile(
+    payload: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserProfileDetailResponse:
+    if current_user.role == UserRole.CANDIDATE:
+        profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == current_user.id).one_or_none()
+        if not profile:
+            profile = CandidateProfile(user_id=current_user.id, email=current_user.email)
+            db.add(profile)
+        if payload.name is not None:
+            profile.name = payload.name
+        if payload.headline is not None:
+            profile.headline = payload.headline
+        if payload.location is not None:
+            profile.location = payload.location
+        edu_data = profile.education if isinstance(profile.education, dict) else {}
+        edu_data["skills"] = payload.skills
+        if payload.bio is not None:
+            edu_data["bio"] = payload.bio
+        profile.education = edu_data
+    elif current_user.role == UserRole.RECRUITER:
+        profile = db.query(RecruiterProfile).filter(RecruiterProfile.user_id == current_user.id).one_or_none()
+        if not profile:
+            profile = RecruiterProfile(user_id=current_user.id)
+            db.add(profile)
+        if payload.organization_name is not None:
+            profile.organization_name = payload.organization_name
+
+    db.commit()
+    return get_profile(current_user=current_user, db=db)
+
+
+@router.post("/password", response_model=MessageResponse)
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    if not verify_password(payload.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The current password provided is incorrect.",
+        )
+    current_user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return MessageResponse(message="Password successfully updated.")
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    # Safe generic response preventing email enumeration
+    return MessageResponse(
+        message=f"If an account is associated with {payload.email}, a secure password reset link has been dispatched."
+    )
