@@ -11,21 +11,24 @@ export default function ResumePage() {
     setTimeout(() => {
       setIsUploading(false);
       setParsedData(sampleParsedResume);
-    }, 1500);
+    }, 1200);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-100">AI Resume Studio & ATS Analyzer</h1>
+        <h1 className="text-2xl font-bold text-slate-100 font-display">Free AI Resume Studio &amp; ATS Analyzer</h1>
         <p className="text-slate-400 text-xs mt-1">
-          Upload your CV to generate vector embeddings, score ATS compatibility, and extract structured skills.
+          Upload your CV to generate vector embeddings, score ATS compatibility, and extract structured skills completely free.
         </p>
       </div>
 
       {/* Upload Box */}
-      <div className="p-8 rounded-2xl bg-slate-900/60 border-2 border-dashed border-slate-800 hover:border-blue-500/50 transition backdrop-blur-md text-center group cursor-pointer" onClick={handleUpload}>
-        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition">
+      <div
+        onClick={handleUpload}
+        className="p-8 rounded-2xl bg-slate-900/80 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 transition duration-300 backdrop-blur-md text-center group cursor-pointer"
+      >
+        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition">
           {isUploading ? (
             <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -38,17 +41,17 @@ export default function ResumePage() {
           )}
         </div>
         <h3 className="text-sm font-bold text-slate-200">
-          {isUploading ? "Extracting & Embedding Resume..." : "Click or drag PDF resume here to analyze"}
+          {isUploading ? "Extracting & Embedding Resume..." : "Click or drag PDF/DOCX resume here to analyze free"}
         </h3>
-        <p className="text-slate-400 text-xs mt-1">Supports PDF, DOCX (Max 10MB). Uses SpaCy + Transformer extraction.</p>
+        <p className="text-slate-400 text-xs mt-1">Supports PDF &amp; DOCX (Max 10MB). Powered by SpaCy + Transformer extraction.</p>
       </div>
 
       {parsedData && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ATS Score Panel */}
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md space-y-6">
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md space-y-6">
             <h2 className="text-base font-bold text-slate-200">ATS Score Breakdown</h2>
-            <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-slate-950/60 border border-slate-800">
+            <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-slate-950/80 border border-slate-800">
               <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
                 {parsedData.atsScore}/100
               </span>
@@ -67,34 +70,34 @@ export default function ResumePage() {
               </div>
               <div>
                 <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1">
-                  <span>Formatting & Structure</span>
+                  <span>Formatting &amp; Structure</span>
                   <span>88%</span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full w-[88%]" />
+                  <div className="bg-teal-500 h-2 rounded-full w-[88%]" />
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1">
-                  <span>Action Verbs & Quantified Results</span>
+                  <span>Action Verbs &amp; Quantified Results</span>
                   <span>84%</span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-2">
-                  <div className="bg-indigo-500 h-2 rounded-full w-[84%]" />
+                  <div className="bg-emerald-600 h-2 rounded-full w-[84%]" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Extracted Structured Skills & Experience */}
-          <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md space-y-6">
-            <h2 className="text-base font-bold text-slate-200">Extracted Vector Entities</h2>
+          <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md space-y-6">
+            <h2 className="text-base font-bold text-slate-200">Extracted Vector Skill Graph</h2>
             
             <div>
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Technical Skills Detected</h3>
+              <h3 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-2">Technical Skills Detected</h3>
               <div className="flex flex-wrap gap-2">
                 {parsedData.skills.map((skill, idx) => (
-                  <span key={idx} className="px-3 py-1 text-xs font-medium text-blue-300 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <span key={idx} className="px-3 py-1 text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                     {skill}
                   </span>
                 ))}
@@ -102,15 +105,15 @@ export default function ResumePage() {
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Work Experience Highlights</h3>
+              <h3 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-2">Work Experience Highlights</h3>
               <div className="space-y-3">
                 {parsedData.experience.map((exp, idx) => (
-                  <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <div key={idx} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                     <div className="flex justify-between text-xs font-bold text-slate-200">
                       <span>{exp.title}</span>
                       <span className="text-slate-400 font-normal">{exp.period}</span>
                     </div>
-                    <p className="text-xs text-blue-400 mt-0.5">{exp.company}</p>
+                    <p className="text-xs text-emerald-400 mt-0.5">{exp.company}</p>
                     <p className="text-xs text-slate-400 mt-2 leading-relaxed">{exp.summary}</p>
                   </div>
                 ))}

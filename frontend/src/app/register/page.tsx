@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, UserRole } from "@/lib/auth";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const { register, isLoading: authLoading } = useAuth();
 
@@ -58,196 +58,149 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0b1326] px-4 py-8 relative">
-      {/* Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#4edea3]/6 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] bg-[#8083ff]/5 rounded-full blur-[100px]" />
+    <div className="min-h-screen flex flex-col justify-between bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 text-slate-100 px-4 py-8 relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-md z-10">
-        {/* Brand */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-11 h-11 rounded-xl bg-[#8083ff]/20 border border-[#8083ff]/40 flex items-center justify-center text-[#c0c1ff] shadow-[0_0_12px_rgba(128,131,255,0.25)]">
-              <span className="material-symbols-outlined text-2xl">neurology</span>
-            </div>
-          </Link>
-          <h1 className="font-headline font-bold text-2xl text-[#dae2fd] tracking-tight">
-            Create Your Account
-          </h1>
-          <p className="text-sm text-[#908fa0] mt-1">
-            Join TalentIQ AI and unlock intelligent career matching
-          </p>
-        </div>
+      {/* Header Logo */}
+      <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-6">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-base shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+            T
+          </div>
+          <span className="font-display font-bold text-lg text-slate-100 tracking-tight">
+            Talent<span className="text-[#059669]">IQ</span> AI
+          </span>
+        </Link>
+        <Link href="/login" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
+          Sign in instead →
+        </Link>
+      </div>
 
-        {/* Register Card */}
-        <div className="bg-[#131b2e] border border-[#222a3d] rounded-2xl p-8 shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
-          {/* Role Selector */}
-          <div className="mb-6">
-            <label className="block text-[11px] font-semibold text-[#c7c4d7] uppercase tracking-wider mb-2">
-              I am a
-            </label>
-            <div className="flex gap-2 bg-[#171f33] p-1 rounded-lg border border-[#222a3d]">
+      {/* Main Register Card */}
+      <div className="relative max-w-md mx-auto w-full z-10">
+        <div className="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-6">
+          <div className="text-center space-y-1">
+            <h1 className="font-display text-2xl font-bold text-slate-100">Create Free Account</h1>
+            <p className="text-slate-400 text-xs">100% free access for Candidates &amp; Recruiters</p>
+          </div>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-2">
+              <span>⚠️</span>
+              <p>{error}</p>
+            </div>
+          )}
+
+          {/* Role Toggle Selector */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider">Account Role</label>
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950 border border-slate-800">
               <button
                 type="button"
                 onClick={() => setRole("candidate")}
-                className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+                className={`py-2 rounded-lg text-xs font-semibold transition ${
                   role === "candidate"
-                    ? "bg-[#8083ff] text-[#0d0096] shadow-[0_0_12px_rgba(128,131,255,0.2)]"
-                    : "text-[#c7c4d7] hover:text-[#dae2fd]"
+                    ? "bg-[#059669] text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <span className="material-symbols-outlined text-base">person</span>
-                Job Seeker
+                👤 Job Candidate
               </button>
               <button
                 type="button"
                 onClick={() => setRole("recruiter")}
-                className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+                className={`py-2 rounded-lg text-xs font-semibold transition ${
                   role === "recruiter"
-                    ? "bg-[#4edea3] text-[#003824] shadow-[0_0_12px_rgba(78,222,163,0.2)]"
-                    : "text-[#c7c4d7] hover:text-[#dae2fd]"
+                    ? "bg-[#059669] text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <span className="material-symbols-outlined text-base">badge</span>
-                Recruiter
+                🏢 Recruiter
               </button>
             </div>
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-semibold text-[#c7c4d7] uppercase tracking-wider">
-                Email Address
-              </label>
-              <div className="flex items-center bg-[#171f33] border border-[#222a3d] rounded-lg px-3.5 py-2.5 focus-within:border-[#8083ff] transition-colors">
-                <span className="material-symbols-outlined text-[#908fa0] text-lg mr-2">mail</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@organization.com"
-                  autoComplete="email"
-                  required
-                  className="w-full bg-transparent text-[#dae2fd] text-sm placeholder:text-[#464554] focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Organization Name (Recruiter only) */}
             {role === "recruiter" && (
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-semibold text-[#c7c4d7] uppercase tracking-wider">
-                  Organization Name
-                </label>
-                <div className="flex items-center bg-[#171f33] border border-[#222a3d] rounded-lg px-3.5 py-2.5 focus-within:border-[#4edea3] transition-colors">
-                  <span className="material-symbols-outlined text-[#908fa0] text-lg mr-2">domain</span>
-                  <input
-                    type="text"
-                    value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
-                    placeholder="Acme Corp"
-                    required
-                    className="w-full bg-transparent text-[#dae2fd] text-sm placeholder:text-[#464554] focus:outline-none"
-                  />
-                </div>
+                <label className="block text-xs font-medium text-slate-300">Company / Organization Name</label>
+                <input
+                  type="text"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  placeholder="Acme Tech Labs"
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
+                />
               </div>
             )}
 
-            {/* Password */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-semibold text-[#c7c4d7] uppercase tracking-wider">
-                Password <span className="text-[#908fa0] normal-case">(min 8 characters)</span>
-              </label>
-              <div className="flex items-center bg-[#171f33] border border-[#222a3d] rounded-lg px-3.5 py-2.5 focus-within:border-[#8083ff] transition-colors">
-                <span className="material-symbols-outlined text-[#908fa0] text-lg mr-2">lock</span>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  className="w-full bg-transparent text-[#dae2fd] text-sm placeholder:text-[#464554] focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((p) => !p)}
-                  className="text-[#908fa0] hover:text-[#dae2fd] transition-colors ml-1"
-                >
-                  <span className="material-symbols-outlined text-lg">
-                    {showPassword ? "visibility_off" : "visibility"}
-                  </span>
-                </button>
-              </div>
+              <label className="block text-xs font-medium text-slate-300">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                required
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
+              />
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-semibold text-[#c7c4d7] uppercase tracking-wider">
-                Confirm Password
-              </label>
-              <div className="flex items-center bg-[#171f33] border border-[#222a3d] rounded-lg px-3.5 py-2.5 focus-within:border-[#8083ff] transition-colors">
-                <span className="material-symbols-outlined text-[#908fa0] text-lg mr-2">lock</span>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  autoComplete="new-password"
-                  required
-                  className="w-full bg-transparent text-[#dae2fd] text-sm placeholder:text-[#464554] focus:outline-none"
-                />
-              </div>
+              <label className="block text-xs font-medium text-slate-300">Password (min 8 chars)</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={8}
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
+              />
             </div>
 
-            {/* Error */}
-            {error && (
-              <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-[#ffb4ab]/10 border border-[#ffb4ab]/20">
-                <span className="material-symbols-outlined text-[#ffb4ab] text-lg shrink-0 mt-0.5">error</span>
-                <p className="text-xs text-[#ffb4ab]">{error}</p>
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-slate-300">Confirm Password</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={8}
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
+              />
+            </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={submitting || authLoading}
-              className={`w-full py-3 px-4 font-bold text-sm rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
-                role === "recruiter"
-                  ? "bg-[#4edea3] hover:bg-[#6ffbbe] text-[#003824] shadow-[0_0_20px_rgba(78,222,163,0.25)]"
-                  : "bg-[#8083ff] hover:bg-[#c0c1ff] text-[#0d0096] shadow-[0_0_20px_rgba(128,131,255,0.25)]"
-              }`}
+              className="w-full py-3.5 bg-gradient-to-r from-[#059669] to-[#0d9488] hover:from-[#047857] hover:to-[#0f766e] text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 disabled:opacity-50"
             >
-              {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-lg">rocket_launch</span>
-                  {role === "recruiter" ? "Create Recruiter Account" : "Create Candidate Account"}
-                </>
-              )}
+              {submitting ? "Creating Free Account..." : "Create Account"}
             </button>
           </form>
-
-          {/* Login link */}
-          <p className="text-center text-sm text-[#908fa0] mt-6">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-[#c0c1ff] hover:text-[#dae2fd] font-semibold transition-colors"
-            >
-              Sign In
-            </Link>
-          </p>
         </div>
       </div>
+
+      {/* Footer */}
+      <div className="relative z-10 text-center text-xs text-slate-500">
+        © {new Date().getFullYear()} TalentIQ AI • 100% Free Platform
+      </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

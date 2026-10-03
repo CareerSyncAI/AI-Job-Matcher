@@ -50,148 +50,118 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0b1326] px-4 relative">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#8083ff]/6 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-[#4edea3]/5 rounded-full blur-[100px]" />
+    <div className="min-h-screen flex flex-col justify-between bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 text-slate-100 px-4 py-8 relative overflow-hidden">
+      {/* Subtle Ambient Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-md z-10">
-        {/* Brand */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-11 h-11 rounded-xl bg-[#8083ff]/20 border border-[#8083ff]/40 flex items-center justify-center text-[#c0c1ff] shadow-[0_0_12px_rgba(128,131,255,0.25)]">
-              <span className="material-symbols-outlined text-2xl">neurology</span>
-            </div>
-          </Link>
-          <h1 className="font-headline font-bold text-2xl text-[#dae2fd] tracking-tight">
-            Welcome Back
-          </h1>
-          <p className="text-sm text-[#908fa0] mt-1">
-            Sign in to your TalentIQ AI workspace
-          </p>
-        </div>
+      {/* Top Header Logo */}
+      <div className="relative z-10 max-w-md mx-auto w-full flex justify-between items-center mb-8">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-display font-extrabold text-base shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+            T
+          </div>
+          <span className="font-display font-bold text-lg text-slate-100 tracking-tight">
+            Talent<span className="text-[#059669]">IQ</span> AI
+          </span>
+        </Link>
+        <Link href="/register" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
+          Create account →
+        </Link>
+      </div>
 
-        {/* Login Card */}
-        <div className="bg-[#131b2e] border border-[#222a3d] rounded-2xl p-8 shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
-          {/* Demo Quick-fill Buttons */}
-          <div className="flex gap-2 mb-6">
-            <button
-              type="button"
-              onClick={fillDemoCandidate}
-              className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#8083ff]/10 border border-[#8083ff]/20 hover:bg-[#8083ff]/15 transition-colors text-left group"
-            >
-              <span className="material-symbols-outlined text-[#8083ff] text-lg">person</span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-[#c0c1ff]">Demo Candidate</p>
-                <p className="text-[10px] text-[#908fa0] truncate font-mono">candidate.demo@...</p>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={fillDemoRecruiter}
-              className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#4edea3]/10 border border-[#4edea3]/20 hover:bg-[#4edea3]/15 transition-colors text-left group"
-            >
-              <span className="material-symbols-outlined text-[#4edea3] text-lg">badge</span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-[#4edea3]">Demo Recruiter</p>
-                <p className="text-[10px] text-[#908fa0] truncate font-mono">recruiter.sarah@...</p>
-              </div>
-            </button>
+      {/* Main Login Card */}
+      <div className="relative max-w-md mx-auto w-full z-10">
+        <div className="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-6">
+          <div className="text-center space-y-1">
+            <h1 className="font-display text-2xl font-bold text-slate-100">Welcome Back</h1>
+            <p className="text-slate-400 text-xs">Sign in to your free TalentIQ AI workspace</p>
           </div>
 
+          {/* Error Alert */}
+          {error && (
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-2">
+              <span>⚠️</span>
+              <p>{error}</p>
+            </div>
+          )}
+
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-semibold text-[#c7c4d7] uppercase tracking-wider">
-                Email Address
-              </label>
-              <div className="flex items-center bg-[#171f33] border border-[#222a3d] rounded-lg px-3.5 py-2.5 focus-within:border-[#8083ff] transition-colors">
-                <span className="material-symbols-outlined text-[#908fa0] text-lg mr-2">mail</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@organization.com"
-                  autoComplete="email"
-                  required
-                  className="w-full bg-transparent text-[#dae2fd] text-sm placeholder:text-[#464554] focus:outline-none"
-                />
-              </div>
+              <label className="block text-xs font-medium text-slate-300">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                required
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
+              />
             </div>
 
-            {/* Password */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-semibold text-[#c7c4d7] uppercase tracking-wider">
-                Password
-              </label>
-              <div className="flex items-center bg-[#171f33] border border-[#222a3d] rounded-lg px-3.5 py-2.5 focus-within:border-[#8083ff] transition-colors">
-                <span className="material-symbols-outlined text-[#908fa0] text-lg mr-2">lock</span>
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-medium text-slate-300">Password</label>
+              </div>
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  autoComplete="current-password"
+                  placeholder="••••••••"
                   required
-                  className="w-full bg-transparent text-[#dae2fd] text-sm placeholder:text-[#464554] focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((p) => !p)}
-                  className="text-[#908fa0] hover:text-[#dae2fd] transition-colors ml-1"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 text-xs"
                 >
-                  <span className="material-symbols-outlined text-lg">
-                    {showPassword ? "visibility_off" : "visibility"}
-                  </span>
+                  {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
             </div>
 
-            {/* Error */}
-            {error && (
-              <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-[#ffb4ab]/10 border border-[#ffb4ab]/20">
-                <span className="material-symbols-outlined text-[#ffb4ab] text-lg shrink-0 mt-0.5">error</span>
-                <p className="text-xs text-[#ffb4ab]">{error}</p>
-              </div>
-            )}
-
-            {/* Submit */}
             <button
               type="submit"
               disabled={submitting || authLoading}
-              className="w-full py-3 px-4 bg-[#8083ff] hover:bg-[#c0c1ff] disabled:opacity-50 disabled:cursor-not-allowed text-[#0d0096] font-bold text-sm rounded-lg transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(128,131,255,0.25)] cursor-pointer"
+              className="w-full py-3.5 bg-gradient-to-r from-[#059669] to-[#0d9488] hover:from-[#047857] hover:to-[#0f766e] text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 disabled:opacity-50"
             >
-              {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-[#0d0096] border-t-transparent rounded-full animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-lg">login</span>
-                  Sign In
-                </>
-              )}
+              {submitting ? "Signing in..." : "Sign In to Account"}
             </button>
           </form>
 
-          {/* Register link */}
-          <p className="text-center text-sm text-[#908fa0] mt-6">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="text-[#c0c1ff] hover:text-[#dae2fd] font-semibold transition-colors"
-            >
-              Create Account
-            </Link>
-          </p>
-
-          <p className="text-center text-[10px] text-[#464554] mt-5">
-            Academic prototype — CHARUSAT University, SGP 5th Semester
-          </p>
+          {/* Quick Demo Fill Buttons */}
+          <div className="pt-4 border-t border-slate-800 text-center space-y-2">
+            <span className="text-[11px] font-mono text-slate-500 uppercase tracking-wider block">
+              Quick Demo Fill
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={fillDemoCandidate}
+                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-emerald-400 transition"
+              >
+                👤 Candidate Demo
+              </button>
+              <button
+                type="button"
+                onClick={fillDemoRecruiter}
+                className="px-3 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl text-xs font-semibold text-teal-400 transition"
+              >
+                🏢 Recruiter Demo
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="relative z-10 text-center text-xs text-slate-500">
+        © {new Date().getFullYear()} TalentIQ AI • 100% Free Platform
       </div>
     </div>
   );

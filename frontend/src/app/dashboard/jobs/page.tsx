@@ -11,20 +11,20 @@ export default function JobsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">Semantic Job Search</h1>
+          <h1 className="text-2xl font-bold text-slate-100 font-display">Semantic Job Search</h1>
           <p className="text-slate-400 text-xs mt-1">
-            AI-powered vector matching based on your experience and skill embeddings.
+            Free AI-powered vector matching based on your experience and skill embeddings.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            ⚡ 1,420 Active Jobs Scanned
+          <span className="text-xs font-mono font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            ⚡ 1,420 Active Jobs Scanned Free
           </span>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md flex flex-col md:flex-row items-center gap-3">
+      <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md flex flex-col md:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
           <svg
             className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500"
@@ -39,14 +39,14 @@ export default function JobsPage() {
             placeholder="Search by role, skill (e.g. Next.js, Vector DB, LLM Fine-tuning)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-blue-500 transition"
+            className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-emerald-500 transition"
           />
         </div>
 
         <select
           value={selectedLocation}
           onChange={(e) => setSelectedLocation(e.target.value)}
-          className="w-full md:w-48 bg-slate-950 border border-slate-800 text-slate-300 text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 transition"
+          className="w-full md:w-48 bg-slate-950 border border-slate-800 text-slate-300 text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500 transition"
         >
           <option value="all">All Locations</option>
           <option value="remote">Remote Only</option>
@@ -54,8 +54,8 @@ export default function JobsPage() {
           <option value="onsite">On-site</option>
         </select>
 
-        <button className="w-full md:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-blue-600/20 shrink-0">
-          Match Jobs
+        <button className="w-full md:w-auto px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 shrink-0">
+          Match Jobs Free
         </button>
       </div>
 
@@ -64,15 +64,17 @@ export default function JobsPage() {
         {jobsList.map((job) => (
           <div
             key={job.id}
-            className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-6"
+            className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-6 group"
           >
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-lg font-bold text-slate-100">{job.title}</h2>
+                <h2 className="text-lg font-bold text-slate-100 group-hover:text-emerald-300 transition">
+                  {job.title}
+                </h2>
                 <span className="px-2.5 py-0.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
                   {job.matchScore}% Match Score
                 </span>
-                <span className="px-2 py-0.5 text-[11px] font-medium text-blue-400 bg-blue-500/10 rounded-md">
+                <span className="px-2 py-0.5 text-[11px] font-medium text-emerald-300 bg-emerald-500/10 rounded-md">
                   {job.type}
                 </span>
               </div>
@@ -91,7 +93,7 @@ export default function JobsPage() {
                 {job.skills.map((s, idx) => (
                   <span
                     key={idx}
-                    className="px-2.5 py-1 text-[11px] font-medium text-slate-300 bg-slate-800/80 rounded-lg border border-slate-700/60"
+                    className="px-2.5 py-1 text-[11px] font-medium text-slate-300 bg-slate-950 rounded-lg border border-slate-800"
                   >
                     {s}
                   </span>
@@ -100,11 +102,11 @@ export default function JobsPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center justify-center gap-2 shrink-0 border-t md:border-t-0 border-slate-800 pt-4 md:pt-0">
-              <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl transition shadow-md shadow-blue-600/20 text-center">
-                Apply with AI Resume
+              <button className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white font-semibold text-xs rounded-xl transition shadow-md shadow-emerald-600/20 text-center">
+                Apply Free with AI
               </button>
               <button className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 transition text-center">
-                View Match Analysis
+                View Vector Analysis
               </button>
             </div>
           </div>
