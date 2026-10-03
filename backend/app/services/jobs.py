@@ -60,7 +60,7 @@ class JobService:
         return job
 
     @staticmethod
-    def response(job: Job) -> JobResponse:
+    def response(job: Job, applicant_count: int = 0) -> JobResponse:
         return JobResponse(
             id=job.id,
             title=job.title,
@@ -80,6 +80,7 @@ class JobService:
                 semantic=job.semantic_weight,
             ),
             created_at=job.created_at,
+            applicant_count=applicant_count,
         )
 
     @staticmethod

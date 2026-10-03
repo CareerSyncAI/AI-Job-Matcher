@@ -9,15 +9,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from contextlib import asynccontextmanager
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.db.init_db import init_db
 
 settings = get_settings()
 configure_logging()
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="CareerSync AI API", version="0.1.0", docs_url="/docs" if not settings.is_production else None)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Initializing database...")
+    init_db()
+    yield
+
+app = FastAPI(
+    title="CareerSync AI API",
+    version="0.1.0",
+    docs_url="/docs" if not settings.is_production else None,
+    lifespan=lifespan,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,

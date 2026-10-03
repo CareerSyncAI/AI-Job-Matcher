@@ -10,7 +10,7 @@ from app.schemas.common import APIModel
 
 class RegisterRequest(APIModel):
     email: EmailStr
-    password: str = Field(min_length=12, max_length=128)
+    password: str = Field(min_length=8, max_length=128)
     role: UserRole = UserRole.CANDIDATE
     organization_name: str | None = Field(default=None, max_length=255)
 

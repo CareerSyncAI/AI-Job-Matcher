@@ -74,4 +74,5 @@ class JobResponse(APIModel):
     skills: list[JobSkillResponse]
     evaluation_weights: JobWeights
     created_at: datetime
+    applicant_count: int = 0
 

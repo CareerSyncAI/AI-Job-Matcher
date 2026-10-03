@@ -21,6 +21,9 @@ def list_jobs(
     recruiter: RecruiterProfile = Depends(get_recruiter_profile),
     db: Session = Depends(get_db),
 ) -> list[JobResponse]:
+    from sqlalchemy import func
+    from app.models.entities import Application
+
     jobs = (
         db.query(Job)
         .options(selectinload(Job.skills))
@@ -28,7 +31,21 @@ def list_jobs(
         .order_by(Job.created_at.desc())
         .all()
     )
-    return [JobService.response(job) for job in jobs]
+
+    # Batch-fetch application counts for all jobs in a single query
+    if jobs:
+        job_ids = [j.id for j in jobs]
+        counts_q = (
+            db.query(Application.job_id, func.count(Application.id).label("cnt"))
+            .filter(Application.job_id.in_(job_ids))
+            .group_by(Application.job_id)
+            .all()
+        )
+        count_map = {row.job_id: row.cnt for row in counts_q}
+    else:
+        count_map = {}
+
+    return [JobService.response(job, applicant_count=count_map.get(job.id, 0)) for job in jobs]
 
 
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
