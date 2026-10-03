@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit, DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -45,8 +46,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col font-sans antialiased bg-white text-slate-900">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="min-h-full flex flex-col font-sans antialiased">
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

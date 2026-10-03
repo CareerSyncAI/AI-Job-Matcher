@@ -12,6 +12,8 @@
   --color-brand-border: rgba(5, 150, 105, 0.2);
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --brand: #059669;
   --brand-l: #10b981;
@@ -19,22 +21,77 @@
   --brand-dim: rgba(5, 150, 105, 0.08);
   --brand-b: rgba(5, 150, 105, 0.2);
   --teal: #0d9488;
-  --bg: #ffffff;
-  --bg2: #f8fafc;
-  --bg3: #f1f5f9;
-  --border: #e2e8f0;
-  --border2: #cbd5e1;
-  --t1: #0f172a;
-  --t2: #475569;
-  --t3: #94a3b8;
-  --t4: #cbd5e1;
+}
+
+html.dark, [data-theme="dark"] {
+  color-scheme: dark;
+  --bg-main: #020617;
+  --bg-card: #0f172a;
+  --bg-subtle: #1e293b;
+  --border-card: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+html.light, [data-theme="light"] {
+  color-scheme: light;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --border-card: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+}
+
+/* Automatic light theme overrides for all slate cards and text */
+html.light .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+html.light .bg-slate-900,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/95 {
+  background-color: #ffffff !important;
+}
+html.light .bg-slate-800,
+html.light .bg-slate-800\/60,
+html.light .bg-slate-800\/80 {
+  background-color: #f1f5f9 !important;
+}
+html.light .border-slate-800,
+html.light .border-slate-800\/80,
+html.light .border-slate-700,
+html.light .border-slate-700\/60 {
+  border-color: #e2e8f0 !important;
+}
+html.light .text-slate-100 {
+  color: #0f172a !important;
+}
+html.light .text-slate-200 {
+  color: #1e293b !important;
+}
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+html.light .hover\:bg-slate-800:hover,
+html.light .hover\:bg-slate-800\/60:hover,
+html.light .hover\:bg-slate-800\/70:hover {
+  background-color: #f1f5f9 !important;
+}
+html.light .hover\:text-white:hover,
+html.light .hover\:text-slate-100:hover {
+  color: #0f172a !important;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: var(--bg-main, #020617);
+  color: var(--text-main, #f8fafc);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-display {

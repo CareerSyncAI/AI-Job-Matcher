@@ -4,6 +4,7 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, UserRole } from "@/lib/auth";
+import { useTheme } from "@/lib/theme";
 import {
   CareerSyncLogo,
   IconUser,
@@ -11,11 +12,14 @@ import {
   IconAlertTriangle,
   IconEye,
   IconEyeOff,
+  IconSun,
+  IconMoon,
 } from "@/components/Icons";
 
 function RegisterForm() {
   const router = useRouter();
   const { register, isLoading: authLoading } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,9 +87,20 @@ function RegisterForm() {
             Career<span className="text-[#059669]">Sync</span>
           </span>
         </Link>
-        <Link href="/login" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
-          Sign in instead →
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            className="p-2 rounded-xl border border-slate-700/60 bg-slate-800/80 text-amber-400 hover:text-amber-300 transition cursor-pointer flex items-center justify-center shadow-xs"
+          >
+            {isDark ? <IconSun size={15} /> : <IconMoon size={15} />}
+          </button>
+          <Link href="/login" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
+            Sign in instead →
+          </Link>
+        </div>
       </div>
 
       {/* Main Register Card */}
