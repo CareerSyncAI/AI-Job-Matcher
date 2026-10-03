@@ -17,12 +17,23 @@ import {
   IconMoon,
   IconChevronDown,
   IconSettings,
+  IconTarget,
+  IconUsers,
+  IconLayers,
 } from "@/components/Icons";
 
-const navItemsList = [
+const candidateNavItems = [
   { label: "Overview", icon: IconDashboard, href: "/dashboard" },
   { label: "Job Matches", icon: IconBriefcase, href: "/dashboard/jobs" },
-  { label: "Resume Studio", icon: IconDocument, href: "/dashboard/resume" },
+  { label: "AI Resume Studio", icon: IconDocument, href: "/dashboard/resume" },
+  { label: "My Applications", icon: IconTarget, href: "/dashboard/applications" },
+];
+
+const recruiterNavItems = [
+  { label: "Hiring Overview", icon: IconDashboard, href: "/dashboard" },
+  { label: "Job Requisitions", icon: IconBriefcase, href: "/dashboard/recruiter/jobs" },
+  { label: "Talent Discovery", icon: IconUsers, href: "/dashboard/recruiter/candidates" },
+  { label: "Applicant Pipeline", icon: IconLayers, href: "/dashboard/recruiter/pipeline" },
 ];
 
 export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
@@ -58,6 +69,8 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
     router.replace("/login");
   };
 
+  const navItems = user?.role === "recruiter" ? recruiterNavItems : candidateNavItems;
+
   return (
     <div
       className={`min-h-screen flex font-sans transition-colors duration-200 ${
@@ -92,14 +105,16 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
           <span className="font-display font-bold text-base tracking-tight">
             Career<span className="text-[#059669]">Sync</span>
           </span>
-          <span className="ml-auto px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20">
-            {user?.role === "recruiter" ? "RECRUITER" : "FREE"}
-          </span>
+          {user?.role === "recruiter" && (
+            <span className="ml-auto px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20">
+              RECRUITER
+            </span>
+          )}
         </div>
 
         {/* Navigation items */}
         <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5">
-          {navItemsList.map((item) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -181,12 +196,6 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
 
           {/* Right Header Navigation Items */}
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-            {/* Free Platform Badge */}
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-mono font-semibold border border-emerald-500/20">
-              <IconCheckCircle size={13} className="text-emerald-500" />
-              100% Free Platform
-            </span>
-
             {/* Quick Dark/Light Theme Toggle Button */}
             <button
               type="button"
@@ -271,9 +280,6 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                     <div className="flex items-center gap-2 mt-1">
                       <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-bold border border-emerald-500/20 capitalize">
                         {user?.role || "Candidate"}
-                      </span>
-                      <span className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                        Free Platform Tier
                       </span>
                     </div>
                   </div>

@@ -12,6 +12,8 @@ import {
   IconNetwork,
   IconUser,
   IconBuilding,
+  IconUsers,
+  IconLayers,
 } from "@/components/Icons";
 
 export default function DashboardPage() {
@@ -29,22 +31,50 @@ export default function DashboardPage() {
               {isCandidate ? "Candidate Workspace" : "Recruiter Command Center"}
             </span>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{user?.full_name || user?.email?.split('@')[0] || "User"}</span>
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{user?.full_name || user?.email?.split("@")[0] || "User"}</span>
             </h1>
             <p className="text-slate-400 text-sm mt-1 max-w-xl">
               {isCandidate
-                ? "Your vector profile matched 1,420 open engineering roles this week. 12 high-affinity positions are ready for review."
-                : "Your talent matcher has screened 84 incoming applicants with an average 91% skill alignment."}
+                ? "Your vector profile matched 1,420 open engineering roles this week. 12 high-affinity positions are ready for your review."
+                : "Your talent pipeline has 84 screened applicants across 8 live requisitions with an average 89% skill alignment."}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/jobs"
-              className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-2"
-            >
-              <IconSearch size={16} />
-              Explore Matches
-            </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            {isCandidate ? (
+              <>
+                <Link
+                  href="/dashboard/jobs"
+                  className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-2"
+                >
+                  <IconSearch size={16} />
+                  Explore Matches
+                </Link>
+                <Link
+                  href="/dashboard/resume"
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-semibold rounded-xl transition flex items-center gap-2"
+                >
+                  <IconDocument size={16} />
+                  Resume Studio
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard/recruiter/jobs"
+                  className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-2"
+                >
+                  <IconBriefcase size={16} />
+                  Post New Requisition
+                </Link>
+                <Link
+                  href="/dashboard/recruiter/pipeline"
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-semibold rounded-xl transition flex items-center gap-2"
+                >
+                  <IconLayers size={16} />
+                  ATS Pipeline
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -52,9 +82,10 @@ export default function DashboardPage() {
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {(isCandidate ? candidateStats : recruiterStats).map((stat, i) => (
-          <div
+          <Link
             key={i}
-            className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group"
+            href={stat.href}
+            className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block"
           >
             <div className="flex items-center justify-between">
               <span className="text-slate-400 text-xs font-medium">{stat.label}</span>
@@ -70,7 +101,7 @@ export default function DashboardPage() {
                 {stat.change}
               </span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -78,19 +109,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Top Section */}
           <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-100">
-                  {isCandidate ? "Recommended Positions" : "High-Affinity Applicants"}
+                  {isCandidate ? "Recommended Positions" : "High-Affinity Sourced Candidates"}
                 </h2>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  {isCandidate ? "Ranked by skill matrix overlap & experience affinity" : "Screened candidates with >85% alignment"}
+                  {isCandidate ? "Ranked by skill matrix overlap & experience affinity" : "Screened talent matches with >85% skill alignment"}
                 </p>
               </div>
-              <Link href="/dashboard/jobs" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition">
-                View All Directory →
+              <Link
+                href={isCandidate ? "/dashboard/jobs" : "/dashboard/recruiter/candidates"}
+                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
+              >
+                {isCandidate ? "View All Directory →" : "View Sourcing Directory →"}
               </Link>
             </div>
 
@@ -141,7 +174,7 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#059669] to-[#0d9488] flex items-center justify-center font-bold text-white text-xs">
-                          {cand.name.split(" ").map(n => n[0]).join("")}
+                          {cand.name.split(" ").map((n) => n[0]).join("")}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -157,9 +190,12 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <button className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition cursor-pointer">
-                        View Profile
-                      </button>
+                      <Link
+                        href="/dashboard/recruiter/candidates"
+                        className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition"
+                      >
+                        Screen Candidate
+                      </Link>
                     </div>
                   ))}
             </div>
@@ -172,46 +208,104 @@ export default function DashboardPage() {
           <div className="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 backdrop-blur-md space-y-4">
             <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
               <IconNetwork size={16} />
-              Skill Matrix Optimization
+              {isCandidate ? "Skill Matrix Optimization" : "Requisition Pipeline Strategy"}
             </div>
             <p className="text-slate-300 text-xs leading-relaxed">
               {isCandidate
                 ? "Integrating verified proficiencies in 'Docker' and 'Kubernetes' in your profile increases affinity rankings for Senior Infrastructure roles by an estimated +18%."
-                : "Listings specifying exact testing frameworks and CI/CD stacks receive 3.2x higher qualified candidate submissions."}
+                : "Job listings with clearly detailed required vs. preferred skills and automated screening criteria yield 3.2x higher-quality interview conversion rates."}
             </p>
-            <Link href="/dashboard/resume" className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold rounded-xl transition text-center block">
-              {isCandidate ? "Review Resume Keywords" : "Update Job Requirements"}
+            <Link
+              href={isCandidate ? "/dashboard/resume" : "/dashboard/recruiter/jobs"}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold rounded-xl transition text-center block"
+            >
+              {isCandidate ? "Review Resume Keywords" : "Post New Requisition"}
             </Link>
           </div>
 
           {/* Quick Tools */}
           <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
-            <h3 className="text-sm font-bold text-slate-200 mb-4">Workspace Tools</h3>
+            <h3 className="text-sm font-bold text-slate-200 mb-4">Role Quick Tools</h3>
             <div className="space-y-2.5">
-              <Link
-                href="/dashboard/resume"
-                className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                    <IconDocument size={16} />
-                  </div>
-                  Resume Studio &amp; ATS Scanner
-                </div>
-                <span className="text-slate-500 font-bold">→</span>
-              </Link>
-              <Link
-                href="/dashboard/jobs"
-                className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
-                    <IconBriefcase size={16} />
-                  </div>
-                  Open Opportunities Directory
-                </div>
-                <span className="text-slate-500 font-bold">→</span>
-              </Link>
+              {isCandidate ? (
+                <>
+                  <Link
+                    href="/dashboard/resume"
+                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                        <IconDocument size={16} />
+                      </div>
+                      Resume Studio &amp; ATS Scanner
+                    </div>
+                    <span className="text-slate-500 font-bold">→</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/jobs"
+                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
+                        <IconBriefcase size={16} />
+                      </div>
+                      Job Opportunities Directory
+                    </div>
+                    <span className="text-slate-500 font-bold">→</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/applications"
+                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+                        <IconCheckCircle size={16} />
+                      </div>
+                      My Applications &amp; Status
+                    </div>
+                    <span className="text-slate-500 font-bold">→</span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/dashboard/recruiter/jobs"
+                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                        <IconBriefcase size={16} />
+                      </div>
+                      Job Requisitions &amp; Postings
+                    </div>
+                    <span className="text-slate-500 font-bold">→</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/recruiter/candidates"
+                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
+                        <IconUsers size={16} />
+                      </div>
+                      Talent Sourcing &amp; Discovery
+                    </div>
+                    <span className="text-slate-500 font-bold">→</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/recruiter/pipeline"
+                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+                        <IconLayers size={16} />
+                      </div>
+                      Applicant Pipeline ATS Board
+                    </div>
+                    <span className="text-slate-500 font-bold">→</span>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -225,6 +319,7 @@ const candidateStats = [
     label: "Profile Match Affinity",
     value: "94%",
     change: "+4% this wk",
+    href: "/dashboard/jobs",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -235,6 +330,7 @@ const candidateStats = [
     label: "Resume ATS Score",
     value: "88/100",
     change: "Verified",
+    href: "/dashboard/resume",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -245,6 +341,7 @@ const candidateStats = [
     label: "Applications Sent",
     value: "14",
     change: "Active",
+    href: "/dashboard/applications",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -255,6 +352,7 @@ const candidateStats = [
     label: "Interview Requests",
     value: "3",
     change: "Active",
+    href: "/dashboard/applications",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -265,9 +363,10 @@ const candidateStats = [
 
 const recruiterStats = [
   {
-    label: "Active Job Listings",
+    label: "Active Job Postings",
     value: "8",
     change: "Live",
+    href: "/dashboard/recruiter/jobs",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -275,9 +374,10 @@ const recruiterStats = [
     ),
   },
   {
-    label: "Total Applicants",
+    label: "Talent Sourced",
     value: "142",
     change: "+24 today",
+    href: "/dashboard/recruiter/candidates",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -285,9 +385,10 @@ const recruiterStats = [
     ),
   },
   {
-    label: "Candidate Alignment Rate",
+    label: "Candidate Alignment",
     value: "89%",
     change: "High Quality",
+    href: "/dashboard/recruiter/pipeline",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -295,9 +396,10 @@ const recruiterStats = [
     ),
   },
   {
-    label: "Interviews Scheduled",
+    label: "Pipeline In Progress",
     value: "11",
     change: "This Week",
+    href: "/dashboard/recruiter/pipeline",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
