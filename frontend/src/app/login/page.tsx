@@ -38,7 +38,7 @@ export default function LoginPage() {
   };
 
   const fillDemoCandidate = () => {
-    setEmail("candidate.demo@talentiq.dev");
+    setEmail("alice.vance@example.com");
     setPassword("Password123456!");
     setError(null);
   };
