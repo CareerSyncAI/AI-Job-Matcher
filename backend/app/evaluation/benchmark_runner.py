@@ -27,8 +27,10 @@ from app.evaluation.benchmark_schema import (
 from app.evaluation.synthetic_dataset import BENCHMARK_DATASET
 from app.models.entities import CandidateProfile, Job, JobSkill, Resume
 from app.models.enums import EvaluatedSkillStatus, JobStatus
+from app.services.education_extractor import extract_education_from_text
 from app.services.evaluation import DeterministicEvaluationEngine
-from app.services.scoring import Weights, education_satisfies, required_coverage_tier
+from app.services.experience_extractor import extract_experience_years_from_text
+from app.services.scoring import Weights, education_satisfies, normalize_degree, required_coverage_tier
 from app.services.taxonomy import taxonomy
 
 
@@ -90,7 +92,39 @@ class BenchmarkRunner:
                     suggested_action="Review taxonomy alias mappings or ambiguity boundary patterns.",
                 ))
 
-            # 2. Mock Entities for Deterministic Engine Run
+            # 2. Extract Actual Experience and Compute Real MAE
+            pred_exp_years = extract_experience_years_from_text(item.candidate.resume_text)
+            exp_err = abs((pred_exp_years or 0.0) - item.candidate.expected_experience_years)
+            exp_errors.append(exp_err)
+            if round(pred_exp_years or 0.0, 1) == round(item.candidate.expected_experience_years, 1):
+                exp_exact += 1
+            if exp_err > 1.5:
+                error_logs.append(ErrorAnalysisLog(
+                    case_id=item.id,
+                    candidate_name=item.candidate.name,
+                    job_title=item.job.title,
+                    error_category="experience_drift",
+                    details=f"Extracted experience ({pred_exp_years} yrs) drifted from expected ({item.candidate.expected_experience_years} yrs).",
+                    suggested_action="Check date boundaries and ongoing tenure calculation against resume text.",
+                ))
+
+            # 3. Extract Actual Education and Compute Real Classification Accuracy
+            pred_edu_entries = extract_education_from_text(item.candidate.resume_text)
+            pred_degree = pred_edu_entries[0].get("degree_level") if pred_edu_entries else None
+            is_edu_correct = normalize_degree(pred_degree) == normalize_degree(item.candidate.expected_education_degree)
+            if is_edu_correct:
+                edu_correct += 1
+            else:
+                error_logs.append(ErrorAnalysisLog(
+                    case_id=item.id,
+                    candidate_name=item.candidate.name,
+                    job_title=item.job.title,
+                    error_category="education_mismatch",
+                    details=f"Extracted degree ({pred_degree}) does not match expected ({item.candidate.expected_education_degree}).",
+                    suggested_action="Review degree pattern regexes and academic institution boundary parser.",
+                ))
+
+            # 4. Mock Entities for Deterministic Engine Run using Actual Predictions
             mock_job = Job(
                 title=item.job.title,
                 description=item.job.description,
@@ -112,8 +146,8 @@ class BenchmarkRunner:
 
             mock_cand = CandidateProfile(
                 name=item.candidate.name,
-                total_experience_years=item.candidate.expected_experience_years,
-                education={"degree": item.candidate.expected_education_degree, "skills": list(extracted_skill_names)},
+                total_experience_years=pred_exp_years,
+                education={"degree": pred_degree, "skills": list(extracted_skill_names)},
             )
             mock_resume = Resume(
                 extracted_text=item.candidate.resume_text,
@@ -133,7 +167,7 @@ class BenchmarkRunner:
                 weights=weights,
             )
 
-            # 3. Evaluate Required Skill Gap Accuracy
+            # 5. Evaluate Required Skill Gap Accuracy
             req_skills_set = {s.casefold() for s in item.job.required_skills}
             system_missing_skills = [
                 s["name"] for s in eval_res["evaluated_skills"]
@@ -153,12 +187,7 @@ class BenchmarkRunner:
             gap_fp += g_fp
             gap_fn += g_fn
 
-            # 4. Evaluate Education Hierarchy
-            satisfies_system = education_satisfies(item.candidate.expected_education_degree, item.job.education_required)
-            satisfies_expected = (item.expected_coverage_tier != 2 or len(item.expected_missing_required_skills) == 0)
-            edu_correct += 1
-
-            # 5. Track Score Correlation
+            # 6. Track Score Correlation
             system_scores.append(eval_res["overall_score"])
             human_ratings.append(item.expected_human_fit_rating)
 
@@ -195,8 +224,8 @@ class BenchmarkRunner:
                 gap_f1=round(g_f1, 4),
             ),
             experience_tenure_metrics=ExperienceMetrics(
-                mean_absolute_error_years=0.0,
-                exact_matches=len(self.dataset),
+                mean_absolute_error_years=round(sum(exp_errors) / len(exp_errors), 4) if exp_errors else 0.0,
+                exact_matches=exp_exact,
                 total_evaluated=len(self.dataset),
             ),
             education_hierarchy_metrics=EducationMetrics(
@@ -209,23 +238,36 @@ class BenchmarkRunner:
         )
 
     def _calculate_spearman_rho(self, x: list[float], y: list[float]) -> float:
-        """Calculate Spearman's rank correlation coefficient."""
+        """Calculate Spearman's rank correlation coefficient with tie-averaging."""
         n = len(x)
         if n < 2:
             return 1.0
 
-        def _rank(vals: list[float]) -> list[float]:
+        def _rank_with_ties(vals: list[float]) -> list[float]:
             sorted_indices = sorted(range(n), key=lambda i: vals[i])
             ranks = [0.0] * n
-            for rank_idx, val_idx in enumerate(sorted_indices):
-                ranks[val_idx] = float(rank_idx + 1)
+            i = 0
+            while i < n:
+                j = i
+                while j + 1 < n and vals[sorted_indices[j + 1]] == vals[sorted_indices[i]]:
+                    j += 1
+                avg_rank = sum(r + 1 for r in range(i, j + 1)) / (j - i + 1)
+                for k in range(i, j + 1):
+                    ranks[sorted_indices[k]] = avg_rank
+                i = j + 1
             return ranks
 
-        rx = _rank(x)
-        ry = _rank(y)
+        rx = _rank_with_ties(x)
+        ry = _rank_with_ties(y)
 
-        d_sq = sum((rx[i] - ry[i]) ** 2 for i in range(n))
-        rho = 1.0 - (6.0 * d_sq) / (n * (n ** 2 - 1))
+        mean_rx = sum(rx) / n
+        mean_ry = sum(ry) / n
+        cov = sum((rx[i] - mean_rx) * (ry[i] - mean_ry) for i in range(n))
+        var_x = sum((rx[i] - mean_rx) ** 2 for i in range(n))
+        var_y = sum((ry[i] - mean_ry) ** 2 for i in range(n))
+        if var_x == 0 or var_y == 0:
+            return 0.0
+        rho = cov / math.sqrt(var_x * var_y)
         return max(-1.0, min(1.0, rho))
 
 

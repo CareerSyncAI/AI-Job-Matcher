@@ -229,11 +229,13 @@ def update_profile(
             profile.headline = payload.headline
         if payload.location is not None:
             profile.location = payload.location
-        edu_data = profile.education if isinstance(profile.education, dict) else {}
-        edu_data["skills"] = payload.skills
+        edu_data = dict(profile.education) if isinstance(profile.education, dict) else {}
+        edu_data["skills"] = list(payload.skills) if payload.skills is not None else []
         if payload.bio is not None:
             edu_data["bio"] = payload.bio
-        profile.education = edu_data
+        profile.education = dict(edu_data)
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(profile, "education")
     elif current_user.role == UserRole.RECRUITER:
         profile = db.query(RecruiterProfile).filter(RecruiterProfile.user_id == current_user.id).one_or_none()
         if not profile:
@@ -258,6 +260,9 @@ def change_password(
             detail="The current password provided is incorrect.",
         )
     current_user.password_hash = hash_password(payload.new_password)
+    # Invalidate all active sessions upon password change
+    from app.models.entities import RefreshToken
+    db.query(RefreshToken).filter(RefreshToken.user_id == current_user.id).delete()
     db.commit()
     return MessageResponse(message="Password successfully updated.")
 

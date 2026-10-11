@@ -32,40 +32,52 @@ interface JobItem {
 }
 
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<JobItem[]>(initialJobs);
+  const [jobs, setJobs] = useState<JobItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedArrangement, setSelectedArrangement] = useState("all");
-  const [sortBy, setSortBy] = useState<"match" | "recent">("match");
+  const [sortBy, setSortBy] = useState<"match" | "recent">("recent");
   const [appliedJobs, setAppliedJobs] = useState<Record<string, boolean>>({});
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
 
-  // Fetch live jobs from FastAPI backend
+  // Fetch live jobs from FastAPI backend and existing applications
   useEffect(() => {
     let isMounted = true;
-    const fetchJobs = async () => {
+    const fetchJobsAndApplications = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/jobs/public/open");
-        if (isMounted && Array.isArray(res.data) && res.data.length > 0) {
-          const augmented = res.data.map((j: JobItem, idx: number) => ({
-            ...j,
-            salary: j.salary || (idx === 0 ? "$135k - $175k" : idx === 1 ? "$150k - $190k" : "$140k - $180k"),
-            matchScore: idx === 0 ? 96 : idx === 1 ? 93 : 89,
-          }));
-          setJobs(augmented);
+        const [jobsRes, appsRes] = await Promise.allSettled([
+          api.get("/jobs/public/open"),
+          api.get("/applications/me"),
+        ]);
+
+        if (isMounted) {
+          if (jobsRes.status === "fulfilled" && Array.isArray(jobsRes.value.data)) {
+            setJobs(jobsRes.value.data);
+          } else {
+            setJobs([]);
+          }
+
+          if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value.data)) {
+            const appliedMap: Record<string, boolean> = {};
+            for (const app of appsRes.value.data) {
+              if (app.job_id) {
+                appliedMap[app.job_id] = true;
+              }
+            }
+            setAppliedJobs(appliedMap);
+          }
         }
       } catch (err) {
-        console.warn("Using offline database fallback", err);
+        console.warn("Error fetching jobs or applications:", err);
       } finally {
-        setTimeout(() => {
-          if (isMounted) setLoading(false);
-        }, 350); // Subtle natural animation duration
+        if (isMounted) setLoading(false);
       }
     };
-    fetchJobs();
+    fetchJobsAndApplications();
     return () => {
       isMounted = false;
     };
@@ -111,10 +123,41 @@ export default function JobsPage() {
     return result;
   }, [jobs, searchTerm, selectedArrangement, selectedCategory, sortBy]);
 
-  const handleApply = (jobId: string, jobTitle: string) => {
-    setAppliedJobs((prev) => ({ ...prev, [jobId]: true }));
-    setStatusMessage(`Application submitted for "${jobTitle}"! Recruiter notified.`);
-    setTimeout(() => setStatusMessage(null), 4000);
+  const handleApply = async (jobId: string, jobTitle: string) => {
+    try {
+      setApplyingJobId(jobId);
+      await api.post(`/jobs/${jobId}/applications`, {});
+      setAppliedJobs((prev) => ({ ...prev, [jobId]: true }));
+      setStatusMessage({
+        type: "success",
+        text: `Application submitted for "${jobTitle}"! Recruiter notified.`,
+      });
+    } catch (err: unknown) {
+      const errResponse = (err as { response?: { status?: number; data?: { detail?: string } } })?.response;
+      const statusCode = errResponse?.status;
+      const detail = errResponse?.data?.detail;
+
+      if (statusCode === 409) {
+        setAppliedJobs((prev) => ({ ...prev, [jobId]: true }));
+        setStatusMessage({
+          type: "success",
+          text: `You have already applied to "${jobTitle}".`,
+        });
+      } else if (statusCode === 400 && typeof detail === "string" && detail.includes("resume")) {
+        setStatusMessage({
+          type: "error",
+          text: "No resume on file. Please upload a resume in Resume Studio before applying.",
+        });
+      } else {
+        setStatusMessage({
+          type: "error",
+          text: typeof detail === "string" ? detail : "Failed to submit application. Please try again.",
+        });
+      }
+    } finally {
+      setApplyingJobId(null);
+      setTimeout(() => setStatusMessage(null), 5000);
+    }
   };
 
   const handleSkillClick = (skillName: string) => {
@@ -153,12 +196,26 @@ export default function JobsPage() {
 
       {/* Instant Notification Toast */}
       {statusMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs font-medium flex items-center justify-between shadow-xl shadow-emerald-950/50 animate-fadeIn">
+        <div
+          className={`p-4 rounded-2xl border text-xs font-medium flex items-center justify-between shadow-xl animate-fadeIn ${
+            statusMessage.type === "error"
+              ? "bg-rose-500/20 border-rose-500/40 text-rose-200 shadow-rose-950/50"
+              : "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 shadow-emerald-950/50"
+          }`}
+        >
           <div className="flex items-center gap-2.5">
-            <IconCheckCircle size={18} className="text-emerald-300 shrink-0" />
-            <p className="font-semibold">{statusMessage}</p>
+            <IconCheckCircle
+              size={18}
+              className={statusMessage.type === "error" ? "text-rose-300 shrink-0" : "text-emerald-300 shrink-0"}
+            />
+            <p className="font-semibold">{statusMessage.text}</p>
           </div>
-          <button onClick={() => setStatusMessage(null)} className="text-emerald-300 hover:text-white text-sm font-bold cursor-pointer">✕</button>
+          <button
+            onClick={() => setStatusMessage(null)}
+            className="text-slate-400 hover:text-white text-sm font-bold cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -360,34 +417,36 @@ export default function JobsPage() {
                   {/* Actions Column */}
                   <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center justify-center gap-2.5 shrink-0 border-t md:border-t-0 border-slate-800/80 pt-4 md:pt-0">
                     <button
-                      disabled={isApplied}
+                      disabled={isApplied || applyingJobId === job.id}
                       onClick={() => handleApply(job.id, job.title)}
                       className={`px-6 py-2.5 rounded-xl font-semibold text-xs transition-all shadow-md cursor-pointer ${
                         isApplied
                           ? "bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default"
+                          : applyingJobId === job.id
+                          ? "bg-emerald-700 text-white cursor-wait opacity-80"
                           : "bg-[#059669] hover:bg-[#047857] text-white hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5"
                       }`}
                     >
-                      {isApplied ? "✓ Application Sent" : "Quick Apply"}
+                      {isApplied ? "✓ Application Sent" : applyingJobId === job.id ? "Submitting..." : "Quick Apply"}
                     </button>
                     <button
                       onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
                       className="px-4 py-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 text-xs font-semibold rounded-xl transition cursor-pointer"
                     >
-                      {isExpanded ? "Hide Details" : "Match Insights"}
+                      {isExpanded ? "Hide Details" : "Role Insights"}
                     </button>
                   </div>
                 </div>
 
-                {/* Expanded Vector Insights Drawer */}
+                {/* Expanded Insights Drawer */}
                 {isExpanded && (
                   <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs animate-fadeIn">
                     <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
                       <span className="font-mono text-[10px] text-emerald-400 font-bold uppercase block mb-1">
-                        Semantic Profile Alignment
+                        Role Requirements Alignment
                       </span>
                       <p className="text-slate-300 text-xs leading-relaxed">
-                        Vector cosine alignment indicates a <strong>{job.matchScore}% overlap</strong> between your recent project scope and this role&apos;s tech stack.
+                        Required competencies: <strong>{job.skills?.filter((s) => s.required).map((s) => s.name).join(", ") || "General experience"}</strong>. These are evaluated against your uploaded ATS resume upon application.
                       </p>
                     </div>
                     <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
@@ -395,7 +454,7 @@ export default function JobsPage() {
                         ATS Resume Recommendations
                       </span>
                       <p className="text-slate-300 text-xs leading-relaxed">
-                        Ensure quantified metrics regarding <strong>{job.skills[0]?.name || "Core Skills"}</strong> are highlighted in your resume work history.
+                        Ensure quantified metrics and experience regarding <strong>{job.skills?.[0]?.name || "Core Skills"}</strong> are clearly present in your resume.
                       </p>
                     </div>
                   </div>
@@ -408,57 +467,3 @@ export default function JobsPage() {
     </div>
   );
 }
-
-const initialJobs: JobItem[] = [
-  {
-    id: "11ecb40c-b052-49bd-9002-70cd091510fb",
-    title: "Senior Frontend Engineer",
-    department: "Product Engineering",
-    location: "San Francisco, CA (Hybrid)",
-    employment_type: "Full-time",
-    work_arrangement: "Hybrid",
-    description: "Lead modern client architecture, optimize Next.js App Router performance, and develop accessible UI components using React, TypeScript, and Tailwind CSS.",
-    matchScore: 96,
-    salary: "$140k - $180k",
-    skills: [
-      { id: "1", name: "React", required: true, min_years: 4 },
-      { id: "2", name: "TypeScript", required: true, min_years: 3 },
-      { id: "3", name: "Next.js", required: true, min_years: 2 },
-      { id: "4", name: "Tailwind CSS", required: false, min_years: 2 },
-    ],
-  },
-  {
-    id: "8cd0ca95-bc88-40aa-be61-f02a155c54c9",
-    title: "Staff AI Platform Engineer",
-    department: "AI Core Team",
-    location: "Remote",
-    employment_type: "Full-time",
-    work_arrangement: "Remote",
-    description: "Design high-throughput vector search pipelines, Celery background tasks, and integrate local embedding microservices with PostgreSQL pgvector.",
-    matchScore: 93,
-    salary: "$160k - $200k",
-    skills: [
-      { id: "5", name: "Python", required: true, min_years: 5 },
-      { id: "6", name: "FastAPI", required: true, min_years: 3 },
-      { id: "7", name: "PyTorch", required: true, min_years: 2 },
-      { id: "8", name: "Docker", required: false, min_years: 2 },
-    ],
-  },
-  {
-    id: "eb000723-58c3-4b76-9335-b1693b923da5",
-    title: "Lead DevOps Architect",
-    department: "Infrastructure",
-    location: "Austin, TX (On-site)",
-    employment_type: "Full-time",
-    work_arrangement: "On-site",
-    description: "Architect container orchestration, infrastructure-as-code, and automated zero-downtime deployment pipelines using AWS, Docker, and Kubernetes.",
-    matchScore: 89,
-    salary: "$150k - $190k",
-    skills: [
-      { id: "9", name: "Kubernetes", required: true, min_years: 4 },
-      { id: "10", name: "Docker", required: true, min_years: 5 },
-      { id: "11", name: "AWS", required: true, min_years: 4 },
-      { id: "12", name: "Python", required: false, min_years: 2 },
-    ],
-  },
-];

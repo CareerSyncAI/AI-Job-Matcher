@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_recruiter_profile
 from app.core.config import get_settings
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
 from app.models.entities import Application, CandidateProfile, Job, RecruiterProfile, Resume, User
 from app.models.enums import ApplicationStatus, AttentionReason, ProcessingStatus, UserRole
 from app.schemas.resumes import ATSAnalysisSchema, AnalyzeTextPayload, ResumeResponse
@@ -137,12 +137,13 @@ async def upload_resume(
         metadata={"job_id": str(job_id), "sha256": resume.sha256},
     )
 
-    # Step 2: Offload inline processing to worker thread when Celery is disabled so event loop is not blocked
-    if not settings.enable_worker:
-        await asyncio.to_thread(_process_resume_inline, db, resume=resume, job_id=job_id, settings=settings)
-
     db.commit()
     db.refresh(resume)
+
+    # Step 2: Offload inline processing to worker thread with dedicated session when Celery is disabled
+    if not settings.enable_worker:
+        await asyncio.to_thread(_process_resume_inline, resume.id, job_id)
+        db.refresh(resume)
 
     return ResumeResponse(
         id=resume.id,
@@ -154,14 +155,22 @@ async def upload_resume(
     )
 
 
-def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, settings) -> None:
+def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
     """
-    Synchronously run the full pipeline for a resume:
+    Synchronously run the full pipeline for a resume in a dedicated worker-thread DB session:
     parse → candidate → application → evaluation.
     Fails loudly without faking defaults or completing failed parses.
     """
+    settings = get_settings()
+    db = SessionLocal()
     try:
+        resume = db.get(Resume, resume_id)
+        if not resume:
+            logger.error("Resume %s not found for inline processing", resume_id)
+            return
+
         resume.processing_status = ProcessingStatus.PROCESSING
+        db.commit()
 
         root = settings.upload_directory.expanduser().resolve()
         file_path = (root / resume.storage_key).resolve()
@@ -170,6 +179,7 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
             logger.error("Resume file missing on disk: %s", file_path)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
+            db.commit()
             return
 
         extracted_text = extract_text_from_file(file_path, resume.mime_type)
@@ -179,6 +189,7 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.PARSE_FAILED
             resume.extracted_text = ""
+            db.commit()
             return
 
         resume.extracted_text = extracted_text
@@ -189,6 +200,7 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
             logger.error("Job %s not found for resume %s", job_id, resume.id)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+            db.commit()
             return
 
         # Find or create CandidateProfile (scoped to recruiter)
@@ -239,15 +251,66 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
 
+        db.commit()
     except Exception as exc:
-        logger.exception("Inline resume processing error for %s: %s", resume.id, exc)
-        resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
-        resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+        db.rollback()
+        logger.exception("Inline resume processing error for %s: %s", resume_id, exc)
+        try:
+            resume = db.get(Resume, resume_id)
+            if resume:
+                resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+                resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+                db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
 
 
 # ── Download / ATS Analyzer endpoints ───────────────────────────────────────
 
 download_router = APIRouter(prefix="/resumes", tags=["resumes"])
+
+
+def verify_resume_access(resume: Resume, current_user: User, db: Session) -> None:
+    """Enforces strict candidate and recruiter ownership boundaries on resume resources."""
+    if current_user.role == UserRole.ADMIN:
+        return
+
+    if current_user.role == UserRole.CANDIDATE:
+        cand_profile = current_user.candidate_profile
+        if not cand_profile or resume.candidate_id != cand_profile.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not own this resume.")
+        return
+
+    if current_user.role == UserRole.RECRUITER:
+        recruiter_profile = current_user.recruiter_profile
+        if not recruiter_profile:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Recruiter profile required.")
+
+        # Check if resume was uploaded directly to a job owned by this recruiter
+        if resume.ingestion_job_id is not None:
+            job = resume.ingestion_job or db.get(Job, resume.ingestion_job_id)
+            if job and job.recruiter_id == recruiter_profile.id:
+                return
+
+        # Or check if resume is attached to an application for a job owned by this recruiter
+        from app.models.entities import Application, Job
+        app_exists = (
+            db.query(Application)
+            .join(Job, Application.job_id == Job.id)
+            .filter(Application.resume_id == resume.id, Job.recruiter_id == recruiter_profile.id)
+            .first()
+        )
+        if app_exists is not None:
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not own the job or application associated with this resume.",
+        )
+
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
 
 
 @download_router.get("/{resume_id}", response_model=ResumeResponse)
@@ -260,14 +323,7 @@ def get_resume(
     if not resume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
 
-    if current_user.role == UserRole.CANDIDATE:
-        if not current_user.candidate_profile or resume.candidate_id != current_user.candidate_profile.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not own this resume.")
-    elif current_user.role == UserRole.RECRUITER:
-        if not current_user.recruiter_profile or resume.ingestion_job.recruiter_id != current_user.recruiter_profile.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not own the job associated with this resume.")
-    elif current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
+    verify_resume_access(resume, current_user, db)
 
     return ResumeResponse(
         id=resume.id,
@@ -285,10 +341,12 @@ def analyze_stored_resume_ats(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ATSAnalysisSchema:
-    """Run standalone ATS quality analysis on a stored resume."""
+    """Run standalone ATS quality analysis on an authorized stored resume."""
     resume = db.get(Resume, resume_id)
     if not resume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+
+    verify_resume_access(resume, current_user, db)
 
     text = resume.extracted_text or ""
     res = ats_analyzer.analyze(text)

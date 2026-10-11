@@ -16,7 +16,7 @@ interface ApplicationItem {
   id: string;
   job_id: string;
   candidate_id: string;
-  status: "NEW" | "SCREENING" | "INTERVIEWING" | "OFFERED" | "HIRED" | "REJECTED";
+  status: "new" | "under_review" | "shortlisted" | "rejected" | string;
   applied_at: string;
   job_title?: string;
   company_name?: string;
@@ -73,28 +73,24 @@ export default function CandidateApplicationsPage() {
   }, []);
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "INTERVIEWING":
+    const s = status?.toLowerCase();
+    switch (s) {
+      case "shortlisted":
         return {
-          label: "Technical Interview",
+          label: "Shortlisted",
           bg: "bg-purple-500/10 text-purple-400 border-purple-500/20",
         };
-      case "SCREENING":
+      case "under_review":
         return {
           label: "In Review / Screening",
           bg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
         };
-      case "OFFERED":
-      case "HIRED":
+      case "rejected":
         return {
-          label: "Offer Extended",
-          bg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-        };
-      case "REJECTED":
-        return {
-          label: "Archived",
+          label: "Archived / Rejected",
           bg: "bg-slate-500/10 text-slate-400 border-slate-500/20",
         };
+      case "new":
       default:
         return {
           label: "Application Submitted",
@@ -104,9 +100,10 @@ export default function CandidateApplicationsPage() {
   };
 
   const filteredApps = applications.filter((app) => {
-    if (activeFilter === "ACTIVE" && (app.status === "REJECTED" || app.status === "HIRED")) return false;
-    if (activeFilter === "INTERVIEWING" && app.status !== "INTERVIEWING") return false;
-    if (activeFilter === "OFFERED" && app.status !== "OFFERED") return false;
+    const s = app.status?.toLowerCase();
+    if (activeFilter === "ACTIVE" && s === "rejected") return false;
+    if (activeFilter === "UNDER_REVIEW" && s !== "under_review") return false;
+    if (activeFilter === "SHORTLISTED" && s !== "shortlisted") return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = app.job_title?.toLowerCase().includes(q);
@@ -168,7 +165,7 @@ export default function CandidateApplicationsPage() {
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Under Review</span>
           <p className="text-2xl font-bold mt-1 text-amber-500">
-            {applications.filter((a) => a.status === "SCREENING" || a.status === "NEW").length}
+            {applications.filter((a) => a.status?.toLowerCase() === "under_review").length}
           </p>
         </div>
         <div
@@ -176,9 +173,9 @@ export default function CandidateApplicationsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Interviews</span>
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Shortlisted</span>
           <p className="text-2xl font-bold mt-1 text-purple-500">
-            {applications.filter((a) => a.status === "INTERVIEWING").length}
+            {applications.filter((a) => a.status?.toLowerCase() === "shortlisted").length}
           </p>
         </div>
         <div
@@ -186,9 +183,9 @@ export default function CandidateApplicationsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Offers</span>
-          <p className="text-2xl font-bold mt-1 text-emerald-500">
-            {applications.filter((a) => a.status === "OFFERED" || a.status === "HIRED").length}
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Archived</span>
+          <p className="text-2xl font-bold mt-1 text-slate-400">
+            {applications.filter((a) => a.status?.toLowerCase() === "rejected").length}
           </p>
         </div>
       </div>
@@ -200,19 +197,24 @@ export default function CandidateApplicationsPage() {
         }`}
       >
         <div className="flex gap-1.5 overflow-x-auto">
-          {["ALL", "ACTIVE", "INTERVIEWING", "OFFERED"].map((f) => (
+          {[
+            { key: "ALL", label: "All" },
+            { key: "ACTIVE", label: "Active" },
+            { key: "UNDER_REVIEW", label: "Under Review" },
+            { key: "SHORTLISTED", label: "Shortlisted" },
+          ].map((f) => (
             <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeFilter === f
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                activeFilter === f.key
                   ? "bg-[#059669] text-white"
                   : isDark
                   ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
-              {f.charAt(0) + f.slice(1).toLowerCase()}
+              {f.label}
             </button>
           ))}
         </div>

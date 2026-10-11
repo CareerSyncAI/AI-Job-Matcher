@@ -243,28 +243,47 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
         else:
             skills_score = 100.0
 
-        # 2. Experience Score
-        candidate_years = float(candidate.total_experience_years or 0.0)
+        # 2. Experience Score (truthful unknown handling)
+        candidate_years_raw = candidate.total_experience_years
         required_years = float(job.experience_min_years or 0.0)
-        tenure_delta = round(candidate_years - required_years, 2)
 
-        if required_years <= 0:
-            experience_score = 100.0
+        if candidate_years_raw is None:
+            candidate_years = None
+            tenure_delta = None
+            exp_status = "not_provided"
+            experience_score = 50.0 if required_years > 0 else 100.0
+            exp_claim = f"Total experience tenure was not provided or detected in candidate documents (Required: {required_years} yrs)."
+            exp_details = "Experience duration could not be reliably calculated from document. Evaluated as insufficient evidence."
+            exp_confidence = EvidenceConfidence.LOW
         else:
-            exp_ratio = candidate_years / required_years
-            experience_score = round(min(max(exp_ratio * 100, 0.0), 100.0), 1)
+            candidate_years = float(candidate_years_raw)
+            tenure_delta = round(candidate_years - required_years, 2)
+            exp_confidence = EvidenceConfidence.HIGH
+            if required_years <= 0:
+                experience_score = 100.0
+                exp_status = "matched"
+            else:
+                exp_ratio = candidate_years / required_years
+                experience_score = round(min(max(exp_ratio * 100, 0.0), 100.0), 1)
+                exp_status = "matched" if tenure_delta >= 0 else "gap"
+            exp_claim = f"Candidate has {candidate_years} yrs of experience (Target: {required_years} yrs)."
+            exp_details = (
+                f"Tenure satisfies requirement ({candidate_years} yrs >= {required_years} yrs)."
+                if tenure_delta >= 0
+                else f"Deficit of {abs(tenure_delta)} yrs against target requirement."
+            )
 
         evidence_claims_records.append({
-            "claim_type": "experience_matched" if tenure_delta >= 0 else "experience_gap",
-            "claim_text": f"{candidate_years} years vs required {required_years} years",
+            "claim_type": f"experience_{exp_status}",
+            "claim_text": f"{candidate_years} years vs required {required_years} years" if candidate_years is not None else f"Experience not specified vs required {required_years} years",
             "source_snippet": None,
             "source_section": "experience",
-            "confidence": EvidenceConfidence.HIGH,
+            "confidence": exp_confidence,
             "evidence_kind": EvidenceKind.DIRECT,
-            "type": "matched" if tenure_delta >= 0 else "gap",
+            "type": exp_status,
             "requirement": "Minimum Experience Threshold",
-            "claim": f"Candidate has {candidate_years} yrs of experience (Target: {required_years} yrs).",
-            "details": f"Tenure satisfies requirement ({candidate_years} yrs >= {required_years} yrs)." if tenure_delta >= 0 else f"Deficit of {abs(tenure_delta)} yrs against target requirement.",
+            "claim": exp_claim,
+            "details": exp_details,
         })
 
         # 3. Education Score (no invented "Bachelor" default)
@@ -338,8 +357,12 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
         # 6. Transparent Comparative Ranking Attributions
         why_ranked_here = [
             f"Matched {len(matched_skills)} core requirements: {', '.join(matched_skills[:4]) if matched_skills else 'None'}.",
-            f"Experience level satisfies requirements ({candidate_years} yrs vs {required_years} yrs required)." if tenure_delta >= 0 else f"Holds relevant foundational experience ({candidate_years} yrs).",
         ]
+        if candidate_years is not None:
+            if tenure_delta is not None and tenure_delta >= 0:
+                why_ranked_here.append(f"Experience level satisfies requirements ({candidate_years} yrs vs {required_years} yrs required).")
+            elif candidate_years > 0:
+                why_ranked_here.append(f"Holds relevant foundational experience ({candidate_years} yrs).")
         if transferable_skills:
             why_ranked_here.append(f"Transferable adjacent competencies recognized: {', '.join(transferable_skills)}.")
         if semantic_result.matched_concepts:
@@ -348,16 +371,20 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
         why_not_higher = []
         if missing_skills:
             why_not_higher.append(f"Not detected in documents: {', '.join(missing_skills[:4])}.")
-        if tenure_delta < 0:
+        if candidate_years is None:
+            why_not_higher.append("Experience tenure was not provided or could not be detected from resume.")
+        elif tenure_delta is not None and tenure_delta < 0:
             why_not_higher.append(f"Experience deficit of {abs(tenure_delta)} years below target requirement.")
         if edu_status == "gap":
             why_not_higher.append(f"Degree level ({candidate_degree}) below target ({required_degree}).")
+        elif edu_status == "not_provided":
+            why_not_higher.append(f"Education credential not detected; required: {required_degree}.")
         if semantic_result.missing_concepts:
             why_not_higher.append(f"Limited contextual coverage on: {', '.join(semantic_result.missing_concepts[:2])}.")
 
         # Signal quality reflects truthfulness
-        has_required_gap = tenure_delta < 0 or edu_status == "gap"
-        has_not_detected = len(missing_skills) > 0
+        has_required_gap = (tenure_delta is not None and tenure_delta < 0) or edu_status == "gap"
+        has_not_detected = len(missing_skills) > 0 or candidate_years is None or edu_status == "not_provided"
         if not has_required_gap and not has_not_detected:
             signal_quality = "clean_match"
         elif has_required_gap:

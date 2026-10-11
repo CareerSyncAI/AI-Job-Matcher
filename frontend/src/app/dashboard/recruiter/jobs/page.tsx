@@ -20,44 +20,11 @@ interface JobPosting {
   experience_min_years: number;
   education_required: string;
   description: string;
-  status: "DRAFT" | "OPEN" | "PAUSED" | "CLOSED";
+  status: "draft" | "open" | "closed" | "archived";
   skills: Array<{ name: string; required: boolean }>;
   applicant_count: number;
   created_at: string;
 }
-
-const DEMO_RECRUITER_JOBS: JobPosting[] = [
-  {
-    id: "job-demo-1",
-    title: "Senior Full-Stack Engineer",
-    department: "Platform Engineering",
-    location: "San Francisco, CA / Remote",
-    employment_type: "Full-time",
-    work_arrangement: "Remote",
-    experience_min_years: 4,
-    education_required: "Bachelor's",
-    description: "Design and scale cloud services using FastAPI, Next.js, and distributed vector matching systems.",
-    status: "OPEN",
-    skills: [{ name: "Python", required: true }, { name: "React", required: true }, { name: "FastAPI", required: true }],
-    applicant_count: 14,
-    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-  },
-  {
-    id: "job-demo-2",
-    title: "Staff Machine Learning Engineer",
-    department: "AI Research",
-    location: "New York, NY / Hybrid",
-    employment_type: "Full-time",
-    work_arrangement: "Hybrid",
-    experience_min_years: 6,
-    education_required: "Master's",
-    description: "Lead development of semantic embedding pipelines, fine-tuned transformer models, and real-time inference.",
-    status: "OPEN",
-    skills: [{ name: "PyTorch", required: true }, { name: "Python", required: true }, { name: "Docker", required: true }],
-    applicant_count: 22,
-    created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-  },
-];
 
 export default function RecruiterJobsPage() {
   const { isDark } = useTheme();
@@ -78,7 +45,7 @@ export default function RecruiterJobsPage() {
   const [employmentType, setEmploymentType] = useState("Full-time");
   const [workArrangement, setWorkArrangement] = useState("Remote");
   const [experienceMinYears, setExperienceMinYears] = useState(3);
-  const [educationRequired, setEducationRequired] = useState("Bachelor's");
+  const [educationRequired, setEducationRequired] = useState("Bachelor");
   const [description, setDescription] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
   const [skillsList, setSkillsList] = useState<string[]>(["Python", "TypeScript"]);
@@ -88,11 +55,11 @@ export default function RecruiterJobsPage() {
     const loadJobs = async () => {
       try {
         const res = await api.get("/jobs");
-        if (isMounted) setJobs(res.data);
+        if (isMounted) setJobs(Array.isArray(res.data) ? res.data : []);
       } catch (err: unknown) {
         if (!isMounted) return;
         console.warn("Could not fetch recruiter jobs:", err);
-        setJobs(DEMO_RECRUITER_JOBS);
+        setJobs([]);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -134,6 +101,7 @@ export default function RecruiterJobsPage() {
         education_required: educationRequired,
         description,
         skills: skillsList.map((s) => ({ name: s, required: true })),
+        status: "open",
       });
       setModalOpen(false);
       // Reset form
@@ -156,10 +124,10 @@ export default function RecruiterJobsPage() {
   const handleStatusChange = async (jobId: string, newStatus: JobPosting["status"]) => {
     try {
       await api.patch(`/jobs/${jobId}`, { status: newStatus });
-      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
-    } catch {
-      // optimistic update
-      setJobs(jobs.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
+      setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      setRefreshKey((prev) => prev + 1);
     }
   };
 
@@ -205,7 +173,7 @@ export default function RecruiterJobsPage() {
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Active Openings</span>
           <p className="text-2xl font-bold mt-1 text-emerald-500">
-            {jobs.filter((j) => j.status === "OPEN").length}
+            {jobs.filter((j) => j.status?.toLowerCase() === "open").length}
           </p>
         </div>
         <div
@@ -231,9 +199,9 @@ export default function RecruiterJobsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Draft / Paused</span>
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Draft / Closed</span>
           <p className="text-2xl font-bold mt-1 text-amber-500">
-            {jobs.filter((j) => j.status !== "OPEN").length}
+            {jobs.filter((j) => j.status?.toLowerCase() !== "open").length}
           </p>
         </div>
       </div>
@@ -281,19 +249,20 @@ export default function RecruiterJobsPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <h3 className="font-semibold text-lg">{job.title}</h3>
                     <select
-                      value={job.status}
+                      value={job.status?.toLowerCase() || "open"}
                       onChange={(e) => handleStatusChange(job.id, e.target.value as JobPosting["status"])}
                       className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer ${
-                        job.status === "OPEN"
+                        job.status?.toLowerCase() === "open"
                           ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                          : job.status === "PAUSED"
+                          : job.status?.toLowerCase() === "draft"
                           ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
                           : "bg-slate-500/10 text-slate-400 border-slate-500/20"
                       }`}
                     >
-                      <option value="OPEN">Open (Active)</option>
-                      <option value="PAUSED">Paused</option>
-                      <option value="CLOSED">Closed</option>
+                      <option value="open">Open (Active)</option>
+                      <option value="draft">Draft</option>
+                      <option value="closed">Closed</option>
+                      <option value="archived">Archived</option>
                     </select>
                   </div>
 
@@ -475,10 +444,10 @@ export default function RecruiterJobsPage() {
                       isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                     }`}
                   >
-                    <option value="Bachelor's">Bachelor&apos;s</option>
-                    <option value="Master's">Master&apos;s</option>
-                    <option value="PhD">Doctorate / PhD</option>
-                    <option value="Associate / Diploma">Associate / Diploma</option>
+                    <option value="Bachelor">Bachelor&apos;s Degree</option>
+                    <option value="Master">Master&apos;s Degree</option>
+                    <option value="Doctorate">Doctorate / PhD</option>
+                    <option value="Associate">Associate Degree / Diploma</option>
                     <option value="Any">Any Level</option>
                   </select>
                 </div>

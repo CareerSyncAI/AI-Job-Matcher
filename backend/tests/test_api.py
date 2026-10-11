@@ -78,19 +78,81 @@ def test_auth_and_job_flow(client):
 
 
 def test_resume_idor_protection(client):
-    # Register Candidate 1 & 2
+    # 1. Register Candidate 1 & Candidate 2
     client.post("/api/v1/auth/register", json={"email": "c1@example.com", "password": "Password123456!", "role": "candidate"})
-    client.post("/api/v1/auth/login", json={"email": "c1@example.com", "password": "Password123456!"})
-    
-    client.post("/api/v1/auth/register", json={"email": "c2@example.com", "password": "Password123456!", "role": "candidate"})
-    c2_login = client.post("/api/v1/auth/login", json={"email": "c2@example.com", "password": "Password123456!"}).json()["access_token"]
+    c1_token = client.post("/api/v1/auth/login", json={"email": "c1@example.com", "password": "Password123456!"}).json()["access_token"]
+    c1_headers = {"Authorization": f"Bearer {c1_token}"}
 
-    from uuid import uuid4
-    random_uuid = str(uuid4())
-    
-    # Candidate 2 attempts to fetch Candidate 1's non-existent or unowned resume
-    res = client.get(f"/api/v1/resumes/{random_uuid}", headers={"Authorization": f"Bearer {c2_login}"})
-    assert res.status_code == 404
+    client.post("/api/v1/auth/register", json={"email": "c2@example.com", "password": "Password123456!", "role": "candidate"})
+    c2_token = client.post("/api/v1/auth/login", json={"email": "c2@example.com", "password": "Password123456!"}).json()["access_token"]
+    c2_headers = {"Authorization": f"Bearer {c2_token}"}
+
+    # Register Recruiter 1 & Recruiter 2
+    client.post("/api/v1/auth/register", json={"email": "r1@example.com", "password": "Password123456!", "role": "recruiter", "organization_name": "Org 1"})
+    r1_token = client.post("/api/v1/auth/login", json={"email": "r1@example.com", "password": "Password123456!"}).json()["access_token"]
+    r1_headers = {"Authorization": f"Bearer {r1_token}"}
+
+    client.post("/api/v1/auth/register", json={"email": "r2@example.com", "password": "Password123456!", "role": "recruiter", "organization_name": "Org 2"})
+    r2_token = client.post("/api/v1/auth/login", json={"email": "r2@example.com", "password": "Password123456!"}).json()["access_token"]
+    r2_headers = {"Authorization": f"Bearer {r2_token}"}
+
+    # Candidate 1 uploads a profile resume
+    pdf_payload = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
+    upload_res = client.post(
+        "/api/v1/profile/resumes",
+        headers=c1_headers,
+        files={"file": ("c1_resume.pdf", pdf_payload, "application/pdf")},
+    )
+    assert upload_res.status_code == 202
+    c1_resume_id = upload_res.json()["id"]
+
+    # Candidate 1 can view metadata and ATS
+    res = client.get(f"/api/v1/resumes/{c1_resume_id}", headers=c1_headers)
+    assert res.status_code == 200
+    ats_res = client.get(f"/api/v1/resumes/{c1_resume_id}/ats", headers=c1_headers)
+    assert ats_res.status_code == 200
+
+    # Candidate 2 cannot view Candidate 1's resume or ATS data (403 Forbidden)
+    res_c2 = client.get(f"/api/v1/resumes/{c1_resume_id}", headers=c2_headers)
+    assert res_c2.status_code == 403
+    ats_c2 = client.get(f"/api/v1/resumes/{c1_resume_id}/ats", headers=c2_headers)
+    assert ats_c2.status_code == 403
+
+    # Recruiter 1 (unrelated) cannot view Candidate 1's profile resume or ATS data (403 Forbidden, no 500 error)
+    res_r1 = client.get(f"/api/v1/resumes/{c1_resume_id}", headers=r1_headers)
+    assert res_r1.status_code == 403
+    ats_r1 = client.get(f"/api/v1/resumes/{c1_resume_id}/ats", headers=r1_headers)
+    assert ats_r1.status_code == 403
+
+    # Recruiter 1 creates Job 1 and uploads a candidate resume directly
+    job1_res = client.post(
+        "/api/v1/jobs",
+        headers=r1_headers,
+        json={
+            "title": "Backend Dev", "department": "Eng", "location": "Remote",
+            "employment_type": "Full-time", "work_arrangement": "Remote",
+            "experience_min_years": 2.0, "education_required": "Bachelor",
+            "description": "Dev", "skills": [{"name": "Python", "required": True}],
+            "evaluation_weights": {"skills": 100, "experience": 0, "education": 0, "semantic": 0},
+            "status": "open",
+        },
+    )
+    job1_id = job1_res.json()["id"]
+    job1_upload = client.post(
+        f"/api/v1/jobs/{job1_id}/resumes",
+        headers=r1_headers,
+        files={"file": ("job1_candidate.pdf", pdf_payload, "application/pdf")},
+    )
+    assert job1_upload.status_code == 202
+    job1_resume_id = job1_upload.json()["id"]
+
+    # Recruiter 1 can access job resume and ATS
+    assert client.get(f"/api/v1/resumes/{job1_resume_id}", headers=r1_headers).status_code == 200
+    assert client.get(f"/api/v1/resumes/{job1_resume_id}/ats", headers=r1_headers).status_code == 200
+
+    # Recruiter 2 cannot access Recruiter 1's job resume or ATS data
+    assert client.get(f"/api/v1/resumes/{job1_resume_id}", headers=r2_headers).status_code == 403
+    assert client.get(f"/api/v1/resumes/{job1_resume_id}/ats", headers=r2_headers).status_code == 403
 
 
 def test_tier1_evaluation_and_recruitment_workflow(client):

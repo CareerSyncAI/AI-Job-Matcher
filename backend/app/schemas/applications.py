@@ -10,7 +10,7 @@ from app.schemas.common import APIModel
 
 
 class ApplicationCreate(APIModel):
-    resume_id: UUID
+    resume_id: UUID | None = None
 
 
 class ApplicationStatusUpdate(APIModel):

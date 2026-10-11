@@ -34,11 +34,14 @@ jobs:
       - name: Run Backend Pytest Suite
         working-directory: backend
         env:
-          JWT_SECRET: "ci-test-jwt-secret-minimum-32-chars-long"
-          ENVIRONMENT: "development"
-          AUTO_SEED_DEMO_DATA: "false"
+          CAREERSYNC_JWT_SECRET: "ci-test-jwt-secret-minimum-32-chars-long"
+          CAREERSYNC_ENVIRONMENT: "development"
+          CAREERSYNC_AUTO_SEED_DEMO_DATA: "false"
+          CAREERSYNC_AI_SERVICE_URL: "http://localhost:8001"
+          CAREERSYNC_AI_SERVICE_API_KEY: "ci-test-ai-key"
+          PYTHONPATH: "."
         run: |
-          pytest -v
+          python -m pytest -v
 
   ai-services-tests:
     name: AI Services Tests

@@ -43,7 +43,7 @@ class MatchResultSchema(APIModel):
     education_score: float
     semantic_score: float
     rapidfuzz_score: float = 0.0
-    tenure_delta_years: float = 0.0
+    tenure_delta_years: float | None = None
     signal_quality: str = "high"
     ranking_attribution: dict[str, list[str]] = Field(default_factory=dict)
     why_ranked_here: list[str] = Field(default_factory=list)

@@ -52,20 +52,20 @@ class EducationExtractor:
 
                 entries.append({
                     "institution": inst,
-                    "degree_level": degree_level or "Bachelor",
-                    "degree_name": degree_name or "Degree in Computing / Science",
+                    "degree_level": degree_level,
+                    "degree_name": degree_name,
                     "field_of_study": self._infer_field(line),
                     "graduation_year": grad_year
                 })
 
         return entries
 
-    def _parse_inst_and_degree(self, line: str) -> Tuple[str, str]:
+    def _parse_inst_and_degree(self, line: str) -> Tuple[Optional[str], Optional[str]]:
         parts = re.split(r"[,|•\-–—]", line)
         parts = [p.strip() for p in parts if p.strip()]
 
-        inst = "University / Institution"
-        degree = ""
+        inst: Optional[str] = None
+        degree: Optional[str] = None
 
         for part in parts:
             if INSTITUTION_KEYWORDS.search(part):
@@ -73,18 +73,25 @@ class EducationExtractor:
             elif any(pat.search(part) for pat, _ in DEGREE_LEVEL_PATTERNS):
                 degree = part
 
-        return inst, degree or (parts[0] if parts else "Degree")
+        if not degree and parts:
+            degree = parts[0]
 
-    def _infer_field(self, line: str) -> str:
+        return inst, degree
+
+    def _infer_field(self, line: str) -> Optional[str]:
         lower = line.lower()
-        if "computer science" in lower or "cs" in lower:
+        if re.search(r"\b(?:computer\s+science|cs)\b", lower):
             return "Computer Science"
-        if "information technology" in lower or "it" in lower:
+        if re.search(r"\b(?:information\s+technology|it)\b", lower):
             return "Information Technology"
-        if "software engineering" in lower:
+        if re.search(r"\bsoftware\s+engineering\b", lower):
             return "Software Engineering"
-        if "data science" in lower:
+        if re.search(r"\bdata\s+science\b", lower):
             return "Data Science"
-        if "electrical" in lower or "electronics" in lower:
+        if re.search(r"\b(?:electrical|electronics)\b", lower):
             return "Electrical & Electronics"
-        return "Computer Science & Engineering"
+        if re.search(r"\bmechanical\b", lower):
+            return "Mechanical Engineering"
+        if re.search(r"\bcivil\b", lower):
+            return "Civil Engineering"
+        return None

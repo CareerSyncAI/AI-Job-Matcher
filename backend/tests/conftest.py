@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+# Ensure backend root is always on sys.path regardless of how pytest is invoked
+backend_dir = str(Path(__file__).resolve().parents[1])
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
 os.environ["CAREERSYNC_JWT_SECRET"] = "a" * 32
 os.environ["CAREERSYNC_ENVIRONMENT"] = "testing"
@@ -14,6 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.db import session as session_module
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -27,13 +35,17 @@ def db_session() -> Generator[Session, None, None]:
         poolclass=StaticPool,
     )
     Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
-    db = SessionLocal()
+    orig_engine = session_module.engine
+    session_module.engine = engine
+    session_module.SessionLocal.configure(bind=engine)
+    db = session_module.SessionLocal()
     try:
         yield db
     finally:
         db.close()
         Base.metadata.drop_all(engine)
+        session_module.engine = orig_engine
+        session_module.SessionLocal.configure(bind=orig_engine)
 
 
 @pytest.fixture

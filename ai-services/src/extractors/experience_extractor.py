@@ -19,7 +19,7 @@ MONTH_MAP = {
 
 # Regex matching date intervals: "Jan 2020 - Present", "2018 - 2022", "06/2019 to 12/2021"
 DATE_RANGE_PATTERN = re.compile(
-    r"\b((?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+)?(?:19|20)\d{2}|(?:\d{1,2}/(?:19|20)?\d{2}))\s*(?:[-–—to]+)\s*((?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+)?(?:19|20)\d{2}|(?:\d{1,2}/(?:19|20)?\d{2})|present|current|now)\b",
+    r"\b((?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+)?(?:19|20)\d{2}|(?:\d{1,2}/(?:\d{4}|\d{2})))\s*(?:[-–—]|to|until)\s*((?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+)?(?:19|20)\d{2}|(?:\d{1,2}/(?:\d{4}|\d{2}))|present|current|now)\b",
     re.IGNORECASE,
 )
 
@@ -46,8 +46,18 @@ class ExperienceExtractor:
         entries: List[Dict[str, any]] = []
         date_intervals: List[Tuple[datetime, datetime]] = []
 
+        in_education = False
         # Find date range lines and parse surrounding organization and title
         for idx, line in enumerate(lines):
+            clean_lower = line.strip().lower()
+            if re.match(r"^(?:education|academics|academic background|qualifications)\b", clean_lower):
+                in_education = True
+            elif re.match(r"^(?:work experience|professional experience|experience|employment history)\b", clean_lower):
+                in_education = False
+
+            if in_education:
+                continue
+
             match = DATE_RANGE_PATTERN.search(line)
             if match:
                 raw_start, raw_end = match.group(1), match.group(2)
@@ -55,13 +65,12 @@ class ExperienceExtractor:
 
                 if start_dt and end_dt and end_dt >= start_dt:
                     duration_months = max(1, (end_dt.year - start_dt.year) * 12 + (end_dt.month - start_dt.month))
-                    date_intervals.append((start_dt, end_dt))
-
-                    # Search previous line or line before for role and organization
                     title, org = self._extract_title_org(lines, idx, match)
-
-                    # Extract highlights (lines following this until next date or blank)
                     highlights = self._extract_highlights(lines, idx + 1)
+                    is_intern = bool(re.search(r"\b(?:intern|internship|trainee)\b", title, re.IGNORECASE))
+
+                    if not is_intern:
+                        date_intervals.append((start_dt, end_dt))
 
                     entries.append({
                         "organization": org,
@@ -69,6 +78,7 @@ class ExperienceExtractor:
                         "start_date": start_dt.strftime("%Y-%m"),
                         "end_date": None if is_current else end_dt.strftime("%Y-%m"),
                         "is_current": is_current,
+                        "is_internship": is_intern,
                         "duration_months": duration_months,
                         "highlights": highlights
                     })
@@ -101,12 +111,15 @@ class ExperienceExtractor:
             month = MONTH_MAP.get(m_str[:3], 1)
             return datetime(int(y_str), month, 1)
 
-        # Pattern 2: MM/YYYY or M/YYYY
-        m2 = re.search(r"(\d{1,2})/(?:19|20)?(\d{2,4})", text)
+        # Pattern 2: MM/YYYY or M/YYYY or MM/YY
+        m2 = re.search(r"\b(\d{1,2})/(?:(19\d{2}|20\d{2})|(\d{2}))\b", text)
         if m2:
-            m, y = int(m2.group(1)), int(m2.group(2))
-            if y < 100:
-                y += 2000
+            m = int(m2.group(1))
+            if m2.group(2):
+                y = int(m2.group(2))
+            else:
+                short_y = int(m2.group(3))
+                y = short_y + (2000 if short_y < 50 else 1900)
             return datetime(y, min(12, max(1, m)), 1)
 
         # Pattern 3: Just Year (e.g. '2021')

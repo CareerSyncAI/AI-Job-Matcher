@@ -64,7 +64,68 @@ class EmploymentInterval:
     employment_type: str = "full_time"
 
 
-DEGREE_RANK = {"Any": 0, "Bachelor": 1, "Master": 2, "PhD": 3}
+DEGREE_RANK = {
+    "Any": 0,
+    "Associate": 1,
+    "Bachelor": 2,
+    "Master": 3,
+    "Doctorate": 4,
+}
+
+DEGREE_ALIASES: dict[str, str] = {
+    "any": "Any",
+    "none": "Any",
+    "not_required": "Any",
+    "associate": "Associate",
+    "associates": "Associate",
+    "associate's": "Associate",
+    "diploma": "Associate",
+    "bachelor": "Bachelor",
+    "bachelors": "Bachelor",
+    "bachelor's": "Bachelor",
+    "bs": "Bachelor",
+    "ba": "Bachelor",
+    "b.s.": "Bachelor",
+    "b.a.": "Bachelor",
+    "b.tech": "Bachelor",
+    "btech": "Bachelor",
+    "b.e.": "Bachelor",
+    "undergraduate": "Bachelor",
+    "master": "Master",
+    "masters": "Master",
+    "master's": "Master",
+    "ms": "Master",
+    "m.s.": "Master",
+    "mba": "Master",
+    "m.tech": "Master",
+    "mtech": "Master",
+    "m.sc": "Master",
+    "doctorate": "Doctorate",
+    "phd": "Doctorate",
+    "ph.d.": "Doctorate",
+    "ph.d": "Doctorate",
+    "doctor": "Doctorate",
+}
+
+
+def normalize_degree(degree: str | None) -> str:
+    if not degree:
+        return "Any"
+    cleaned = degree.strip().lower()
+    if cleaned in DEGREE_ALIASES:
+        return DEGREE_ALIASES[cleaned]
+    no_dot = cleaned.replace(".", "")
+    if no_dot in DEGREE_ALIASES:
+        return DEGREE_ALIASES[no_dot]
+    if "doctor" in cleaned or "phd" in cleaned:
+        return "Doctorate"
+    if "master" in cleaned or "mba" in cleaned:
+        return "Master"
+    if "bachelor" in cleaned or "undergraduate" in cleaned or "btech" in cleaned or "b.e" in cleaned:
+        return "Bachelor"
+    if "associate" in cleaned or "diploma" in cleaned:
+        return "Associate"
+    return "Any"
 
 
 def calculate_weighted_score(
@@ -131,10 +192,12 @@ def professional_experience_years(intervals: Iterable[EmploymentInterval], evalu
     return round(total_days / 365.2425, 2)
 
 
-def education_satisfies(candidate_degree: str, required_degree: str) -> bool:
-    if candidate_degree not in DEGREE_RANK or required_degree not in DEGREE_RANK:
-        return False
-    return DEGREE_RANK[candidate_degree] >= DEGREE_RANK[required_degree]
+def education_satisfies(candidate_degree: str | None, required_degree: str | None) -> bool:
+    norm_cand = normalize_degree(candidate_degree)
+    norm_req = normalize_degree(required_degree)
+    if norm_req == "Any":
+        return True
+    return DEGREE_RANK.get(norm_cand, 0) >= DEGREE_RANK.get(norm_req, 0)
 
 
 def transferable_skill_allowed(skill: str, target_skill: str, taxonomy: dict[str, set[str]]) -> bool:

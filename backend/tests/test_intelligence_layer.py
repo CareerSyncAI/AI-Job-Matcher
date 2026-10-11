@@ -151,3 +151,50 @@ def test_ground_truth_benchmark_runner():
 
     # Spearman rank correlation should be strongly positive
     assert report.rank_correlation_spearman >= 0.80
+
+
+def test_benchmark_metrics_degrade_on_poor_predictions():
+    """Verifies that degraded or incorrect predictions genuinely lower benchmark accuracy."""
+    from app.evaluation.benchmark_runner import BenchmarkRunner
+    from app.evaluation.benchmark_schema import GroundTruthCandidate, GroundTruthItem, GroundTruthJob
+
+    # Dataset with intentional mismatches and missing required credentials
+    degraded_item = GroundTruthItem(
+        id="degrade-001",
+        candidate=GroundTruthCandidate(
+            id="cand-deg",
+            name="No Match Candidate",
+            resume_text="Experienced painter and artist with 10 years working with watercolor and oil on canvas (2014 - Present). High School Diploma 2013.",
+            expected_skills=["Kubernetes", "Docker", "Python", "FastAPI"],
+            expected_experience_years=10.0,
+            expected_education_degree="Doctorate",
+        ),
+        job=GroundTruthJob(
+            id="job-deg",
+            title="Senior Infrastructure Engineer",
+            description="Requires Kubernetes and Docker.",
+            required_skills=["Kubernetes", "Docker"],
+            preferred_skills=["FastAPI"],
+            experience_min_years=5.0,
+            education_required="Doctorate",
+        ),
+        expected_matched_required_skills=[],
+        expected_missing_required_skills=["Kubernetes", "Docker"],
+        expected_coverage_tier=3,
+        expected_human_fit_rating=10.0,
+    )
+
+    runner = BenchmarkRunner([degraded_item])
+    report = runner.run_benchmark()
+
+    # Skill recall should be 0 because candidate text has none of expected skills
+    assert report.skill_extraction_metrics.recall == 0.0
+    assert report.skill_extraction_metrics.f1_score == 0.0
+
+    # Education mismatch should be caught (High School is not Doctorate)
+    assert report.education_hierarchy_metrics.accuracy == 0.0
+
+    # Error analysis logs should document the failures
+    assert len(report.error_analysis_logs) > 0
+    categories = {log.error_category for log in report.error_analysis_logs}
+    assert "skill_extraction" in categories or "education_mismatch" in categories

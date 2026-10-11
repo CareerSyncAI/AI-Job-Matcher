@@ -39,7 +39,7 @@ class GroundTruthItem(BaseModel):
     job: GroundTruthJob
     expected_matched_required_skills: list[str]
     expected_missing_required_skills: list[str]
-    expected_coverage_tier: int  # 1 = No Gaps, 2 = Required Gap, 3 = Insufficient Evidence
+    expected_coverage_tier: int  # 1 = No Gaps, 2 = Insufficient Evidence, 3 = Required Gap
     expected_human_fit_rating: float  # 0.0 to 100.0
     notes: str | None = None
 

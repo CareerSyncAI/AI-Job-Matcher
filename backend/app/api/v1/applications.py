@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_recruiter_profile, require_roles
 from app.core.config import get_settings
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
 from app.models.entities import (
     Application,
     CandidateProfile,
@@ -70,7 +70,22 @@ def apply_to_job(
     db: Session = Depends(get_db),
 ) -> ApplicationResponse:
     candidate = _candidate_for_user(db, current_user)
-    resume = db.get(Resume, payload.resume_id)
+    target_resume_id = payload.resume_id
+    if not target_resume_id:
+        latest_resume = (
+            db.query(Resume)
+            .filter(Resume.candidate_id == candidate.id)
+            .order_by(Resume.created_at.desc())
+            .first()
+        )
+        if not latest_resume:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No resume on file. Please upload a resume before applying.",
+            )
+        target_resume_id = latest_resume.id
+
+    resume = db.get(Resume, target_resume_id)
     if not resume or resume.candidate_id != candidate.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
     job = db.get(Job, job_id)
@@ -79,9 +94,22 @@ def apply_to_job(
     existing = db.query(Application).filter(Application.job_id == job_id, Application.candidate_id == candidate.id).one_or_none()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An application already exists for this job.")
+
     application = Application(job_id=job_id, candidate_id=candidate.id, resume_id=resume.id)
     db.add(application)
     db.flush()
+
+    # Trigger evaluation immediately upon application creation
+    try:
+        evaluation_service = EvaluationService()
+        evaluation_service.evaluate_application(
+            db,
+            application_id=application.id,
+            recruiter_id=job.recruiter_id,
+        )
+    except Exception as eval_exc:
+        logger.warning("Application auto-evaluation encountered warning: %s", eval_exc)
+
     record_audit_event(
         db,
         action="application_created",
@@ -95,10 +123,20 @@ def apply_to_job(
     return _application_response(application)
 
 
-def _process_profile_resume_inline(db: Session, *, resume: Resume, candidate: CandidateProfile, settings) -> None:
-    """Synchronously extract and process a candidate-uploaded profile resume when worker is disabled."""
+def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
+    """Synchronously extract and process a candidate-uploaded profile resume in a dedicated worker-thread DB session."""
+    settings = get_settings()
+    db = SessionLocal()
     try:
+        resume = db.get(Resume, resume_id)
+        candidate = db.get(CandidateProfile, candidate_id)
+        if not resume or not candidate:
+            logger.error("Resume %s or Candidate %s missing for profile processing", resume_id, candidate_id)
+            return
+
         resume.processing_status = ProcessingStatus.PROCESSING
+        db.commit()
+
         root = settings.upload_directory.expanduser().resolve()
         file_path = (root / resume.storage_key).resolve()
 
@@ -106,6 +144,7 @@ def _process_profile_resume_inline(db: Session, *, resume: Resume, candidate: Ca
             logger.error("Profile resume file missing on disk: %s", file_path)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
+            db.commit()
             return
 
         extracted_text = extract_text_from_file(file_path, resume.mime_type)
@@ -114,6 +153,7 @@ def _process_profile_resume_inline(db: Session, *, resume: Resume, candidate: Ca
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.PARSE_FAILED
             resume.extracted_text = ""
+            db.commit()
             return
 
         resume.extracted_text = extracted_text
@@ -123,25 +163,36 @@ def _process_profile_resume_inline(db: Session, *, resume: Resume, candidate: Ca
         exp_years = extract_experience_years_from_text(extracted_text)
         detected_skills = taxonomy.extract_skills_from_text(extracted_text)
 
-        edu = candidate.education or {}
-        if isinstance(edu, dict):
-            current_skills = set(edu.get("skills", []))
-            for s in detected_skills:
-                current_skills.add(s["canonical_name"])
-            edu["skills"] = list(current_skills)
-            if not edu.get("degree") and edu_records:
-                edu["degree"] = edu_records[0].get("degree_level")
-            candidate.education = edu
+        edu = dict(candidate.education) if isinstance(candidate.education, dict) else {}
+        current_skills = set(edu.get("skills", []))
+        for s in detected_skills:
+            current_skills.add(s["canonical_name"])
+        edu["skills"] = list(current_skills)
+        if not edu.get("degree") and edu_records:
+            edu["degree"] = edu_records[0].get("degree_level")
+        candidate.education = dict(edu)
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(candidate, "education")
 
         if exp_years is not None and (candidate.total_experience_years is None or candidate.total_experience_years == 0):
             candidate.total_experience_years = exp_years
 
         resume.processing_status = ProcessingStatus.COMPLETED
         resume.needs_attention_reason = None
+        db.commit()
     except Exception as exc:
-        logger.exception("Profile resume inline processing error for %s: %s", resume.id, exc)
-        resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
-        resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+        db.rollback()
+        logger.exception("Profile resume inline processing error for %s: %s", resume_id, exc)
+        try:
+            resume = db.get(Resume, resume_id)
+            if resume:
+                resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+                resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+                db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
 
 
 @router.post("/profile/resumes", response_model=ResumeResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -164,11 +215,13 @@ async def upload_profile_resume(
         request_id=getattr(request.state, "request_id", None),
     )
 
-    if not settings.enable_worker:
-        await asyncio.to_thread(_process_profile_resume_inline, db, resume=resume, candidate=candidate, settings=settings)
-
     db.commit()
     db.refresh(resume)
+
+    if not settings.enable_worker:
+        await asyncio.to_thread(_process_profile_resume_inline, resume.id, candidate.id)
+        db.refresh(resume)
+
     return ResumeResponse(
         id=resume.id,
         mime_type=resume.mime_type,
@@ -177,6 +230,31 @@ async def upload_profile_resume(
         needs_attention_reason=resume.needs_attention_reason,
         uploaded_at=resume.created_at,
     )
+
+
+@router.get("/profile/resumes", response_model=list[ResumeResponse])
+def list_my_resumes(
+    current_user: User = Depends(require_roles(UserRole.CANDIDATE)), db: Session = Depends(get_db)
+) -> list[ResumeResponse]:
+    """Retrieve all resumes uploaded by the authenticated candidate."""
+    candidate = _candidate_for_user(db, current_user)
+    resumes = (
+        db.query(Resume)
+        .filter(Resume.candidate_id == candidate.id)
+        .order_by(Resume.created_at.desc())
+        .all()
+    )
+    return [
+        ResumeResponse(
+            id=r.id,
+            mime_type=r.mime_type,
+            byte_size=r.byte_size,
+            processing_status=r.processing_status,
+            needs_attention_reason=r.needs_attention_reason,
+            uploaded_at=r.created_at,
+        )
+        for r in resumes
+    ]
 
 
 @router.get("/applications", response_model=list[ApplicationResponse])

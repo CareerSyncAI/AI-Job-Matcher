@@ -54,28 +54,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-AI_SERVICE_API_KEY = os.getenv("AI_SERVICE_API_KEY", "careersync-internal-ai-service-key-dev")
-REQUIRE_API_KEY = os.getenv("AI_SERVICE_REQUIRE_AUTH", "false").lower() in ("true", "1")
+DEFAULT_DEV_KEY = "careersync-internal-ai-service-key-dev"
+AI_SERVICE_API_KEY = os.getenv("AI_SERVICE_API_KEY", DEFAULT_DEV_KEY)
+ENVIRONMENT = os.getenv("ENVIRONMENT", os.getenv("CAREERSYNC_ENVIRONMENT", "development")).lower()
+
+
+def check_production_security() -> None:
+    current_env = os.getenv("ENVIRONMENT", os.getenv("CAREERSYNC_ENVIRONMENT", "development")).lower()
+    current_key = os.getenv("AI_SERVICE_API_KEY", DEFAULT_DEV_KEY)
+    if current_env in ("production", "prod"):
+        if not current_key or current_key == DEFAULT_DEV_KEY or "CHANGE_ME" in current_key:
+            raise RuntimeError("Production AI service requires a secure, non-default AI_SERVICE_API_KEY")
+
+
+check_production_security()
+
+REQUIRE_API_KEY = os.getenv("AI_SERVICE_REQUIRE_AUTH", "true").lower() in ("true", "1")
 
 
 def verify_ai_service_key(
     authorization: Optional[str] = Header(None),
-    x_api_key: Optional[str] = Header(None, alias="X-AI-Service-Key")
+    x_api_key: Optional[str] = Header(None, alias="X-AI-Service-Key"),
+    x_api_key_alt: Optional[str] = Header(None, alias="X-API-Key")
 ) -> None:
-    expected_key = os.getenv("AI_SERVICE_API_KEY", "careersync-internal-ai-service-key-dev")
-    key = x_api_key
+    expected_key = os.getenv("AI_SERVICE_API_KEY", DEFAULT_DEV_KEY)
+    key = x_api_key or x_api_key_alt
     if not key and authorization:
         if authorization.startswith("Bearer "):
             key = authorization[7:].strip()
         else:
             key = authorization.strip()
 
-    if REQUIRE_API_KEY or key:
+    if REQUIRE_API_KEY:
         if not key or key != expected_key:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or missing AI service authorization key."
             )
+    elif key and key != expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid AI service authorization key."
+        )
 
 
 # Engine Singletons
@@ -117,19 +137,31 @@ async def parse_resume(
             ).model_dump()
         )
 
-    content = await file.read()
-    if len(content) > 10 * 1024 * 1024:  # 10MB
-        return JSONResponse(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            content=StandardErrorResponse(
-                error=ErrorDetail(
-                    code="PAYLOAD_TOO_LARGE",
-                    message="Document file size exceeds 10MB limit."
-                )
-            ).model_dump()
-        )
+    # Stream/chunk upload up to 10MB to avoid memory exhaustion
+    CHUNK_SIZE = 1024 * 1024  # 1MB
+    MAX_SIZE = 10 * 1024 * 1024  # 10MB
+    total_bytes = 0
+    buffer = io.BytesIO()
 
-    stream = io.BytesIO(content)
+    while True:
+        chunk = await file.read(CHUNK_SIZE)
+        if not chunk:
+            break
+        total_bytes += len(chunk)
+        if total_bytes > MAX_SIZE:
+            return JSONResponse(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                content=StandardErrorResponse(
+                    error=ErrorDetail(
+                        code="PAYLOAD_TOO_LARGE",
+                        message="Document file size exceeds 10MB limit."
+                    )
+                ).model_dump()
+            )
+        buffer.write(chunk)
+
+    buffer.seek(0)
+    stream = buffer
 
     try:
         if extension == "pdf":

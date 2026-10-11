@@ -13,10 +13,10 @@ def init_db() -> None:
     from app.core.config import get_settings
 
     settings = get_settings()
-    Base.metadata.create_all(bind=engine)
-
-    if settings.is_production:
-        logger.info("Production mode: automatic demo data seeding is strictly disabled.")
+    if not settings.is_production:
+        Base.metadata.create_all(bind=engine)
+    else:
+        logger.info("Production mode: schema migrations are managed via Alembic; skipping create_all.")
         return
 
     if not settings.auto_seed_demo_data:

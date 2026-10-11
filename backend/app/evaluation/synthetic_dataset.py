@@ -6,7 +6,7 @@ Contains diverse candidate-job pairs spanning the full spectrum:
 2. Tier 1 (Strong Match, 95%): Direct skills, exact tenure, exact education
 3. Tier 1 (Good Match, 85%): Transferable skills, moderate tenure
 4. Tier 1 (Moderate Match, 68%): Partial preferred skills, tenure deficit
-5. Tier 2 (Required Gap, 25%): Missing mandatory required core skills
+5. Tier 3 (Required Gap, 25%): Missing mandatory required core skills
 """
 
 from __future__ import annotations
@@ -204,7 +204,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
         notes="Has required skills but significant experience tenure deficit (1.5 yrs vs 5 yrs).",
     ),
 
-    # ── Case 5: Required Skill Gap (Tier 2, ~25%) ──
+    # ── Case 5: Required Skill Gap (Tier 3, ~25%) ──
     GroundTruthItem(
         id="bench-005",
         candidate=GroundTruthCandidate(
@@ -246,7 +246,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
         ),
         expected_matched_required_skills=[],
         expected_missing_required_skills=["Python", "FastAPI", "React", "Next.js"],
-        expected_coverage_tier=2,
+        expected_coverage_tier=3,
         expected_human_fit_rating=25.0,
         notes="Multiple required skill gaps (Python, FastAPI, React, Next.js), tenure deficit, and degree deficit.",
     ),

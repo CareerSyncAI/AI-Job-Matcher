@@ -43,6 +43,15 @@ class Settings(BaseSettings):
                 raise ValueError("Production environment cannot use default or placeholder JWT secret.")
         return value
 
+    @field_validator("ai_service_api_key")
+    @classmethod
+    def validate_ai_service_api_key(cls, value: str, info) -> str:
+        env = info.data.get("environment", "development")
+        if str(env).lower() == "production":
+            if "careersync-internal-ai-service-key-dev" in value or "CHANGE_ME" in value:
+                raise ValueError("Production environment cannot use default or placeholder AI service API key.")
+        return value
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_origins(cls, value: str | list[str]) -> list[str]:

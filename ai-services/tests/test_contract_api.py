@@ -1,13 +1,43 @@
 """API Conformance Tests against docs/ai-service-contract.md."""
 
+import os
 import pytest
 from fastapi.testclient import TestClient
-from src.api.app import app
+from src.api.app import app, check_production_security, DEFAULT_DEV_KEY
 
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return TestClient(app, headers={"X-AI-Service-Key": DEFAULT_DEV_KEY})
+
+
+def test_unauthenticated_request_rejected():
+    """Verifies unauthenticated calls to protected endpoints return 401."""
+    unauth_client = TestClient(app)
+    response = unauth_client.post(
+        "/api/v1/ai/normalize-skills",
+        json={"skills": ["Python"]}
+    )
+    assert response.status_code == 401
+    assert "detail" in response.json()
+
+
+def test_invalid_api_key_rejected():
+    """Verifies calls with invalid AI service key return 401."""
+    bad_client = TestClient(app, headers={"X-AI-Service-Key": "wrong-key"})
+    response = bad_client.post(
+        "/api/v1/ai/normalize-skills",
+        json={"skills": ["Python"]}
+    )
+    assert response.status_code == 401
+
+
+def test_production_startup_rejects_default_dev_key(monkeypatch):
+    """Verifies production environment aborts if using default dev key."""
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("AI_SERVICE_API_KEY", DEFAULT_DEV_KEY)
+    with pytest.raises(RuntimeError, match="secure, non-default AI_SERVICE_API_KEY"):
+        check_production_security()
 
 
 def test_health_endpoint(client):
