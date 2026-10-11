@@ -280,7 +280,7 @@ class EvidenceClaim(Base):
     claim_text: Mapped[str] = mapped_column(Text)
     source_document_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True))
     source_page: Mapped[int | None] = mapped_column(Integer)
-    source_snippet: Mapped[str] = mapped_column(Text)
+    source_snippet: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_section: Mapped[str | None] = mapped_column(String(255))
     character_start: Mapped[int | None] = mapped_column(Integer)
     character_end: Mapped[int | None] = mapped_column(Integer)

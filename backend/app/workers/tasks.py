@@ -50,6 +50,8 @@ def process_resume(self, resume_id: str, db=None) -> None:
         parsed_text = ""
         sections = {}
 
+        headers = {"X-AI-Service-Key": settings.ai_service_api_key}
+
         try:
             with open(file_path, "rb") as f:
                 with httpx.Client(timeout=15.0) as client:
@@ -57,12 +59,13 @@ def process_resume(self, resume_id: str, db=None) -> None:
                         ai_url,
                         files={"file": (resume.original_filename, f, resume.mime_type)},
                         data={"resume_id": str(resume.id)},
+                        headers=headers,
                     )
 
             if resp.status_code == 200:
                 data = resp.json()
                 sections = data.get("sections", {})
-                parsed_text = " ".join(sections.values()) if sections else ""
+                parsed_text = "\n\n".join(s for s in sections.values() if s.strip()) if sections else ""
                 resume.extracted_text = parsed_text
                 resume.parser_method = data.get("parser_version", "ai-parser-v1")
             else:
@@ -85,22 +88,23 @@ def process_resume(self, resume_id: str, db=None) -> None:
                             "text": parsed_text,
                             "sections": sections,
                         },
+                        headers=headers,
                     )
                 if extract_resp.status_code == 200:
                     ext_data = extract_resp.json()
                     entities = ext_data.get("entities", {})
                     skills = [s.get("canonical_name") for s in entities.get("skills", []) if s.get("canonical_name")]
 
-                    # Enrich candidate profile if attached
+                    # Enrich candidate profile only if not a registered user account (prevents profile hijacking)
                     if resume.candidate_id:
                         candidate = db.get(CandidateProfile, resume.candidate_id)
-                        if candidate:
+                        if candidate and candidate.user_id is None:
                             edu = candidate.education or {}
                             if isinstance(edu, dict):
                                 existing_skills = set(edu.get("skills", []))
                                 existing_skills.update(skills)
                                 edu["skills"] = list(existing_skills)
-                                
+
                                 # Enrich education degree if available and not set
                                 ai_edu = entities.get("education", [])
                                 if ai_edu and isinstance(ai_edu, list) and not edu.get("degree"):
@@ -116,14 +120,57 @@ def process_resume(self, resume_id: str, db=None) -> None:
             except Exception as exc:
                 logger.warning("AI entity extraction call failed: %s", exc)
 
-        # Mark completed or needs attention
-        if resume.extracted_text:
+        # 3. Create or find Application and evaluate if attached to an ingestion job
+        if resume.ingestion_job_id and resume.candidate_id and parsed_text:
+            from app.models.entities import Application, Job
+            from app.models.enums import ApplicationStatus
+            from app.services.evaluation import EvaluationService
+
+            job = db.get(Job, resume.ingestion_job_id)
+            if job:
+                existing_app = (
+                    db.query(Application)
+                    .filter(
+                        Application.job_id == job.id,
+                        Application.candidate_id == resume.candidate_id,
+                    )
+                    .one_or_none()
+                )
+                if not existing_app:
+                    app_record = Application(
+                        job_id=job.id,
+                        candidate_id=resume.candidate_id,
+                        resume_id=resume.id,
+                        status=ApplicationStatus.NEW,
+                    )
+                    db.add(app_record)
+                    db.flush()
+                else:
+                    app_record = existing_app
+                    app_record.resume_id = resume.id
+                    db.flush()
+
+                try:
+                    eval_svc = EvaluationService()
+                    eval_svc.evaluate_application(
+                        db,
+                        application_id=app_record.id,
+                        recruiter_id=job.recruiter_id,
+                    )
+                except Exception as eval_err:
+                    logger.warning("Worker evaluation failed for application %s: %s", app_record.id, eval_err)
+
+        # Mark completed or needs attention based on worker extraction outcome
+        if parsed_text:
             resume.processing_status = ProcessingStatus.COMPLETED
             resume.needs_attention_reason = None
         else:
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            if not resume.needs_attention_reason:
+                resume.needs_attention_reason = AttentionReason.PARSE_FAILED
 
         db.commit()
+
 
     except Exception as err:
         logger.exception("Unexpected error in resume processing worker: %s", err)

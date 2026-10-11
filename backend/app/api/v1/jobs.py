@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.api.deps import get_current_user, get_recruiter_profile
 from app.db.session import get_db
 from app.models.entities import Job, RecruiterProfile, User
-from app.models.enums import JobStatus
+from app.models.enums import JobStatus, UserRole
 from app.schemas.jobs import JobCreate, JobResponse, JobUpdate
 from app.services.audit import record_audit_event
 from app.services.jobs import JobService
@@ -76,9 +76,30 @@ def get_job(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> JobResponse:
-    job = db.get(Job, job_id)
+    job = (
+        db.query(Job)
+        .options(selectinload(Job.skills))
+        .filter(Job.id == job_id)
+        .one_or_none()
+    )
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job requirement not found.")
+
+    if current_user.role == UserRole.RECRUITER:
+        recruiter = current_user.recruiter_profile
+        is_owner = recruiter is not None and job.recruiter_id == recruiter.id
+        if not is_owner:
+            # Another recruiter cannot inspect other recruiters' drafts or internal evaluation weights
+            if job.status != JobStatus.OPEN:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job requirement not found.")
+            return JobService.response(job, hide_internal_weights=True)
+        return JobService.response(job)
+    elif current_user.role == UserRole.CANDIDATE:
+        # Candidates can only access published/OPEN jobs, with internal weights hidden
+        if job.status != JobStatus.OPEN:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job requirement not found.")
+        return JobService.response(job, hide_internal_weights=True)
+
     return JobService.response(job)
 
 
@@ -117,4 +138,5 @@ def list_public_open_jobs(db: Session = Depends(get_db)) -> list[JobResponse]:
         .order_by(Job.created_at.desc())
         .all()
     )
-    return [JobService.response(job) for job in jobs]
+    return [JobService.response(job, hide_internal_weights=True) for job in jobs]
+

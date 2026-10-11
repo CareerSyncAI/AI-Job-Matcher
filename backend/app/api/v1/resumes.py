@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import asyncio
 import logging
 import re
 from pathlib import Path
@@ -11,11 +10,14 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_recruiter_profile
 from app.core.config import get_settings
 from app.db.session import get_db
-from app.models.entities import Application, CandidateProfile, RecruiterProfile, Resume, User
+from app.models.entities import Application, CandidateProfile, Job, RecruiterProfile, Resume, User
 from app.models.enums import ApplicationStatus, AttentionReason, ProcessingStatus, UserRole
-from app.schemas.resumes import ResumeResponse
+from app.schemas.resumes import ATSAnalysisSchema, AnalyzeTextPayload, ResumeResponse
+from app.services.ats_analyzer import ats_analyzer
 from app.services.audit import record_audit_event
+from app.services.education_extractor import extract_education_from_text
 from app.services.evaluation import EvaluationService
+from app.services.experience_extractor import extract_experience_years_from_text
 from app.services.jobs import JobService
 from app.services.resumes import ResumeService
 from app.services.text_extraction import extract_text_from_file
@@ -28,39 +30,72 @@ router = APIRouter(prefix="/jobs/{job_id}/resumes", tags=["resume-ingestion"])
 def _extract_name_from_filename(filename: str) -> str:
     """Best-effort candidate name from the resume filename."""
     stem = Path(filename).stem
-    # Replace common separators with spaces, strip version markers
     name = re.sub(r"[_\-\.]+", " ", stem)
     name = re.sub(r"\b(resume|cv|curriculum|vitae|v\d+|final|new|updated)\b", "", name, flags=re.IGNORECASE)
     name = " ".join(w.capitalize() for w in name.split() if w)
     return name or "Applicant"
 
 
-def _find_or_create_candidate(db: Session, *, filename: str, extracted_text: str) -> CandidateProfile:
+def _find_or_create_candidate(
+    db: Session,
+    *,
+    filename: str,
+    extracted_text: str,
+    job_recruiter_id: UUID | None = None,
+) -> CandidateProfile:
     """
     Find existing or create a new CandidateProfile for an uploaded resume.
-    Uses email extracted from text if available, otherwise creates a placeholder.
+    Uses email extracted from text if available, guarding against hijacking
+    registered user accounts or candidate profiles owned by other recruiters.
     """
-    # Simple email extraction from resume text
     email_match = re.search(
         r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b", extracted_text
     )
     email = email_match.group(0).lower() if email_match else None
+    email_for_new_candidate = email
 
-    # Deduplicate by email if found
     if email:
         existing = db.query(CandidateProfile).filter(CandidateProfile.email == email).one_or_none()
         if existing:
-            return existing
+            # 1. Prevent candidate hijack: do NOT attach to or mutate registered user accounts
+            if existing.user_id is not None:
+                logger.warning(
+                    "Resume email %s belongs to a registered user account (%s); creating dedicated unlinked candidate profile.",
+                    email,
+                    existing.user_id,
+                )
+                email_for_new_candidate = None  # Don't violate unique constraint
+            # 2. Check if candidate belongs to another recruiter
+            elif job_recruiter_id is not None:
+                other_recruiter_app = (
+                    db.query(Application)
+                    .join(Job, Application.job_id == Job.id)
+                    .filter(Application.candidate_id == existing.id, Job.recruiter_id != job_recruiter_id)
+                    .first()
+                )
+                if other_recruiter_app is not None:
+                    logger.warning(
+                        "Candidate profile %s belongs to another recruiter; creating dedicated profile for recruiter %s.",
+                        existing.id,
+                        job_recruiter_id,
+                    )
+                    email_for_new_candidate = None
+                else:
+                    return existing
+            else:
+                return existing
 
-    # Build display name from filename
     display_name = _extract_name_from_filename(filename)
+    edu_records = extract_education_from_text(extracted_text) if extracted_text else []
+    highest_degree = edu_records[0].get("degree_level") if edu_records else None
+    exp_years = extract_experience_years_from_text(extracted_text) if extracted_text else None
 
     candidate = CandidateProfile(
-        email=email,
+        email=email_for_new_candidate,
         name=display_name,
         headline="Candidate",
-        education={"degree": "Bachelor", "skills": []},
-        total_experience_years=0.0,
+        education={"degree": highest_degree, "skills": []} if highest_degree else {"skills": []},
+        total_experience_years=exp_years,
     )
     db.add(candidate)
     db.flush()
@@ -78,10 +113,10 @@ async def upload_resume(
     """
     Upload and synchronously process a resume for a job.
 
-    Full pipeline (synchronous when ENABLE_WORKER=false):
+    Full pipeline:
     1. Validate + store file
     2. Extract text (PDF/DOCX)
-    3. Find or create CandidateProfile
+    3. Find or create CandidateProfile (anti-hijack guarded)
     4. Create Application (deduplicated)
     5. Run DeterministicEvaluationEngine → MatchResult
     6. Return ResumeResponse
@@ -102,9 +137,9 @@ async def upload_resume(
         metadata={"job_id": str(job_id), "sha256": resume.sha256},
     )
 
-    # Step 2: Synchronous processing (only when Celery worker is disabled)
+    # Step 2: Offload inline processing to worker thread when Celery is disabled so event loop is not blocked
     if not settings.enable_worker:
-        _process_resume_inline(db, resume=resume, job_id=job_id, settings=settings)
+        await asyncio.to_thread(_process_resume_inline, db, resume=resume, job_id=job_id, settings=settings)
 
     db.commit()
     db.refresh(resume)
@@ -123,12 +158,11 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
     """
     Synchronously run the full pipeline for a resume:
     parse → candidate → application → evaluation.
-    Updates resume status in-place.
+    Fails loudly without faking defaults or completing failed parses.
     """
     try:
         resume.processing_status = ProcessingStatus.PROCESSING
 
-        # --- Step 2a: Extract text ---
         root = settings.upload_directory.expanduser().resolve()
         file_path = (root / resume.storage_key).resolve()
 
@@ -140,25 +174,33 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
 
         extracted_text = extract_text_from_file(file_path, resume.mime_type)
 
-        if not extracted_text.strip():
-            logger.warning("No text extracted from resume %s", resume.id)
+        if not extracted_text or not extracted_text.strip():
+            logger.warning("No text extracted from resume %s - failing loudly.", resume.id)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.PARSE_FAILED
-            # Still continue to create candidate + application with empty text
-            extracted_text = ""
+            resume.extracted_text = ""
+            return
 
         resume.extracted_text = extracted_text
-        resume.parser_method = "inline-sync-v1"
+        resume.parser_method = "inline-sync-v2-taxonomy"
 
-        # --- Step 2b: Find or create CandidateProfile ---
+        job = db.get(Job, job_id)
+        if not job:
+            logger.error("Job %s not found for resume %s", job_id, resume.id)
+            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+            return
+
+        # Find or create CandidateProfile (scoped to recruiter)
         candidate = _find_or_create_candidate(
             db,
             filename=resume.original_filename,
             extracted_text=extracted_text,
+            job_recruiter_id=job.recruiter_id,
         )
         resume.candidate_id = candidate.id
 
-        # --- Step 2c: Create or find Application ---
+        # Create or find Application
         existing_app = (
             db.query(Application)
             .filter(
@@ -179,33 +221,23 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
             db.flush()
         else:
             application = existing_app
-            # Update resume reference to the latest
             application.resume_id = resume.id
             db.flush()
 
-        # --- Step 2d: Run evaluation engine ---
+        # Run evaluation engine
         try:
-            from app.models.entities import Job
-            from app.services.scoring import Weights
-            from app.services.evaluation import DeterministicEvaluationEngine, EvaluationService
-
             evaluation_service = EvaluationService()
             evaluation_service.evaluate_application(
                 db,
                 application_id=application.id,
-                recruiter_id=_get_job_recruiter_id(db, job_id),
+                recruiter_id=job.recruiter_id,
             )
-        except Exception as eval_exc:
-            logger.warning("Evaluation failed for application %s: %s", application.id, eval_exc)
-            # Non-fatal: resume still ingested successfully
-
-        # --- Mark complete ---
-        if extracted_text.strip():
             resume.processing_status = ProcessingStatus.COMPLETED
             resume.needs_attention_reason = None
-        else:
+        except Exception as eval_exc:
+            logger.error("Evaluation failed for application %s: %s", application.id, eval_exc)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
-            resume.needs_attention_reason = AttentionReason.PARTIAL_EXTRACTION
+            resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
 
     except Exception as exc:
         logger.exception("Inline resume processing error for %s: %s", resume.id, exc)
@@ -213,16 +245,7 @@ def _process_resume_inline(db: Session, *, resume: Resume, job_id: UUID, setting
         resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
 
 
-def _get_job_recruiter_id(db: Session, job_id: UUID) -> UUID:
-    """Helper to fetch the recruiter_id for a job."""
-    from app.models.entities import Job
-    job = db.get(Job, job_id)
-    if not job:
-        raise ValueError(f"Job {job_id} not found")
-    return job.recruiter_id
-
-
-# ── Download / metadata endpoint ────────────────────────────────────────────
+# ── Download / ATS Analyzer endpoints ───────────────────────────────────────
 
 download_router = APIRouter(prefix="/resumes", tags=["resumes"])
 
@@ -253,4 +276,78 @@ def get_resume(
         processing_status=resume.processing_status,
         needs_attention_reason=resume.needs_attention_reason,
         uploaded_at=resume.created_at,
+    )
+
+
+@download_router.get("/{resume_id}/ats", response_model=ATSAnalysisSchema)
+def analyze_stored_resume_ats(
+    resume_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ATSAnalysisSchema:
+    """Run standalone ATS quality analysis on a stored resume."""
+    resume = db.get(Resume, resume_id)
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+
+    text = resume.extracted_text or ""
+    res = ats_analyzer.analyze(text)
+    return ATSAnalysisSchema(
+        overall_ats_score=res.overall_ats_score,
+        grade=res.grade,
+        section_score=res.section_score,
+        contact_score=res.contact_score,
+        impact_score=res.impact_score,
+        formatting_score=res.formatting_score,
+        skills_score=res.skills_score,
+        detected_sections=res.detected_sections,
+        missing_critical_sections=res.missing_critical_sections,
+        contact_details=res.contact_details,
+        action_verbs_found=res.action_verbs_found,
+        quantifiable_metrics_count=res.quantifiable_metrics_count,
+        word_count=res.word_count,
+        strengths=res.strengths,
+        issues=[
+            {
+                "category": i.category,
+                "severity": i.severity,
+                "issue": i.issue,
+                "recommendation": i.recommendation,
+            }
+            for i in res.issues
+        ],
+    )
+
+
+@download_router.post("/analyze-text-ats", response_model=ATSAnalysisSchema)
+def analyze_text_ats(
+    payload: AnalyzeTextPayload,
+    current_user: User = Depends(get_current_user),
+) -> ATSAnalysisSchema:
+    """Instant ATS quality inspection for raw resume text in Resume Studio."""
+    res = ats_analyzer.analyze(payload.text)
+    return ATSAnalysisSchema(
+        overall_ats_score=res.overall_ats_score,
+        grade=res.grade,
+        section_score=res.section_score,
+        contact_score=res.contact_score,
+        impact_score=res.impact_score,
+        formatting_score=res.formatting_score,
+        skills_score=res.skills_score,
+        detected_sections=res.detected_sections,
+        missing_critical_sections=res.missing_critical_sections,
+        contact_details=res.contact_details,
+        action_verbs_found=res.action_verbs_found,
+        quantifiable_metrics_count=res.quantifiable_metrics_count,
+        word_count=res.word_count,
+        strengths=res.strengths,
+        issues=[
+            {
+                "category": i.category,
+                "severity": i.severity,
+                "issue": i.issue,
+                "recommendation": i.recommendation,
+            }
+            for i in res.issues
+        ],
     )

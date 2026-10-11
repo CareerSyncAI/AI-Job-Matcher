@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    name: Backend Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Backend Pytest Suite
+        working-directory: backend
+        env:
+          JWT_SECRET: "ci-test-jwt-secret-minimum-32-chars-long"
+          ENVIRONMENT: "development"
+          AUTO_SEED_DEMO_DATA: "false"
+        run: |
+          pytest -v
+
+  ai-services-tests:
+    name: AI Services Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "ai-services/requirements.txt"
+
+      - name: Install AI Services Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ai-services/requirements.txt
+
+      - name: Run AI Services Pytest Suite
+        working-directory: ai-services
+        env:
+          AI_SERVICE_API_KEY: "ci-test-ai-key"
+        run: |
+          pytest -v
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Next.js Application
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:8000/api/v1"
+        run: npm run build

@@ -200,7 +200,7 @@ def upgrade() -> None:
         sa.Column("claim_text", sa.Text(), nullable=False),
         sa.Column("source_document_id", sa.Uuid()),
         sa.Column("source_page", sa.Integer()),
-        sa.Column("source_snippet", sa.Text(), nullable=False),
+        sa.Column("source_snippet", sa.Text(), nullable=True),
         sa.Column("source_section", sa.String(255)),
         sa.Column("character_start", sa.Integer()),
         sa.Column("character_end", sa.Integer()),

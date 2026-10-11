@@ -28,7 +28,7 @@ class EvidenceClaimSchema(APIModel):
     claim_text: str
     source_document_id: UUID | None = None
     source_page: int | None = None
-    source_snippet: str
+    source_snippet: str | None = None
     source_section: str | None = None
     confidence: EvidenceConfidence | None = None
     evidence_kind: EvidenceKind | None = None

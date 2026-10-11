@@ -63,9 +63,49 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     return user
 
 
+import time
+from collections import defaultdict
+
+_LOGIN_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
+_MAX_FAILED_ATTEMPTS = 5
+_LOCKOUT_SECONDS = 300  # 5 minutes
+
+
+def _get_rate_limit_key(request: Request, email: str) -> str:
+    ip = request.client.host if request.client else "unknown"
+    return f"{ip}:{email.strip().lower()}"
+
+
+def _check_login_rate_limit(key: str) -> None:
+    now = time.time()
+    valid_attempts = [t for t in _LOGIN_ATTEMPTS[key] if now - t < _LOCKOUT_SECONDS]
+    _LOGIN_ATTEMPTS[key] = valid_attempts
+    if len(valid_attempts) >= _MAX_FAILED_ATTEMPTS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed login attempts. Please wait 5 minutes before trying again.",
+        )
+
+
+def _record_login_failure(key: str) -> None:
+    _LOGIN_ATTEMPTS[key].append(time.time())
+
+
+def _record_login_success(key: str) -> None:
+    _LOGIN_ATTEMPTS.pop(key, None)
+
+
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, response: Response, request: Request, db: Session = Depends(get_db)) -> TokenResponse:
-    user = AuthenticationService.authenticate(db, str(payload.email), payload.password)
+    rate_limit_key = _get_rate_limit_key(request, str(payload.email))
+    _check_login_rate_limit(rate_limit_key)
+    try:
+        user = AuthenticationService.authenticate(db, str(payload.email), payload.password)
+    except HTTPException:
+        _record_login_failure(rate_limit_key)
+        raise
+
+    _record_login_success(rate_limit_key)
     access_token, refresh_token, expires_in = AuthenticationService.create_session(db, user)
     record_audit_event(
         db,
@@ -78,6 +118,7 @@ def login(payload: LoginRequest, response: Response, request: Request, db: Sessi
     db.commit()
     _set_refresh_cookie(response, refresh_token)
     return _token_response(user, access_token, expires_in)
+
 
 
 @router.post("/refresh", response_model=TokenResponse)

@@ -352,3 +352,129 @@ def test_ai_off_graceful_degradation(client, db_session, monkeypatch):
     assert resume.needs_attention_reason.value == "parse_failed"
 
 
+def test_substring_collision_resistance():
+    """Verify that substring skills (Java in JavaScript, Go in Google, R in research) do NOT produce false matches."""
+    from app.services.evaluation import DeterministicEvaluationEngine
+    from app.models.entities import Job, JobSkill, CandidateProfile, Resume
+    from app.models.enums import JobStatus, EvaluatedSkillStatus
+    from app.services.scoring import Weights
+
+    engine = DeterministicEvaluationEngine()
+    tricky_resume = "JavaScript developer working at Google using PostgreSQL and conducting research."
+
+    job = Job(
+        title="Backend Engineer",
+        description="Core systems",
+        experience_min_years=0,
+        education_required="Any",
+        skills_weight=100,
+        experience_weight=0,
+        education_weight=0,
+        semantic_weight=0,
+        status=JobStatus.OPEN,
+        skills=[
+            JobSkill(name="Java", normalized_name="java", required=True),
+            JobSkill(name="Go", normalized_name="go", required=True),
+            JobSkill(name="R", normalized_name="r", required=True),
+            JobSkill(name="SQL", normalized_name="sql", required=True),
+        ],
+    )
+    cand = CandidateProfile(name="Applicant", total_experience_years=3.0, education={"skills": []})
+    resume = Resume(extracted_text=tricky_resume)
+    weights = Weights(skills=100, experience=0, education=0, semantic=0)
+
+    result = engine.evaluate(job=job, candidate=cand, resume=resume, weights=weights)
+
+    matched_names = {s["name"] for s in result["evaluated_skills"] if s["status"] == EvaluatedSkillStatus.MATCHED}
+    assert "Java" not in matched_names, "Java must not match from JavaScript"
+    assert "Go" not in matched_names, "Go must not match from Google"
+    assert "R" not in matched_names, "R must not match from research"
+    # Score should NOT be inflated
+    assert result["skills_score"] <= 25.0
+
+
+def test_job_read_authorization_and_weight_redaction(client):
+    """Verify that non-owners cannot see DRAFT jobs, and candidates/other recruiters see redacted weights."""
+    # Recruiter 1
+    client.post("/api/v1/auth/register", json={"email": "rec1@agency.com", "password": "Password123456!", "role": "recruiter"})
+    r1_token = client.post("/api/v1/auth/login", json={"email": "rec1@agency.com", "password": "Password123456!"}).json()["access_token"]
+    r1_headers = {"Authorization": f"Bearer {r1_token}"}
+
+    # Recruiter 2
+    client.post("/api/v1/auth/register", json={"email": "rec2@agency.com", "password": "Password123456!", "role": "recruiter"})
+    r2_token = client.post("/api/v1/auth/login", json={"email": "rec2@agency.com", "password": "Password123456!"}).json()["access_token"]
+    r2_headers = {"Authorization": f"Bearer {r2_token}"}
+
+    # Candidate
+    client.post("/api/v1/auth/register", json={"email": "viewer.cand@example.com", "password": "Password123456!", "role": "candidate"})
+    cand_token = client.post("/api/v1/auth/login", json={"email": "viewer.cand@example.com", "password": "Password123456!"}).json()["access_token"]
+    cand_headers = {"Authorization": f"Bearer {cand_token}"}
+
+    # R1 creates draft job with internal weights
+    create_res = client.post("/api/v1/jobs", headers=r1_headers, json={
+        "title": "Secret Strategy Lead",
+        "description": "Confidential hiring initiative",
+        "employment_type": "Full-time",
+        "work_arrangement": "Remote",
+        "skills": [{"name": "Python", "required": True}],
+        "evaluation_weights": {"skills": 50, "experience": 30, "education": 10, "semantic": 10},
+        "status": "draft",
+    })
+    assert create_res.status_code == 201
+    job_id = create_res.json()["id"]
+
+    # Candidate and Recruiter 2 attempt to read draft job -> 404
+    assert client.get(f"/api/v1/jobs/{job_id}", headers=cand_headers).status_code == 404
+    assert client.get(f"/api/v1/jobs/{job_id}", headers=r2_headers).status_code == 404
+
+    # Recruiter 1 opens the job
+    patch_res = client.patch(f"/api/v1/jobs/{job_id}", headers=r1_headers, json={"status": "open"})
+    assert patch_res.status_code == 200
+
+    # Recruiter 1 sees true weights
+    r1_job = client.get(f"/api/v1/jobs/{job_id}", headers=r1_headers).json()
+    assert r1_job["evaluation_weights"]["skills"] == 50
+
+    # Candidate sees redacted weights (all 0)
+    cand_job = client.get(f"/api/v1/jobs/{job_id}", headers=cand_headers).json()
+    assert cand_job["evaluation_weights"]["skills"] == 0
+    assert cand_job["evaluation_weights"]["experience"] == 0
+
+    # Recruiter 2 sees redacted weights
+    r2_job = client.get(f"/api/v1/jobs/{job_id}", headers=r2_headers).json()
+    assert r2_job["evaluation_weights"]["skills"] == 0
+
+
+def test_candidate_profile_anti_hijack(client, db_session):
+    """Ensure recruiter resume upload containing registered user email does not hijack or mutate registered profile."""
+    from app.models.entities import CandidateProfile, Resume
+    from app.api.v1.resumes import _find_or_create_candidate
+
+    # Registered candidate Alice
+    alice = CandidateProfile(
+        email="alice.registered@example.com",
+        name="Alice Real",
+        headline="Senior AI Scientist",
+        education={"degree": "Master", "skills": ["PyTorch", "Transformers"]},
+        total_experience_years=5.0,
+    )
+    from uuid import uuid4
+    alice.user_id = uuid4()
+    db_session.add(alice)
+    db_session.commit()
+
+    # Recruiter uploads resume text referencing Alice's email
+    hijack_attempt_text = "Junior Dev\nEmail: alice.registered@example.com\nSkills: HTML, CSS\nTenure: 1 year"
+    created_cand = _find_or_create_candidate(db_session, filename="fake_resume.pdf", extracted_text=hijack_attempt_text)
+
+    # Must NOT return Alice's registered profile
+    assert created_cand.id != alice.id
+    assert created_cand.user_id is None
+
+    # Alice's real profile skills must NOT be touched
+    db_session.refresh(alice)
+    assert alice.education["skills"] == ["PyTorch", "Transformers"]
+    assert alice.total_experience_years == 5.0
+
+
+

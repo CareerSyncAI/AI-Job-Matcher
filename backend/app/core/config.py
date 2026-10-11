@@ -30,7 +30,18 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 10 * 1024 * 1024
     secure_cookies: bool = False
     enable_worker: bool = False
+    auto_seed_demo_data: bool = False
     ai_service_url: str = "http://localhost:8001"
+    ai_service_api_key: str = "careersync-internal-ai-service-key-dev"
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def validate_jwt_secret(cls, value: str, info) -> str:
+        env = info.data.get("environment", "development")
+        if str(env).lower() == "production":
+            if "CHANGE_ME" in value or "super-secret" in value:
+                raise ValueError("Production environment cannot use default or placeholder JWT secret.")
+        return value
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -49,6 +60,7 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.lower() == "production"
+
 
 
 @lru_cache

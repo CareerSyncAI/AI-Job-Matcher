@@ -11,8 +11,9 @@ from app.models.enums import EvaluatedSkillStatus
 
 class CoverageTier(IntEnum):
     NO_COMPUTABLE_REQUIRED_GAPS = 1
-    REQUIRED_GAP = 2
-    INSUFFICIENT_REQUIRED_EVIDENCE = 3
+    INSUFFICIENT_REQUIRED_EVIDENCE = 2
+    REQUIRED_GAP = 3
+
 
 
 @dataclass(frozen=True)

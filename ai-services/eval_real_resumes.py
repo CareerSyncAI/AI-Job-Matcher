@@ -28,11 +28,11 @@ from src.normalizers.skill_normalizer import SkillNormalizer
 from src.similarity.semantic_matcher import SemanticMatcher
 
 
-KAGGLE_PATH = r"C:\Users\Hit\Downloads\Resume.csv\Resume.csv"
+KAGGLE_PATH = os.environ.get("KAGGLE_RESUME_CSV_PATH", r"C:\Users\Hit\Downloads\Resume.csv\Resume.csv")
 
 
 def load_real_resume_sample(n_target: int = 18) -> List[Dict[str, Any]]:
-    """Sample 18 diverse real resumes across technical, engineering, and non-technical categories."""
+    """Sample diverse real resumes across technical, engineering, and non-technical categories."""
     categories_quota = {
         "INFORMATION-TECHNOLOGY": 6,
         "ENGINEERING": 3,
@@ -45,6 +45,10 @@ def load_real_resume_sample(n_target: int = 18) -> List[Dict[str, Any]]:
 
     samples: List[Dict[str, Any]] = []
     category_counts = {c: 0 for c in categories_quota}
+
+    if not os.path.exists(KAGGLE_PATH):
+        print(f"[Warning] Resume dataset file not found at {KAGGLE_PATH}. Please set KAGGLE_RESUME_CSV_PATH.")
+        return samples
 
     with open(KAGGLE_PATH, "r", encoding="utf-8", errors="ignore") as f:
         reader = csv.DictReader(f)
@@ -127,6 +131,7 @@ def run_audit():
         # Phase 2: Section Detection
         sections = sec_detector.split_sections(text)
         found_sections = list(sections.keys())
+        audit_results["section_detection"]["total"] += len(found_sections)
         for sec in found_sections:
             audit_results["section_detection"]["detected_sections_distribution"][sec] = (
                 audit_results["section_detection"]["detected_sections_distribution"].get(sec, 0) + 1

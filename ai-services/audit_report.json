@@ -1,7 +1,7 @@
 {
   "resumes_evaluated": 18,
   "section_detection": {
-    "total": 0,
+    "total": 81,
     "detected_sections_distribution": {
       "contact": 18,
       "summary": 16,

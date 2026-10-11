@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import api from "@/lib/api";
 import {
   IconSearch,
   IconBriefcase,
@@ -13,9 +14,101 @@ import {
   IconLayers,
 } from "@/components/Icons";
 
+interface RealJob {
+  id: string;
+  title: string;
+  department?: string | null;
+  location?: string | null;
+  employment_type: string;
+  work_arrangement: string;
+  experience_min_years: number;
+  education_required: string;
+  status: string;
+  skills: { name: string; required: boolean }[];
+  applicant_count?: number;
+}
+
+interface RealApplication {
+  id: string;
+  job_id: string;
+  status: string;
+  applied_at: string;
+}
+
+interface RealCandidateCard {
+  id: string;
+  application_id: string;
+  name: string;
+  currentRole?: string | null;
+  experienceYears: number;
+  matchScore: number;
+  matchedSkills: string[];
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const isCandidate = user?.role === "candidate" || !user?.role;
+
+  const [loading, setLoading] = useState(true);
+  const [openJobs, setOpenJobs] = useState<RealJob[]>([]);
+  const [myApplications, setMyApplications] = useState<RealApplication[]>([]);
+  const [recruiterJobs, setRecruiterJobs] = useState<RealJob[]>([]);
+  const [topCandidates, setTopCandidates] = useState<RealCandidateCard[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboardData = async () => {
+      setLoading(true);
+      try {
+        if (isCandidate) {
+          // Candidate flow: fetch public open jobs and personal applications
+          const [jobsRes, appsRes] = await Promise.allSettled([
+            api.get("/jobs/public/open"),
+            api.get("/applications/me"),
+          ]);
+          if (isMounted) {
+            if (jobsRes.status === "fulfilled" && Array.isArray(jobsRes.value.data)) {
+              setOpenJobs(jobsRes.value.data.slice(0, 5));
+            }
+            if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value.data)) {
+              setMyApplications(appsRes.value.data);
+            }
+          }
+        } else {
+          // Recruiter flow: fetch owned jobs and candidate cards
+          const jobsRes = await api.get("/jobs");
+          if (isMounted && Array.isArray(jobsRes.data)) {
+            setRecruiterJobs(jobsRes.data);
+            if (jobsRes.data.length > 0) {
+              const topJob = jobsRes.data[0];
+              try {
+                const candRes = await api.get(`/jobs/${topJob.id}/candidates`);
+                if (isMounted && Array.isArray(candRes.data)) {
+                  setTopCandidates(candRes.data.slice(0, 5));
+                }
+              } catch {
+                // No candidates yet
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Dashboard data load error:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+    return () => {
+      isMounted = false;
+    };
+  }, [isCandidate]);
+
+  // Derived metrics
+  const totalApplicants = recruiterJobs.reduce((acc, j) => acc + (j.applicant_count || 0), 0);
+  const activePostingsCount = recruiterJobs.filter((j) => j.status === "open").length;
 
   return (
     <div className="space-y-8">
@@ -32,8 +125,8 @@ export default function DashboardPage() {
             </h1>
             <p className="text-slate-400 text-sm mt-1 max-w-xl">
               {isCandidate
-                ? "Your vector profile matched 1,420 open engineering roles this week. 12 high-affinity positions are ready for your review."
-                : "Your talent pipeline has 84 screened applicants across 8 live requisitions with an average 89% skill alignment."}
+                ? `You have ${myApplications.length} active applications and ${openJobs.length} verified live requisitions ready for discovery.`
+                : `Managing ${recruiterJobs.length} requisitions with ${totalApplicants} evaluated candidate applications across your ATS pipeline.`}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -61,7 +154,7 @@ export default function DashboardPage() {
                   className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-2"
                 >
                   <IconBriefcase size={16} />
-                  Post New Requisition
+                  Post Requisition
                 </Link>
                 <Link
                   href="/dashboard/recruiter/pipeline"
@@ -78,28 +171,101 @@ export default function DashboardPage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {(isCandidate ? candidateStats : recruiterStats).map((stat, i) => (
-          <Link
-            key={i}
-            href={stat.href}
-            className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400 text-xs font-medium">{stat.label}</span>
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                {stat.icon}
+        {isCandidate ? (
+          <>
+            <Link href="/dashboard/jobs" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">Open Verified Roles</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconSearch size={18} /></div>
               </div>
-            </div>
-            <div className="mt-4 flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">
-                {stat.value}
-              </span>
-              <span className="text-xs font-medium text-emerald-400">
-                {stat.change}
-              </span>
-            </div>
-          </Link>
-        ))}
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">{openJobs.length}</span>
+                <span className="text-xs font-medium text-emerald-400">Live</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/applications" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">Submitted Applications</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconDocument size={18} /></div>
+              </div>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">{myApplications.length}</span>
+                <span className="text-xs font-medium text-emerald-400">Active</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/applications" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">Under Review</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconCheckCircle size={18} /></div>
+              </div>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">
+                  {myApplications.filter((a) => a.status === "under_review" || a.status === "shortlisted").length}
+                </span>
+                <span className="text-xs font-medium text-emerald-400">In Pipeline</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/resume" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">Resume Studio</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconBriefcase size={18} /></div>
+              </div>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">ATS Ready</span>
+                <span className="text-xs font-medium text-emerald-400">Deterministic</span>
+              </div>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link href="/dashboard/recruiter/jobs" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">Total Requisitions</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconBriefcase size={18} /></div>
+              </div>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">{recruiterJobs.length}</span>
+                <span className="text-xs font-medium text-emerald-400">{activePostingsCount} Open</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/recruiter/candidates" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">Applicants Evaluated</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconUsers size={18} /></div>
+              </div>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">{totalApplicants}</span>
+                <span className="text-xs font-medium text-emerald-400">Total Sourced</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/recruiter/pipeline" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">ATS Pipeline</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconLayers size={18} /></div>
+              </div>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">{topCandidates.length}</span>
+                <span className="text-xs font-medium text-emerald-400">Ranked</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/recruiter/jobs" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-xs font-medium">Scoring Engine</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconNetwork size={18} /></div>
+              </div>
+              <div className="mt-4 flex items-baseline justify-between">
+                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">v2.1</span>
+                <span className="text-xs font-medium text-emerald-400">Deterministic</span>
+              </div>
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Main Grid Section */}
@@ -110,30 +276,39 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-100">
-                  {isCandidate ? "Recommended Positions" : "High-Affinity Sourced Candidates"}
+                  {isCandidate ? "Live Open Requisitions" : "Recent Evaluated Candidates"}
                 </h2>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  {isCandidate ? "Ranked by skill matrix overlap & experience affinity" : "Screened talent matches with >85% skill alignment"}
+                  {isCandidate
+                    ? "Verified open positions scored by deterministic skill requirements"
+                    : "Top candidates ranked by deterministic multi-tier coverage"}
                 </p>
               </div>
               <Link
                 href={isCandidate ? "/dashboard/jobs" : "/dashboard/recruiter/candidates"}
                 className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
               >
-                {isCandidate ? "View All Directory →" : "View Sourcing Directory →"}
+                {isCandidate ? "View All Jobs →" : "View All Candidates →"}
               </Link>
             </div>
 
             <div className="space-y-4">
-              {isCandidate
-                ? mockJobs.map((job) => (
+              {loading ? (
+                <div className="p-8 text-center text-xs text-slate-500">Loading directory...</div>
+              ) : isCandidate ? (
+                openJobs.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-500">
+                    No open requisitions posted yet. Check back soon!
+                  </div>
+                ) : (
+                  openJobs.map((job) => (
                     <div
                       key={job.id}
                       className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/40 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sm font-bold text-emerald-400 shrink-0">
-                          {job.company[0]}
+                          {job.title.charAt(0)}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -141,16 +316,16 @@ export default function DashboardPage() {
                               {job.title}
                             </h3>
                             <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-mono">
-                              {job.match}% Affinity
+                              {job.employment_type}
                             </span>
                           </div>
                           <p className="text-slate-400 text-xs mt-1">
-                            {job.company} • {job.location} • {job.salary}
+                            {job.department || "Enterprise"} • {job.location || "Remote"} • Min {job.experience_min_years} yrs exp
                           </p>
                           <div className="flex flex-wrap gap-1.5 mt-2">
-                            {job.tags.map((t, idx) => (
+                            {(job.skills || []).slice(0, 4).map((s, idx) => (
                               <span key={idx} className="px-2 py-0.5 text-[10px] text-slate-300 bg-slate-900 rounded-md border border-slate-800">
-                                {t}
+                                {s.name}
                               </span>
                             ))}
                           </div>
@@ -160,146 +335,123 @@ export default function DashboardPage() {
                         href="/dashboard/jobs"
                         className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold rounded-xl transition shrink-0 self-start sm:self-center"
                       >
-                        Apply Position
+                        View &amp; Apply
                       </Link>
                     </div>
                   ))
-                : mockCandidates.map((cand) => (
-                    <div
-                      key={cand.id}
-                      className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/40 transition group flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#059669] to-[#0d9488] flex items-center justify-center font-bold text-white text-xs">
-                          {cand.name.split(" ").map((n) => n[0]).join("")}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-slate-100 group-hover:text-emerald-300 transition">
-                              {cand.name}
-                            </h3>
-                            <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-mono">
-                              {cand.match}% Alignment
-                            </span>
-                          </div>
-                          <p className="text-slate-400 text-xs mt-0.5">
-                            {cand.role} • {cand.exp} exp
-                          </p>
-                        </div>
+                )
+              ) : topCandidates.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500">
+                  No candidate evaluations recorded yet. Upload resumes to an open requisition to screen talent!
+                </div>
+              ) : (
+                topCandidates.map((cand) => (
+                  <div
+                    key={cand.id}
+                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/40 transition group flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#059669] to-[#0d9488] flex items-center justify-center font-bold text-white text-xs">
+                        {cand.name.charAt(0)}
                       </div>
-                      <Link
-                        href="/dashboard/recruiter/candidates"
-                        className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition"
-                      >
-                        Screen Candidate
-                      </Link>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-slate-100 group-hover:text-emerald-300 transition">
+                            {cand.name}
+                          </h3>
+                          <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-mono">
+                            {cand.matchScore}% Match
+                          </span>
+                        </div>
+                        <p className="text-slate-400 text-xs mt-0.5">
+                          {cand.currentRole || "Candidate"} • {cand.experienceYears} yrs experience
+                        </p>
+                      </div>
                     </div>
-                  ))}
+                    <Link
+                      href="/dashboard/recruiter/candidates"
+                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition"
+                    >
+                      Screen Candidate
+                    </Link>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right Column (1 col) */}
+        {/* Right Column: Actions & Quick Links */}
         <div className="space-y-6">
-          {/* Skill Matrix Insights Widget */}
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 backdrop-blur-md space-y-4">
-            <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
-              <IconNetwork size={16} />
-              {isCandidate ? "Skill Matrix Optimization" : "Requisition Pipeline Strategy"}
-            </div>
-            <p className="text-slate-300 text-xs leading-relaxed">
-              {isCandidate
-                ? "Integrating verified proficiencies in 'Docker' and 'Kubernetes' in your profile increases affinity rankings for Senior Infrastructure roles by an estimated +18%."
-                : "Job listings with clearly detailed required vs. preferred skills and automated screening criteria yield 3.2x higher-quality interview conversion rates."}
-            </p>
-            <Link
-              href={isCandidate ? "/dashboard/resume" : "/dashboard/recruiter/jobs"}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold rounded-xl transition text-center block"
-            >
-              {isCandidate ? "Review Resume Keywords" : "Post New Requisition"}
-            </Link>
-          </div>
-
-          {/* Quick Tools */}
           <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
-            <h3 className="text-sm font-bold text-slate-200 mb-4">Role Quick Tools</h3>
+            <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wider mb-4">
+              Quick Actions
+            </h2>
             <div className="space-y-2.5">
               {isCandidate ? (
                 <>
                   <Link
-                    href="/dashboard/resume"
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                    href="/dashboard/jobs"
+                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                        <IconDocument size={16} />
-                      </div>
-                      Resume Studio &amp; ATS Scanner
+                    <div className="flex items-center gap-2.5">
+                      <IconSearch size={14} className="text-emerald-400" />
+                      Browse Live Engineering Roles
                     </div>
-                    <span className="text-slate-500 font-bold">→</span>
+                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
                   </Link>
                   <Link
-                    href="/dashboard/jobs"
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                    href="/dashboard/resume"
+                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
-                        <IconBriefcase size={16} />
-                      </div>
-                      Job Opportunities Directory
+                    <div className="flex items-center gap-2.5">
+                      <IconDocument size={14} className="text-emerald-400" />
+                      Upload &amp; Analyze ATS Resume
                     </div>
-                    <span className="text-slate-500 font-bold">→</span>
+                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
                   </Link>
                   <Link
                     href="/dashboard/applications"
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
-                        <IconCheckCircle size={16} />
-                      </div>
-                      My Applications &amp; Status
+                    <div className="flex items-center gap-2.5">
+                      <IconCheckCircle size={14} className="text-emerald-400" />
+                      Track Submitted Applications
                     </div>
-                    <span className="text-slate-500 font-bold">→</span>
+                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
                   </Link>
                 </>
               ) : (
                 <>
                   <Link
                     href="/dashboard/recruiter/jobs"
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                        <IconBriefcase size={16} />
-                      </div>
-                      Job Requisitions &amp; Postings
+                    <div className="flex items-center gap-2.5">
+                      <IconBriefcase size={14} className="text-emerald-400" />
+                      Post New Requisition
                     </div>
-                    <span className="text-slate-500 font-bold">→</span>
+                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
                   </Link>
                   <Link
                     href="/dashboard/recruiter/candidates"
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
-                        <IconUsers size={16} />
-                      </div>
-                      Talent Sourcing &amp; Discovery
+                    <div className="flex items-center gap-2.5">
+                      <IconUsers size={14} className="text-emerald-400" />
+                      Sourcing Directory &amp; Evaluator
                     </div>
-                    <span className="text-slate-500 font-bold">→</span>
+                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
                   </Link>
                   <Link
                     href="/dashboard/recruiter/pipeline"
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 font-medium transition"
+                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
-                        <IconLayers size={16} />
-                      </div>
-                      Applicant Pipeline ATS Board
+                    <div className="flex items-center gap-2.5">
+                      <IconLayers size={14} className="text-emerald-400" />
+                      ATS Kanban Pipeline Board
                     </div>
-                    <span className="text-slate-500 font-bold">→</span>
+                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
                   </Link>
                 </>
               )}
@@ -310,151 +462,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-const candidateStats = [
-  {
-    label: "Profile Match Affinity",
-    value: "94%",
-    change: "+4% this wk",
-    href: "/dashboard/jobs",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-    ),
-  },
-  {
-    label: "Resume ATS Score",
-    value: "88/100",
-    change: "Verified",
-    href: "/dashboard/resume",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Applications Sent",
-    value: "14",
-    change: "Active",
-    href: "/dashboard/applications",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-      </svg>
-    ),
-  },
-  {
-    label: "Interview Requests",
-    value: "3",
-    change: "Active",
-    href: "/dashboard/applications",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-];
-
-const recruiterStats = [
-  {
-    label: "Active Job Postings",
-    value: "8",
-    change: "Live",
-    href: "/dashboard/recruiter/jobs",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Talent Sourced",
-    value: "142",
-    change: "+24 today",
-    href: "/dashboard/recruiter/candidates",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Candidate Alignment",
-    value: "89%",
-    change: "High Quality",
-    href: "/dashboard/recruiter/pipeline",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Pipeline In Progress",
-    value: "11",
-    change: "This Week",
-    href: "/dashboard/recruiter/pipeline",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-];
-
-const mockJobs = [
-  {
-    id: "1",
-    title: "Senior Full Stack AI Engineer",
-    company: "Anthropic Partner AI",
-    location: "Remote",
-    salary: "$140,000 - $180,000",
-    match: 96,
-    tags: ["React", "TypeScript", "FastAPI", "Vector DB"],
-  },
-  {
-    id: "2",
-    title: "Frontend Architect (Next.js & Tailwind)",
-    company: "TechScale Labs",
-    location: "Hybrid / New York",
-    salary: "$130,000 - $160,000",
-    match: 92,
-    tags: ["Next.js", "Tailwind CSS", "Zustand", "Performance"],
-  },
-  {
-    id: "3",
-    title: "Machine Learning Solutions Engineer",
-    company: "DataCloud Systems",
-    location: "Remote",
-    salary: "$150,000 - $190,000",
-    match: 87,
-    tags: ["Python", "PyTorch", "LLM Fine-tuning", "REST API"],
-  },
-];
-
-const mockCandidates = [
-  {
-    id: "1",
-    name: "Alex Rivera",
-    role: "Senior React Specialist",
-    exp: "5 yrs",
-    match: 95,
-  },
-  {
-    id: "2",
-    name: "Sarah Chen",
-    role: "Full Stack Engineer (Python/Node)",
-    exp: "4 yrs",
-    match: 91,
-  },
-  {
-    id: "3",
-    name: "Marcus Vance",
-    role: "Backend Architect (FastAPI/Postgres)",
-    exp: "6 yrs",
-    match: 88,
-  },
-];

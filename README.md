@@ -1,26 +1,29 @@
 # CareerSync AI — AI-Assisted Resume Screening and Candidate Ranking
 
-> 🤖 **IMPORTANT NOTICE FOR ALL AI ASSISTANTS & DEVELOPERS**:
-> Before reading or modifying this repository, you **MUST** read [docs/README_AI.md](file:///c:/Users/Hit/Desktop/SGP%205TH%20Sem/AI-Job-Matcher/docs/README_AI.md) and review all documentation inside `docs/` (`GIT_WORKFLOW.md`, `PROJECT_PROGRESS.md`, `AI_CHANGELOG.md`, `TASKS.md`, `SESSION.md`).
-
-An intelligent, automated recruitment platform designed to evaluate candidate resumes against job descriptions, extract key qualification metrics, score applicant suitability using Natural Language Processing (NLP), and present candidate rankings via an intuitive web dashboard.
+CareerSync AI is an automated recruitment intelligence platform designed to evaluate candidate resumes against structured job requirements, extract competencies, compute deterministic multi-factor match scores, and present evidence-backed evaluations via a modern web dashboard.
 
 ---
 
 ## 📌 Project Overview
 
-The **AI-Based Resume Screening and Candidate Ranking System** streamlines the recruitment process for hiring managers and recruiters. By automating the initial resume parsing, entity extraction, and contextual skill matching, the system reduces screening time and minimizes evaluation bias, allowing organizations to identify top talent quickly and accurately.
+The **CareerSync AI Resume Screening and Candidate Ranking System** assists hiring teams by streamlining initial resume ingestion, entity extraction, and skills matching. By grounding every evaluation claim in verbatim document snippets and applying deterministic scoring models with configurable weights, the system provides transparent, explainable evaluations for recruiters while preserving candidate privacy.
+
+> **Note on Evaluation Transparency**: CareerSync AI provides deterministic, rule-grounded evaluations to assist human decision-makers. It does not replace human recruiter judgment and makes no claims of eliminating systemic bias.
 
 ---
 
-## ✨ Proposed Features
+## ✨ Features
 
-- **📄 Resume Parsing & Entity Extraction**: Automatically extracts contact information, work experience, education history, key skills, and certifications from resumes (PDF, DOCX).
-- **🤖 AI-Driven Skill Matching & Scoring**: Utilizes Natural Language Processing (NLP) models to calculate similarity scores between applicant resumes and target job descriptions.
-- **📊 Interactive Candidate Dashboard**: Provides recruiters with a central dashboard featuring multi-dimensional candidate rankings, score distributions, and filtering tools.
-- **🔍 Bias Reduction & Anonymized Evaluation**: Optional anonymized mode hides demographic data to foster objective and fair candidate evaluation.
-- **🗄️ Database Management**: Efficiently stores and manages candidate profiles, job postings, and screening histories.
-- **📑 Summary & Insight Reports**: Generates exportable evaluation summaries highlighting candidate strengths, missing skill gaps, and match percentages.
+- **📄 Document Text Extraction**: Ingests PDF and DOCX files with signature validation, SHA-256 deduplication, and size guards.
+- **🎯 Deterministic Skill & Competency Matching**: Matches competencies using a curated canonical taxonomy with token-boundary regexes, ambiguity rules (e.g. C, Go, R), and strict transferable mappings.
+- **🔍 Verbatim Evidence Anchoring**: Captures exact character spans and quotes from resume text rather than template-generated claims.
+- **📊 Multi-Tier Candidate Ranking**: Employs "Uncertainty First" tier ordering (Tier 1: Complete Match, Tier 2: Insufficient Document Evidence / Not Detected, Tier 3: Confirmed Hard Gap) so missing mentions are never penalized more severely than verified disqualifications.
+- **🛡️ Secure Access & Identity Protections**:
+  - Argon2id password hashing and sliding-window login rate limiting.
+  - HttpOnly JWT refresh token rotation with SHA-256 session digests.
+  - Strict IDOR and recruiter ownership enforcement (draft requisitions and internal scoring weights remain private to job owners).
+  - Registered candidate profile protection against recruiter upload hijacking.
+- **⚡ Synchronous & Worker Processing Pipelines**: Supports both lightweight direct execution and Celery/Redis asynchronous worker pipelines.
 
 ---
 
@@ -28,12 +31,11 @@ The **AI-Based Resume Screening and Candidate Ranking System** streamlines the r
 
 | Component | Technology | Description |
 | :--- | :--- | :--- |
-| **Frontend** | **Next.js / React / TypeScript** | Active application in `frontend/`; `frontend2/` is preserved reference material |
-| **Backend API** | **Python / FastAPI** | Authenticated REST API, domain workflows, upload security, and ownership checks |
-| **Database** | **PostgreSQL + pgvector** | SQLAlchemy/Alembic relational model and scoped embeddings |
-| **Async processing** | **Redis / Celery** | Queue boundary for resume parsing and evaluation work |
-| **AI / ML Services** | **Separate Python boundary** | Docling, GLiNER, RapidFuzz, and BGE-M3 integration is staged after the core API |
-| **Version Control** | **Git & GitHub** | Collaborative source code control and version management |
+| **Frontend** | **Next.js 16 / React / TypeScript** | Full-stack web dashboard with ATS Kanban, Sourcing Directory, and Resume Studio |
+| **Backend API** | **Python / FastAPI** | Authenticated REST API with rate-limiting, strict schemas, and audit logging |
+| **Database** | **PostgreSQL + pgvector** | SQLAlchemy 2.x relational schema and Alembic migrations |
+| **Async Processing** | **Redis / Celery** | Optional asynchronous queue boundary for heavy ingestion workloads |
+| **AI / NLP Microservice** | **Python / FastAPI** | Modular AI service for document OCR and specialized entity extraction |
 
 ---
 
@@ -41,14 +43,13 @@ The **AI-Based Resume Screening and Candidate Ranking System** streamlines the r
 
 ```text
 AI-Job-Matcher/
-├── .github/          # GitHub Workflows, issue templates, and CI/CD configurations
-├── ai-services/      # Python & FastAPI microservices for AI/ML and NLP processing
-├── assets/           # Static media assets, architecture diagrams, and images
-├── backend/          # FastAPI API, SQLAlchemy models, and Alembic migrations
-├── database/         # Database fixtures and seed data
-├── docs/             # Technical specifications, SRS, and project documentation
-├── frontend/         # Active Next.js application source code
-├── frontend2/        # Preserved frontend reference/backup
+├── .github/          # GitHub Workflows and CI configuration
+├── ai-services/      # FastAPI AI microservice for parsing and entity extraction
+├── assets/           # Media assets and diagrams
+├── backend/          # Core FastAPI API, evaluation engine, and Alembic migrations
+├── database/         # Database fixtures and init scripts
+├── docs/             # Technical specifications and project status documentation
+├── frontend/         # Next.js web application
 └── README.md         # Primary project documentation
 ```
 
@@ -56,10 +57,44 @@ AI-Job-Matcher/
 
 ## 🚀 Getting Started
 
-Start local infrastructure with `docker compose up -d postgres redis`. See
-`backend/README.md` for FastAPI, Poetry, and migration commands. Real AI model
-inference is staged behind the processing boundary and is not represented by
-the current deterministic fixtures.
+### 1. Prerequisites
+- Python 3.11+
+- Node.js 18+ & npm
+- Docker & Docker Compose (optional for PostgreSQL + Redis)
+
+### 2. Backend Setup
+```bash
+cd backend
+python -m venv .venv
+# Activate virtual environment
+source .venv/bin/activate  # Or on Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+```
+
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 4. Running Tests
+```bash
+# Backend pytest suite
+cd backend
+pytest -v
+
+# AI Services pytest suite
+cd ai-services
+pytest -v
+
+# Frontend build verification
+cd frontend
+npm run build
+```
 
 ---
 

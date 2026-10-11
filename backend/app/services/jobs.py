@@ -60,7 +60,17 @@ class JobService:
         return job
 
     @staticmethod
-    def response(job: Job, applicant_count: int = 0) -> JobResponse:
+    def response(job: Job, applicant_count: int = 0, hide_internal_weights: bool = False) -> JobResponse:
+        weights = (
+            JobWeights(skills=0, experience=0, education=0, semantic=0)
+            if hide_internal_weights
+            else JobWeights(
+                skills=job.skills_weight,
+                experience=job.experience_weight,
+                education=job.education_weight,
+                semantic=job.semantic_weight,
+            )
+        )
         return JobResponse(
             id=job.id,
             title=job.title,
@@ -73,15 +83,11 @@ class JobService:
             description=job.description,
             status=job.status,
             skills=job.skills,
-            evaluation_weights=JobWeights(
-                skills=job.skills_weight,
-                experience=job.experience_weight,
-                education=job.education_weight,
-                semantic=job.semantic_weight,
-            ),
+            evaluation_weights=weights,
             created_at=job.created_at,
             applicant_count=applicant_count,
         )
+
 
     @staticmethod
     def _skill_models(skills) -> list[JobSkill]:

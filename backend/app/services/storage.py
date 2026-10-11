@@ -30,7 +30,8 @@ class StoredUpload:
 def safe_filename(filename: str | None) -> str:
     if not filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A filename is required.")
-    name = Path(filename).name
+    normalized = filename.replace("\\", "/")
+    name = Path(normalized).name
     name = re.sub(r"[^A-Za-z0-9._ -]", "_", name).strip(" .")
     if not name or name in {".", ".."}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename.")

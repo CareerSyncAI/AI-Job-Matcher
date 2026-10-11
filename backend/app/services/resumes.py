@@ -6,6 +6,7 @@ from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.models.entities import Resume
 from app.models.enums import ProcessingStatus
 from app.services.storage import read_validated_upload, store_upload
@@ -51,13 +52,15 @@ class ResumeService:
             ResumeService.delete_storage_key(stored.storage_key)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Duplicate resume upload.") from error
 
-        from app.core.config import get_settings
         if get_settings().enable_worker:
             from app.workers.tasks import process_resume
             try:
                 process_resume.delay(str(resume.id))
-            except Exception:
-                pass
+            except Exception as exc:
+                import logging
+                logging.getLogger(__name__).error(
+                    "Failed to enqueue resume %s for worker execution: %s", resume.id, exc
+                )
         return resume
 
     @staticmethod

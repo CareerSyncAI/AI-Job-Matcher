@@ -1,22 +1,24 @@
-from __future__ import annotations
-
+import asyncio
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_recruiter_profile, require_roles
+from app.core.config import get_settings
 from app.db.session import get_db
 from app.models.entities import (
     Application,
     CandidateProfile,
+    EvaluationRun,
     Job,
     RecruiterNote,
     RecruiterProfile,
     Resume,
     User,
 )
-from app.models.enums import JobStatus, UserRole
+from app.models.enums import AttentionReason, JobStatus, ProcessingStatus, UserRole
 from app.schemas.applications import (
     ApplicationCreate,
     ApplicationResponse,
@@ -24,12 +26,19 @@ from app.schemas.applications import (
     RecruiterNoteCreate,
     RecruiterNoteResponse,
 )
-from app.schemas.resumes import ResumeResponse
 from app.schemas.evaluations import CandidateCardDTO, EvaluationRunSchema
+from app.schemas.resumes import ResumeResponse
 from app.services.audit import record_audit_event
+from app.services.education_extractor import extract_education_from_text
 from app.services.evaluation import EvaluationService
+from app.services.experience_extractor import extract_experience_years_from_text
 from app.services.jobs import JobService
 from app.services.resumes import ResumeService
+from app.services.scoring import CoverageTier
+from app.services.taxonomy import taxonomy
+from app.services.text_extraction import extract_text_from_file
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["applications"])
 
@@ -86,6 +95,55 @@ def apply_to_job(
     return _application_response(application)
 
 
+def _process_profile_resume_inline(db: Session, *, resume: Resume, candidate: CandidateProfile, settings) -> None:
+    """Synchronously extract and process a candidate-uploaded profile resume when worker is disabled."""
+    try:
+        resume.processing_status = ProcessingStatus.PROCESSING
+        root = settings.upload_directory.expanduser().resolve()
+        file_path = (root / resume.storage_key).resolve()
+
+        if not file_path.exists():
+            logger.error("Profile resume file missing on disk: %s", file_path)
+            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
+            return
+
+        extracted_text = extract_text_from_file(file_path, resume.mime_type)
+        if not extracted_text or not extracted_text.strip():
+            logger.warning("No text extracted from profile resume %s", resume.id)
+            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            resume.needs_attention_reason = AttentionReason.PARSE_FAILED
+            resume.extracted_text = ""
+            return
+
+        resume.extracted_text = extracted_text
+        resume.parser_method = "inline-profile-sync"
+
+        edu_records = extract_education_from_text(extracted_text)
+        exp_years = extract_experience_years_from_text(extracted_text)
+        detected_skills = taxonomy.extract_skills_from_text(extracted_text)
+
+        edu = candidate.education or {}
+        if isinstance(edu, dict):
+            current_skills = set(edu.get("skills", []))
+            for s in detected_skills:
+                current_skills.add(s["canonical_name"])
+            edu["skills"] = list(current_skills)
+            if not edu.get("degree") and edu_records:
+                edu["degree"] = edu_records[0].get("degree_level")
+            candidate.education = edu
+
+        if exp_years is not None and (candidate.total_experience_years is None or candidate.total_experience_years == 0):
+            candidate.total_experience_years = exp_years
+
+        resume.processing_status = ProcessingStatus.COMPLETED
+        resume.needs_attention_reason = None
+    except Exception as exc:
+        logger.exception("Profile resume inline processing error for %s: %s", resume.id, exc)
+        resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+        resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+
+
 @router.post("/profile/resumes", response_model=ResumeResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_profile_resume(
     request: Request,
@@ -94,7 +152,7 @@ async def upload_profile_resume(
     db: Session = Depends(get_db),
 ) -> ResumeResponse:
     """Ingest an applicant-owned resume before it is attached to any application."""
-
+    settings = get_settings()
     candidate = _candidate_for_user(db, current_user)
     resume = await ResumeService.ingest(db, candidate_id=candidate.id, upload=file)
     record_audit_event(
@@ -105,7 +163,12 @@ async def upload_profile_resume(
         resource_id=resume.id,
         request_id=getattr(request.state, "request_id", None),
     )
+
+    if not settings.enable_worker:
+        await asyncio.to_thread(_process_profile_resume_inline, db, resume=resume, candidate=candidate, settings=settings)
+
     db.commit()
+    db.refresh(resume)
     return ResumeResponse(
         id=resume.id,
         mime_type=resume.mime_type,
@@ -189,7 +252,7 @@ def list_job_candidates(
     recruiter: RecruiterProfile = Depends(get_recruiter_profile),
     db: Session = Depends(get_db),
 ) -> list[CandidateCardDTO]:
-    """Get candidate application cards for a job, ranked by deterministic score."""
+    """Get candidate application cards for a job, ranked by deterministic score and coverage tier."""
     JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
     applications = (
         db.query(Application)
@@ -205,8 +268,31 @@ def list_job_candidates(
         EvaluationService.get_candidate_card(db, application=app, recruiter_id=recruiter.id)
         for app in applications
     ]
-    # Sort by match score descending
-    cards.sort(key=lambda c: c.matchScore, reverse=True)
+
+    def card_rank_key(card: CandidateCardDTO):
+        has_gap = any(ev.type == "gap" for ev in card.evidence)
+        has_insufficient = (
+            any(ev.type in ("not_detected", "not_provided") for ev in card.evidence)
+            or len(card.missingSkills) > 0
+        )
+        if has_gap:
+            tier_val = CoverageTier.REQUIRED_GAP.value  # 3
+        elif has_insufficient:
+            tier_val = CoverageTier.INSUFFICIENT_REQUIRED_EVIDENCE.value  # 2
+        else:
+            tier_val = CoverageTier.NO_COMPUTABLE_REQUIRED_GAPS.value  # 1
+
+        return (
+            tier_val,
+            -card.matchScore,
+            -card.skillScore,
+            -card.experienceScore,
+            -card.educationScore,
+            -card.semanticScore,
+            str(card.id),
+        )
+
+    cards.sort(key=card_rank_key)
     return cards
 
 

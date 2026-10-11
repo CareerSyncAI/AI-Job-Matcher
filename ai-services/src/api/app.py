@@ -5,9 +5,10 @@ Implements all endpoints defined in docs/ai-service-contract.md.
 
 from __future__ import annotations
 import io
+import os
 import time
 from typing import Optional
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -42,11 +43,40 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+AI_SERVICE_API_KEY = os.getenv("AI_SERVICE_API_KEY", "careersync-internal-ai-service-key-dev")
+REQUIRE_API_KEY = os.getenv("AI_SERVICE_REQUIRE_AUTH", "false").lower() in ("true", "1")
+
+
+def verify_ai_service_key(
+    authorization: Optional[str] = Header(None),
+    x_api_key: Optional[str] = Header(None, alias="X-AI-Service-Key")
+) -> None:
+    expected_key = os.getenv("AI_SERVICE_API_KEY", "careersync-internal-ai-service-key-dev")
+    key = x_api_key
+    if not key and authorization:
+        if authorization.startswith("Bearer "):
+            key = authorization[7:].strip()
+        else:
+            key = authorization.strip()
+
+    if REQUIRE_API_KEY or key:
+        if not key or key != expected_key:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or missing AI service authorization key."
+            )
+
 
 # Engine Singletons
 pdf_parser = PDFParser()
@@ -65,11 +95,12 @@ async def health_check():
     return HealthResponse()
 
 
-@app.post("/api/v1/ai/parse-resume", response_model=ParseResumeResponse)
+@app.post("/api/v1/ai/parse-resume", response_model=ParseResumeResponse, dependencies=[Depends(verify_ai_service_key)])
 async def parse_resume(
     file: UploadFile = File(...),
     resume_id: Optional[str] = Form(None)
 ):
+
     """Parse raw PDF or DOCX file into normalized text and semantic sections."""
     start_time = time.time()
     filename = file.filename or "resume"
@@ -126,13 +157,14 @@ async def parse_resume(
             content=StandardErrorResponse(
                 error=ErrorDetail(
                     code="CORRUPT_DOCUMENT_PAYLOAD",
-                    message=f"Failed to extract text from document: {str(e)}"
+                    message="Failed to extract text from document. File may be corrupt or unreadable."
                 )
             ).model_dump()
         )
 
 
-@app.post("/api/v1/ai/extract-entities", response_model=ExtractEntitiesResponse)
+
+@app.post("/api/v1/ai/extract-entities", response_model=ExtractEntitiesResponse, dependencies=[Depends(verify_ai_service_key)])
 async def extract_entities(payload: ExtractEntitiesRequest):
     """Extract structured skills, chronological tenure, and education credentials."""
     start_time = time.time()
@@ -174,7 +206,7 @@ async def extract_entities(payload: ExtractEntitiesRequest):
     )
 
 
-@app.post("/api/v1/ai/normalize-skills", response_model=NormalizeSkillsResponse)
+@app.post("/api/v1/ai/normalize-skills", response_model=NormalizeSkillsResponse, dependencies=[Depends(verify_ai_service_key)])
 async def normalize_skills(payload: NormalizeSkillsRequest):
     """Normalize raw skill variants to canonical taxonomy."""
     results = skill_normalizer.normalize_list(payload.skills)
@@ -191,8 +223,9 @@ async def normalize_skills(payload: NormalizeSkillsRequest):
     return NormalizeSkillsResponse(normalized=normalized_items)
 
 
-@app.post("/api/v1/ai/semantic-match", response_model=SemanticMatchResponse)
+@app.post("/api/v1/ai/semantic-match", response_model=SemanticMatchResponse, dependencies=[Depends(verify_ai_service_key)])
 async def semantic_match(payload: SemanticMatchRequest):
+
     """Compute vector/semantic alignment between candidate profile and job requisition."""
     match_result = semantic_matcher.match(
         candidate_profile=payload.candidate_profile.model_dump(),

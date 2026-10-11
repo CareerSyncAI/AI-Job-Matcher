@@ -51,6 +51,10 @@ ai-services/.pytest_cache/
 *.sqlite
 *.sqlite3
 career-sync-storage/uploads/
+career-sync-storage/*.docx
+career-sync-storage/*.doc
+career-sync-storage/*.pdf
 frontend_backup/
+
 
 

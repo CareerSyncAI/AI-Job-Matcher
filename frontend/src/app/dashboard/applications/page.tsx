@@ -24,47 +24,11 @@ interface ApplicationItem {
   match_score?: number;
 }
 
-const mockApplications: ApplicationItem[] = [
-  {
-    id: "app-101",
-    job_id: "job-1",
-    candidate_id: "c-1",
-    status: "INTERVIEWING",
-    applied_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    job_title: "Senior Full-Stack Engineer (Next.js / Python)",
-    company_name: "Stripe",
-    location: "San Francisco, CA / Remote",
-    match_score: 96,
-  },
-  {
-    id: "app-102",
-    job_id: "job-2",
-    candidate_id: "c-1",
-    status: "SCREENING",
-    applied_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-    job_title: "Staff Distributed Systems Architect",
-    company_name: "Databricks",
-    location: "Remote (Global)",
-    match_score: 92,
-  },
-  {
-    id: "app-103",
-    job_id: "job-3",
-    candidate_id: "c-1",
-    status: "NEW",
-    applied_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    job_title: "Lead AI Platform Engineer",
-    company_name: "Anthropic",
-    location: "San Francisco, CA",
-    match_score: 89,
-  },
-];
-
 export default function CandidateApplicationsPage() {
   const { isDark } = useTheme();
 
-  const [applications, setApplications] = useState<ApplicationItem[]>(mockApplications);
-  const [loading, setLoading] = useState(false);
+  const [applications, setApplications] = useState<ApplicationItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -73,13 +37,33 @@ export default function CandidateApplicationsPage() {
       try {
         setLoading(true);
         const res = await api.get("/applications/me");
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          // Merge API applications with mock data
-          setApplications(res.data);
-        }
+        const appsData = Array.isArray(res.data) ? res.data : [];
+
+        // Enrich with job titles where possible
+        const enriched = await Promise.all(
+          appsData.map(async (app: ApplicationItem) => {
+            try {
+              const jobRes = await api.get(`/jobs/${app.job_id}`);
+              return {
+                ...app,
+                job_title: jobRes.data?.title || "Engineering Role",
+                company_name: jobRes.data?.department || "Verified Hiring Partner",
+                location: jobRes.data?.location || "Remote",
+              };
+            } catch {
+              return {
+                ...app,
+                job_title: "Role Application",
+                company_name: "Hiring Organization",
+                location: "Remote / Hybrid",
+              };
+            }
+          })
+        );
+        setApplications(enriched);
       } catch (err) {
-        // Fall back to demo data for candidate experience
-        console.warn("Using sample application dataset:", err);
+        console.error("Failed to load applications:", err);
+        setApplications([]);
       } finally {
         setLoading(false);
       }
