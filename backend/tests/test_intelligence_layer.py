@@ -136,6 +136,31 @@ def test_ats_resume_analyzer_missing_sections():
     assert any(i.severity == "critical" for i in res.issues)
 
 
+def test_ats_metric_detection_ignores_bare_years_and_versions():
+    """F7: Standalone years (2020) and version numbers (3.10) must not inflate quantifiable metrics count."""
+    text_with_years = """
+    Alice Vance
+    alice.vance@example.com
+    (555) 019-2834
+
+    SUMMARY
+    Engineer working since 2018 with Python 3.10.
+
+    EXPERIENCE
+    Software Engineer (2019 - 2023)
+    • Worked on release 2.0 and updated dependencies in 2021.
+    • Managed 4 internal meetings across 2 quarters.
+
+    EDUCATION
+    Graduated in 2017.
+    """
+    res = ats_analyzer.analyze(text_with_years)
+    # The text contains years (2018, 2019, 2023, 2021, 2017) and versions (3.10, 2.0)
+    # but NO genuine quantifiable metrics ($100k, 25%, 50k users, 2x).
+    assert res.quantifiable_metrics_count == 0
+    assert res.impact_score < 60.0
+
+
 def test_ground_truth_benchmark_runner():
     report = run_ground_truth_evaluation()
 

@@ -28,7 +28,9 @@ def process_resume(self, resume_id: str, db=None) -> None:
     try:
         resume = db.get(Resume, resume_uuid)
         if not resume:
-            logger.warning("Resume %s not found in database.", resume_id)
+            logger.warning("Resume %s not found in database, scheduling retry.", resume_id)
+            if hasattr(self, "retry"):
+                raise self.retry(countdown=2, exc=Exception(f"Resume {resume_id} not visible yet"))
             return
 
         resume.processing_status = ProcessingStatus.PROCESSING

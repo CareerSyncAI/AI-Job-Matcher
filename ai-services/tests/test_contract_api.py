@@ -11,25 +11,61 @@ def client():
     return TestClient(app, headers={"X-AI-Service-Key": DEFAULT_DEV_KEY})
 
 
-def test_unauthenticated_request_rejected():
-    """Verifies unauthenticated calls to protected endpoints return 401."""
+@pytest.mark.parametrize(
+    "endpoint,method,payload",
+    [
+        ("/api/v1/ai/normalize-skills", "post", {"skills": ["Python"]}),
+        ("/api/v1/ai/extract-entities", "post", {"resume_id": "r1", "text": "Python engineer", "sections": {}}),
+        (
+            "/api/v1/ai/semantic-match",
+            "post",
+            {
+                "candidate_id": "c1",
+                "candidate_profile": {"skills": ["Python"]},
+                "job_requisition": {"job_id": "j1", "title": "Dev", "required_skills": ["Python"]},
+            },
+        ),
+    ],
+)
+def test_unauthenticated_request_rejected(endpoint, method, payload):
+    """Verifies unauthenticated calls to all protected endpoints return 401."""
     unauth_client = TestClient(app)
-    response = unauth_client.post(
-        "/api/v1/ai/normalize-skills",
-        json={"skills": ["Python"]}
-    )
+    response = getattr(unauth_client, method)(endpoint, json=payload)
     assert response.status_code == 401
     assert "detail" in response.json()
 
 
-def test_invalid_api_key_rejected():
+@pytest.mark.parametrize(
+    "endpoint,method,payload",
+    [
+        ("/api/v1/ai/normalize-skills", "post", {"skills": ["Python"]}),
+        ("/api/v1/ai/extract-entities", "post", {"resume_id": "r1", "text": "Python engineer", "sections": {}}),
+        (
+            "/api/v1/ai/semantic-match",
+            "post",
+            {
+                "candidate_id": "c1",
+                "candidate_profile": {"skills": ["Python"]},
+                "job_requisition": {"job_id": "j1", "title": "Dev", "required_skills": ["Python"]},
+            },
+        ),
+    ],
+)
+def test_invalid_api_key_rejected(endpoint, method, payload):
     """Verifies calls with invalid AI service key return 401."""
     bad_client = TestClient(app, headers={"X-AI-Service-Key": "wrong-key"})
-    response = bad_client.post(
-        "/api/v1/ai/normalize-skills",
-        json={"skills": ["Python"]}
-    )
+    response = getattr(bad_client, method)(endpoint, json=payload)
     assert response.status_code == 401
+
+
+def test_parse_resume_auth_rejection():
+    """Verifies parse-resume endpoint also rejects missing/invalid auth headers."""
+    files = {"file": ("test.pdf", b"%PDF-1.4 mock", "application/pdf")}
+    unauth_client = TestClient(app)
+    assert unauth_client.post("/api/v1/ai/parse-resume", files=files).status_code == 401
+
+    bad_client = TestClient(app, headers={"X-AI-Service-Key": "invalid-key"})
+    assert bad_client.post("/api/v1/ai/parse-resume", files=files).status_code == 401
 
 
 def test_production_startup_rejects_default_dev_key(monkeypatch):

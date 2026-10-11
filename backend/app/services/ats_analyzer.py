@@ -78,12 +78,12 @@ STRONG_ACTION_VERBS: set[str] = {
 }
 
 SECTION_HEADER_REGEXES = {
-    "summary": re.compile(r"\b(?:summary|professional summary|executive summary|profile|about me|career objective|objective)\b", re.IGNORECASE),
-    "skills": re.compile(r"\b(?:skills|technical skills|core competencies|technologies|tools & frameworks|tech stack|key skills)\b", re.IGNORECASE),
-    "experience": re.compile(r"\b(?:experience|work experience|professional experience|employment history|work history)\b", re.IGNORECASE),
-    "education": re.compile(r"\b(?:education|academic background|academics|qualifications|degrees)\b", re.IGNORECASE),
-    "projects": re.compile(r"\b(?:projects|personal projects|key projects|academic projects|portfolio)\b", re.IGNORECASE),
-    "certifications": re.compile(r"\b(?:certifications|certificates|licenses|accreditations)\b", re.IGNORECASE),
+    "summary": re.compile(r"(?:^|\n)\s*(?:summary|professional summary|executive summary|profile|about me|career objective|objective)\s*(?::|\n|$)", re.IGNORECASE),
+    "skills": re.compile(r"(?:^|\n)\s*(?:skills|technical skills|core competencies|technologies|tools & frameworks|tech stack|key skills)\s*(?::|\n|$)", re.IGNORECASE),
+    "experience": re.compile(r"(?:^|\n)\s*(?:experience|work experience|professional experience|employment history|work history)\s*(?::|\n|$)", re.IGNORECASE),
+    "education": re.compile(r"(?:^|\n)\s*(?:education|academic background|academics|qualifications|degrees)\s*(?::|\n|$)", re.IGNORECASE),
+    "projects": re.compile(r"(?:^|\n)\s*(?:projects|personal projects|key projects|academic projects|portfolio)\s*(?::|\n|$)", re.IGNORECASE),
+    "certifications": re.compile(r"(?:^|\n)\s*(?:certifications|certificates|licenses|accreditations)\s*(?::|\n|$)", re.IGNORECASE),
 }
 
 
@@ -186,8 +186,13 @@ class ATSAnalyzer:
         words_lower = [w.lower() for w in words]
         verbs_found = sorted(list({w for w in words_lower if w in STRONG_ACTION_VERBS}))
 
-        # Quantifiable metrics: percentages, currency, numerical values with k/m/x multipliers
-        metric_matches = re.findall(r"\b(?:\$\d[\d,]*(?:\.\d+)?|\d+%(?:\.\d+)?|\d+\+?|\d+x|\d+\s*(?:k|m|million|billion|users|requests|ms|seconds|hours))\b", text, re.IGNORECASE)
+        # Quantifiable metrics: percentages, currency, numerical values with explicit metric units/multipliers.
+        # Excludes standalone 4-digit years (e.g. 2021) and software versions (e.g. 3.10).
+        metric_matches = re.findall(
+            r"(?:\$[\d,]+(?:\.\d+)?(?:k|m|b|million|billion)?|\b\d+(?:\.\d+)?%|\b\d+x\b|\b\d+\s*(?:k|m|million|billion|users|requests|ms|seconds|hours|\+?\s*years\b))",
+            text,
+            re.IGNORECASE,
+        )
         metric_count = len(metric_matches)
 
         impact_score = 0.0

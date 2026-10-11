@@ -26,7 +26,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-refresh token on 401 for authenticated protected requests
+let refreshPromise: Promise<string> | null = null;
+
+// Auto-refresh token on 401 with single-flight deduplication for concurrent requests
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -40,27 +42,37 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
+
+      if (!refreshPromise) {
+        refreshPromise = axios
+          .post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true })
+          .then((res) => {
+            const newToken = res.data.access_token;
+            setAccessToken(newToken);
+            return newToken;
+          })
+          .catch((refreshErr) => {
+            setAccessToken(null);
+            if (
+              typeof window !== "undefined" &&
+              window.location.pathname.startsWith("/dashboard")
+            ) {
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+              window.location.href = "/login";
+            }
+            throw refreshErr;
+          })
+          .finally(() => {
+            refreshPromise = null;
+          });
+      }
+
       try {
-        const res = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        const newToken = res.data.access_token;
-        setAccessToken(newToken);
-        original.headers.Authorization = `Bearer ${newToken}`;
+        const token = await refreshPromise;
+        original.headers.Authorization = `Bearer ${token}`;
         return api(original);
-      } catch (refreshErr) {
-        setAccessToken(null);
-        // Only redirect to login if currently trying to access protected dashboard routes
-        if (
-          typeof window !== "undefined" &&
-          window.location.pathname.startsWith("/dashboard")
-        ) {
-          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-          window.location.href = "/login";
-        }
-        return Promise.reject(refreshErr);
+      } catch (err) {
+        return Promise.reject(err);
       }
     }
     return Promise.reject(error);

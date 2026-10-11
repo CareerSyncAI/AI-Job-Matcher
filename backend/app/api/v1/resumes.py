@@ -140,8 +140,10 @@ async def upload_resume(
     db.commit()
     db.refresh(resume)
 
-    # Step 2: Offload inline processing to worker thread with dedicated session when Celery is disabled
-    if not settings.enable_worker:
+    # Step 2: Dispatch processing after successful transaction commit
+    if settings.enable_worker:
+        ResumeService.enqueue_worker(resume.id)
+    else:
         await asyncio.to_thread(_process_resume_inline, resume.id, job_id)
         db.refresh(resume)
 

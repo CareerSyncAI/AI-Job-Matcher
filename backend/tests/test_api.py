@@ -1,4 +1,13 @@
-from __future__ import annotations
+import io
+import docx
+
+
+def _create_docx_resume_bytes(text: str = "Experienced Software Engineer with Python, React, and Docker expertise.") -> bytes:
+    doc = docx.Document()
+    doc.add_paragraph(text)
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
 
 
 def test_health_check(client):
@@ -211,7 +220,8 @@ def test_tier1_evaluation_and_recruitment_workflow(client):
     cand_headers = {"Authorization": f"Bearer {candidate_token}"}
 
     # 4. Candidate uploads a resume
-    files = {"file": ("alice_resume.pdf", b"%PDF-1.4 Mock PDF content containing Python and React expertise", "application/pdf")}
+    docx_bytes = _create_docx_resume_bytes("Alice Vance\nExperienced Fullstack Engineer with Python, React, and Docker expertise.")
+    files = {"file": ("alice_resume.docx", docx_bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
     upload_res = client.post("/api/v1/profile/resumes", headers=cand_headers, files=files)
     assert upload_res.status_code == 202
     resume_id = upload_res.json()["id"]
@@ -537,6 +547,106 @@ def test_candidate_profile_anti_hijack(client, db_session):
     db_session.refresh(alice)
     assert alice.education["skills"] == ["PyTorch", "Transformers"]
     assert alice.total_experience_years == 5.0
+
+
+def test_candidate_profile_update_preserves_skills(client):
+    """F1: Ensure partial profile update without skills does not erase existing skills."""
+    # Register candidate
+    reg_res = client.post(
+        "/api/v1/auth/register",
+        json={"email": "f1_candidate@example.com", "password": "Password123456!", "role": "candidate"},
+    )
+    token = client.post(
+        "/api/v1/auth/login",
+        json={"email": "f1_candidate@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Set initial skills
+    p1 = client.put("/api/v1/auth/profile", headers=headers, json={"skills": ["Python", "FastAPI"]})
+    assert p1.status_code == 200
+    assert p1.json()["skills"] == ["Python", "FastAPI"]
+
+    # Partial update: headline only, skills omitted
+    p2 = client.put("/api/v1/auth/profile", headers=headers, json={"headline": "Lead Backend Architect"})
+    assert p2.status_code == 200
+    assert p2.json()["headline"] == "Lead Backend Architect"
+    assert p2.json()["skills"] == ["Python", "FastAPI"]
+
+    # Explicit empty skills list clears skills
+    p3 = client.put("/api/v1/auth/profile", headers=headers, json={"skills": []})
+    assert p3.status_code == 200
+    assert p3.json()["skills"] == []
+
+
+def test_apply_to_job_enforces_resume_processing_status(client, db_session):
+    """F4: Candidate cannot apply with a QUEUED or NEEDS_ATTENTION resume."""
+    from app.models.entities import Resume
+    from app.models.enums import ProcessingStatus
+
+    # Create recruiter and open job
+    client.post("/api/v1/auth/register", json={"email": "rec.f4@example.com", "password": "Password123456!", "role": "recruiter"})
+    rec_tok = client.post("/api/v1/auth/login", json={"email": "rec.f4@example.com", "password": "Password123456!"}).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+    job_id = client.post("/api/v1/jobs", headers=rec_h, json={"title": "Test Job", "description": "Desc", "status": "open"}).json()["id"]
+
+    # Register candidate
+    client.post("/api/v1/auth/register", json={"email": "cand.f4@example.com", "password": "Password123456!", "role": "candidate"})
+    cand_tok = client.post("/api/v1/auth/login", json={"email": "cand.f4@example.com", "password": "Password123456!"}).json()["access_token"]
+    cand_h = {"Authorization": f"Bearer {cand_tok}"}
+
+    # Upload resume
+    files = {"file": ("f4.pdf", b"%PDF-1.4 Mock", "application/pdf")}
+    res_id = client.post("/api/v1/profile/resumes", headers=cand_h, files=files).json()["id"]
+
+    from uuid import UUID
+    # Manually transition resume to QUEUED
+    resume = db_session.query(Resume).filter(Resume.id == UUID(res_id)).one()
+    resume.processing_status = ProcessingStatus.QUEUED
+    db_session.commit()
+
+    # Apply attempt while QUEUED must fail with 409
+    apply_queued = client.post(f"/api/v1/jobs/{job_id}/applications", headers=cand_h, json={"resume_id": res_id})
+    assert apply_queued.status_code == 409
+    assert "still being processed" in str(apply_queued.json())
+
+    # Manually transition resume to NEEDS_ATTENTION
+    resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+    db_session.commit()
+
+    # Apply attempt while NEEDS_ATTENTION must fail with 422
+    apply_failed = client.post(f"/api/v1/jobs/{job_id}/applications", headers=cand_h, json={"resume_id": res_id})
+    assert apply_failed.status_code == 422
+    assert "Resume processing failed" in str(apply_failed.json())
+
+
+def test_job_weights_all_zero_rejected(client):
+    """F6: All-zero job weights must be rejected by API validation with 422."""
+    client.post("/api/v1/auth/register", json={"email": "rec.f6@example.com", "password": "Password123456!", "role": "recruiter"})
+    rec_tok = client.post("/api/v1/auth/login", json={"email": "rec.f6@example.com", "password": "Password123456!"}).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+
+    res = client.post(
+        "/api/v1/jobs",
+        headers=rec_h,
+        json={
+            "title": "Invalid Job",
+            "description": "Desc",
+            "evaluation_weights": {"skills": 0, "experience": 0, "education": 0, "semantic": 0},
+        },
+    )
+    assert res.status_code == 422
+    assert "Evaluation weights must sum to exactly 100" in str(res.json())
+
+
+def test_evaluation_benchmark_restricted_to_admin(client):
+    """F9: Non-admin users cannot trigger benchmark evaluations."""
+    client.post("/api/v1/auth/register", json={"email": "cand.f9@example.com", "password": "Password123456!", "role": "candidate"})
+    tok = client.post("/api/v1/auth/login", json={"email": "cand.f9@example.com", "password": "Password123456!"}).json()["access_token"]
+    headers = {"Authorization": f"Bearer {tok}"}
+
+    res = client.get("/api/v1/evaluation/benchmark", headers=headers)
+    assert res.status_code == 403
 
 
 

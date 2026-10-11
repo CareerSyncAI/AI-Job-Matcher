@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.entities import Job, JobSkill, RecruiterProfile
-from app.schemas.jobs import JobCreate, JobResponse, JobUpdate, JobWeights
+from app.schemas.jobs import JobCreate, JobResponse, JobUpdate, JobWeights, JobWeightsResponse
 
 
 class JobService:
@@ -62,9 +62,9 @@ class JobService:
     @staticmethod
     def response(job: Job, applicant_count: int = 0, hide_internal_weights: bool = False) -> JobResponse:
         weights = (
-            JobWeights(skills=0, experience=0, education=0, semantic=0)
+            JobWeightsResponse(skills=0, experience=0, education=0, semantic=0)
             if hide_internal_weights
-            else JobWeights(
+            else JobWeightsResponse(
                 skills=job.skills_weight,
                 experience=job.experience_weight,
                 education=job.education_weight,

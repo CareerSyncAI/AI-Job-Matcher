@@ -58,12 +58,25 @@ def _extract_pdf(path: Path) -> str:
 
 
 def _extract_docx(path: Path) -> str:
-    """DOCX extraction using python-docx."""
+    """DOCX extraction using python-docx, including paragraphs and tables."""
     try:
         import docx  # type: ignore
         doc = docx.Document(str(path))
-        paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-        return _normalize("\n\n".join(paragraphs))
+        text_blocks: list[str] = []
+        for p in doc.paragraphs:
+            content = p.text.strip()
+            if content:
+                text_blocks.append(content)
+        for table in doc.tables:
+            for row in table.rows:
+                row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                if row_cells:
+                    unique_cells = []
+                    for c in row_cells:
+                        if not unique_cells or c != unique_cells[-1]:
+                            unique_cells.append(c)
+                    text_blocks.append(" | ".join(unique_cells))
+        return _normalize("\n".join(text_blocks))
     except ImportError:
         logger.warning("python-docx not installed; DOCX extraction unavailable")
     except Exception as exc:

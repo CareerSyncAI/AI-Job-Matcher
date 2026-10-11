@@ -123,7 +123,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.UniqueConstraint("storage_key"),
         sa.UniqueConstraint("ingestion_job_id", "sha256", name="uq_resume_job_sha256"),
-        sa.CheckConstraint("octet_length(sha256) = 64", name="ck_resume_sha256_length"),
+        sa.CheckConstraint("length(sha256) = 64", name="ck_resume_sha256_length"),
     )
     op.create_index("ix_resumes_candidate_id", "resumes", ["candidate_id"])
     op.create_index("ix_resumes_ingestion_job_id", "resumes", ["ingestion_job_id"])

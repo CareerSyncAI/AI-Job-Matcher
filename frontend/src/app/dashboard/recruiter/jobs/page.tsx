@@ -81,8 +81,7 @@ export default function RecruiterJobsPage() {
     }
   };
 
-  const handleCreateJob = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateJob = async (status: "open" | "draft" = "open") => {
     if (!title || !description) {
       setFormError("Title and Job Description are required.");
       return;
@@ -101,7 +100,7 @@ export default function RecruiterJobsPage() {
         education_required: educationRequired,
         description,
         skills: skillsList.map((s) => ({ name: s, required: true })),
-        status: "open",
+        status,
       });
       setModalOpen(false);
       // Reset form
@@ -114,7 +113,7 @@ export default function RecruiterJobsPage() {
       if (err instanceof Error) {
         setFormError(err.message);
       } else {
-        setFormError("Failed to create job opening.");
+        setFormError(status === "draft" ? "Failed to save draft." : "Failed to publish job opening.");
       }
     } finally {
       setSubmitting(false);
@@ -348,7 +347,13 @@ export default function RecruiterJobsPage() {
               </div>
             )}
 
-            <form onSubmit={handleCreateJob} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreateJob("open");
+              }}
+              className="space-y-4"
+            >
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium">Job Title *</label>
                 <input
@@ -512,14 +517,26 @@ export default function RecruiterJobsPage() {
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => handleCreateJob("draft")}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    isDark
+                      ? "bg-slate-900 border-slate-700 text-amber-400 hover:bg-slate-800"
+                      : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                  }`}
+                >
+                  Save as Draft
+                </button>
+                <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl transition shadow-md shadow-emerald-600/20"
+                  className="px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl transition shadow-md shadow-emerald-600/20 cursor-pointer"
                 >
                   {submitting ? "Publishing..." : "Publish Requisition"}
                 </button>

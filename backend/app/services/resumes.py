@@ -52,16 +52,21 @@ class ResumeService:
             ResumeService.delete_storage_key(stored.storage_key)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Duplicate resume upload.") from error
 
+        return resume
+
+    @staticmethod
+    def enqueue_worker(resume_id: UUID) -> None:
+        """Dispatch Celery task strictly after database transaction commit."""
+        from app.core.config import get_settings
         if get_settings().enable_worker:
             from app.workers.tasks import process_resume
             try:
-                process_resume.delay(str(resume.id))
+                process_resume.delay(str(resume_id))
             except Exception as exc:
                 import logging
                 logging.getLogger(__name__).error(
-                    "Failed to enqueue resume %s for worker execution: %s", resume.id, exc
+                    "Failed to enqueue resume %s for worker execution: %s", resume_id, exc
                 )
-        return resume
 
     @staticmethod
     async def ingest_for_job(db: Session, *, job_id, upload: UploadFile) -> Resume:

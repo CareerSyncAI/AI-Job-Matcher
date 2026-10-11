@@ -48,7 +48,7 @@ class UpdateProfileRequest(APIModel):
     headline: str | None = Field(default=None, max_length=255)
     location: str | None = Field(default=None, max_length=255)
     organization_name: str | None = Field(default=None, max_length=255)
-    skills: list[str] = Field(default_factory=list)
+    skills: list[str] | None = Field(default=None)
     bio: str | None = Field(default=None, max_length=1000)
 
 

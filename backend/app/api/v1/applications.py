@@ -88,6 +88,16 @@ def apply_to_job(
     resume = db.get(Resume, target_resume_id)
     if not resume or resume.candidate_id != candidate.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+    if resume.processing_status in (ProcessingStatus.QUEUED, ProcessingStatus.PROCESSING):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Resume is still being processed. Please wait until processing completes before applying.",
+        )
+    if resume.processing_status is ProcessingStatus.NEEDS_ATTENTION:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Resume processing failed ({resume.needs_attention_reason.value if resume.needs_attention_reason else 'needs attention'}). Please re-upload a readable resume before applying.",
+        )
     job = db.get(Job, job_id)
     if not job or job.status is not JobStatus.OPEN:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
@@ -218,7 +228,9 @@ async def upload_profile_resume(
     db.commit()
     db.refresh(resume)
 
-    if not settings.enable_worker:
+    if settings.enable_worker:
+        ResumeService.enqueue_worker(resume.id)
+    else:
         await asyncio.to_thread(_process_profile_resume_inline, resume.id, candidate.id)
         db.refresh(resume)
 

@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_current_user
+from app.api.deps import require_roles
 from app.evaluation.benchmark_runner import run_ground_truth_evaluation
 from app.evaluation.benchmark_schema import BenchmarkSummaryReport
 from app.models.entities import User
+from app.models.enums import UserRole
 
 router = APIRouter(prefix="/evaluation", tags=["evaluation-benchmarks"])
 
 
 @router.get("/benchmark", response_model=BenchmarkSummaryReport)
-def run_benchmark_evaluation(current_user: User = Depends(get_current_user)) -> BenchmarkSummaryReport:
+def run_benchmark_evaluation(current_user: User = Depends(require_roles(UserRole.ADMIN))) -> BenchmarkSummaryReport:
     """
     Run automated ground-truth benchmark evaluation across diverse test pairs.
     Returns:

@@ -24,9 +24,16 @@ class JobWeights(APIModel):
     @model_validator(mode="after")
     def weights_must_total_100(self) -> JobWeights:
         total = self.skills + self.experience + self.education + self.semantic
-        if total != 100 and total != 0:
+        if total != 100:
             raise ValueError("Evaluation weights must sum to exactly 100.")
         return self
+
+
+class JobWeightsResponse(APIModel):
+    skills: int = Field(default=0, ge=0, le=100)
+    experience: int = Field(default=0, ge=0, le=100)
+    education: int = Field(default=0, ge=0, le=100)
+    semantic: int = Field(default=0, ge=0, le=100)
 
 
 class JobCreate(APIModel):
@@ -73,7 +80,7 @@ class JobResponse(APIModel):
     description: str
     status: JobStatus
     skills: list[JobSkillResponse]
-    evaluation_weights: JobWeights
+    evaluation_weights: JobWeightsResponse
     created_at: datetime
     applicant_count: int = 0
 

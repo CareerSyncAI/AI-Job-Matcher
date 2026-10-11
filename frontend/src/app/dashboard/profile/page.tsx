@@ -885,9 +885,9 @@ export default function ProfilePage() {
                     }`}
                   >
                     <div>
-                      <h4 className="text-xs font-semibold">Remember Me On This Device</h4>
+                      <h4 className="text-xs font-semibold">Remember Login Email</h4>
                       <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                        Preserve your credentials and automatic session login on this browser.
+                        Prefill your email address on the login screen for faster sign-in on this device.
                       </p>
                     </div>
                     <input

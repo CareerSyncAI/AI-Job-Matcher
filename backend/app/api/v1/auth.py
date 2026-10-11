@@ -230,7 +230,8 @@ def update_profile(
         if payload.location is not None:
             profile.location = payload.location
         edu_data = dict(profile.education) if isinstance(profile.education, dict) else {}
-        edu_data["skills"] = list(payload.skills) if payload.skills is not None else []
+        if payload.skills is not None:
+            edu_data["skills"] = list(payload.skills)
         if payload.bio is not None:
             edu_data["bio"] = payload.bio
         profile.education = dict(edu_data)
