@@ -240,7 +240,7 @@ export default function RecruiterPipelinePage() {
                 <div className="p-4 border-b border-slate-800 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full border-2 ${col.color.split(" ")[0]}`} />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">{col.title}</h3>
+                    <h3 className="text-xs font-bold text-slate-200">{col.title}</h3>
                   </div>
                   <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
                     {stageCandidates.length}
@@ -262,11 +262,11 @@ export default function RecruiterPipelinePage() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <h4 className="font-semibold text-sm leading-snug">{cand.name}</h4>
-                          <p className={`text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                             {cand.currentRole || "Candidate"}
                           </p>
                         </div>
-                        <span className="text-xs font-bold font-mono text-emerald-500 shrink-0">
+                        <span className="text-sm font-bold font-mono text-emerald-500 shrink-0">
                           {cand.matchScore}%
                         </span>
                       </div>
@@ -276,13 +276,13 @@ export default function RecruiterPipelinePage() {
                           {cand.matchedSkills.slice(0, 3).map((s) => (
                             <span
                               key={s}
-                              className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-medium"
+                              className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium"
                             >
                               {s}
                             </span>
                           ))}
                           {cand.matchedSkills.length > 3 && (
-                            <span className="text-[9px] text-slate-400 self-center">
+                            <span className="text-xs text-slate-400 self-center">
                               +{cand.matchedSkills.length - 3}
                             </span>
                           )}
@@ -290,7 +290,7 @@ export default function RecruiterPipelinePage() {
                       )}
 
                       {/* Stage Progression Buttons */}
-                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-1 text-[10px]">
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-1 text-xs">
                         {col.key !== "under_review" && (
                           <button
                             type="button"
@@ -298,7 +298,7 @@ export default function RecruiterPipelinePage() {
                               e.stopPropagation();
                               moveStage(cand, "under_review");
                             }}
-                            className="text-amber-400 hover:underline"
+                            className="text-amber-400 hover:underline cursor-pointer"
                           >
                             → Review
                           </button>
@@ -310,7 +310,7 @@ export default function RecruiterPipelinePage() {
                               e.stopPropagation();
                               moveStage(cand, "shortlisted");
                             }}
-                            className="text-emerald-400 font-semibold hover:underline"
+                            className="text-emerald-400 font-semibold hover:underline cursor-pointer"
                           >
                             ✓ Shortlist
                           </button>
@@ -322,7 +322,7 @@ export default function RecruiterPipelinePage() {
                               e.stopPropagation();
                               moveStage(cand, "rejected");
                             }}
-                            className="text-slate-400 hover:text-rose-400 hover:underline"
+                            className="text-slate-400 hover:text-rose-400 hover:underline cursor-pointer"
                           >
                             ✕ Archive
                           </button>

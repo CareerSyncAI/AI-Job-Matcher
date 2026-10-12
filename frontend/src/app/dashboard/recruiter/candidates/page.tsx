@@ -193,20 +193,21 @@ export default function RecruiterCandidatesPage() {
       >
         <div className="flex items-center gap-3">
           <IconBriefcase size={18} className="text-emerald-500" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Requisition:</span>
+          <span className="text-xs font-semibold text-slate-400">Target Requisition:</span>
           {jobs.length === 0 ? (
             <span className="text-xs text-slate-400">No active requisitions found</span>
           ) : (
             <select
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
+              aria-label="Target Requisition"
               className={`text-xs font-semibold rounded-xl px-3 py-2 border focus:outline-none focus:border-emerald-500 transition cursor-pointer ${
                 isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-900"
               }`}
             >
               {jobs.map((job) => (
                 <option key={job.id} value={job.id}>
-                  {job.title} ({job.applicant_count ?? 0} applicants) [{job.status.toUpperCase()}]
+                  {job.title} ({job.applicant_count ?? 0} applicants) [{job.status.charAt(0).toUpperCase() + job.status.slice(1)}]
                 </option>
               ))}
             </select>
@@ -318,8 +319,8 @@ export default function RecruiterCandidatesPage() {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Deterministic Match</span>
-                      <span className="text-base font-bold font-mono text-emerald-500">{candidate.matchScore}%</span>
+                      <span className="text-xs text-slate-400 font-medium block">Deterministic Match</span>
+                      <span className="text-2xl font-bold font-mono leading-none text-emerald-500">{candidate.matchScore}%</span>
                     </div>
                   </div>
 
@@ -328,9 +329,9 @@ export default function RecruiterCandidatesPage() {
                       <IconMapPin size={13} />
                       {candidate.location || "Remote / Not Specified"}
                     </span>
-                    <span>{candidate.experienceYears} Yrs Tenure</span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-semibold border border-emerald-500/20 uppercase">
-                      {candidate.status}
+                    <span>{candidate.experienceYears} Yrs Experience</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-semibold border border-emerald-500/20 capitalize">
+                      {candidate.status?.replace("_", " ") || "Under Review"}
                     </span>
                   </div>
 
@@ -341,12 +342,12 @@ export default function RecruiterCandidatesPage() {
                   )}
 
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-[10px] uppercase font-mono text-slate-400 block">Verified Matched Skills:</span>
+                    <span className="text-xs font-semibold text-slate-400 block">Verified Skills Breakdown:</span>
                     <div className="flex flex-wrap gap-1.5">
                       {candidate.matchedSkills.map((skill) => (
                         <span
                           key={skill}
-                          className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-medium"
+                          className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium"
                         >
                           ✓ {skill}
                         </span>
@@ -354,7 +355,7 @@ export default function RecruiterCandidatesPage() {
                       {candidate.missingSkills.map((skill) => (
                         <span
                           key={skill}
-                          className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-medium"
+                          className="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-medium"
                         >
                           ✕ {skill} (Missing)
                         </span>
@@ -424,27 +425,27 @@ export default function RecruiterCandidatesPage() {
 
             {/* Score Breakdown Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className={`p-3 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Match Score</span>
-                <span className="text-xl font-bold font-mono text-emerald-500">{selectedCandidate.matchScore}%</span>
+              <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                <span className="text-xs text-slate-400 font-medium block">Match Score</span>
+                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-emerald-500 block">{selectedCandidate.matchScore}%</span>
               </div>
-              <div className={`p-3 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Skills Score</span>
-                <span className="text-xl font-bold font-mono text-slate-200">{selectedCandidate.skillScore}%</span>
+              <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                <span className="text-xs text-slate-400 font-medium block">Skills Score</span>
+                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-slate-200 block">{selectedCandidate.skillScore}%</span>
               </div>
-              <div className={`p-3 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Experience</span>
-                <span className="text-xl font-bold font-mono text-slate-200">{selectedCandidate.experienceScore}%</span>
+              <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                <span className="text-xs text-slate-400 font-medium block">Experience</span>
+                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-slate-200 block">{selectedCandidate.experienceScore}%</span>
               </div>
-              <div className={`p-3 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Education</span>
-                <span className="text-xl font-bold font-mono text-slate-200">{selectedCandidate.educationScore}%</span>
+              <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                <span className="text-xs text-slate-400 font-medium block">Education</span>
+                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-slate-200 block">{selectedCandidate.educationScore}%</span>
               </div>
             </div>
 
             {/* Verbatim Grounded Evidence Claims */}
             <div className="space-y-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400 block">
+              <span className="text-xs font-semibold text-emerald-400 block">
                 Evidence-Backed Assessment Claims
               </span>
               {selectedCandidate.evidence && selectedCandidate.evidence.length > 0 ? (
@@ -463,7 +464,7 @@ export default function RecruiterCandidatesPage() {
                       <div className="flex items-center justify-between font-semibold">
                         <span className="text-slate-200">{ev.requirement}</span>
                         <span
-                          className={`uppercase text-[9px] px-2 py-0.5 rounded font-mono ${
+                          className={`capitalize text-xs px-2.5 py-0.5 rounded font-medium ${
                             ev.type === "matched"
                               ? "bg-emerald-500/20 text-emerald-400"
                               : ev.type === "transferable"
@@ -476,7 +477,7 @@ export default function RecruiterCandidatesPage() {
                       </div>
                       <p className="text-slate-300">{ev.claim}</p>
                       {ev.sourceText && (
-                        <blockquote className="border-l-2 border-slate-600 pl-2 text-[11px] text-slate-400 italic">
+                        <blockquote className="border-l-2 border-slate-600 pl-2 text-xs text-slate-400 italic">
                           &ldquo;{ev.sourceText}&rdquo;
                         </blockquote>
                       )}

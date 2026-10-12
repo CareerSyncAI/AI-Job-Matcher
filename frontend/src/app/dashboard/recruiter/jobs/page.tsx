@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import api from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 import {
@@ -171,7 +172,7 @@ export default function RecruiterJobsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Active Openings</span>
-          <p className="text-2xl font-bold mt-1 text-emerald-500">
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-emerald-500">
             {jobs.filter((j) => j.status?.toLowerCase() === "open").length}
           </p>
         </div>
@@ -181,7 +182,7 @@ export default function RecruiterJobsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Requisitions</span>
-          <p className="text-2xl font-bold mt-1 text-slate-200">{jobs.length}</p>
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-slate-200">{jobs.length}</p>
         </div>
         <div
           className={`p-5 rounded-2xl border ${
@@ -189,7 +190,7 @@ export default function RecruiterJobsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Applicants</span>
-          <p className="text-2xl font-bold mt-1 text-teal-400">
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-teal-400">
             {jobs.reduce((acc, curr) => acc + (curr.applicant_count || 0), 0)}
           </p>
         </div>
@@ -199,7 +200,7 @@ export default function RecruiterJobsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Draft / Closed</span>
-          <p className="text-2xl font-bold mt-1 text-amber-500">
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-amber-500">
             {jobs.filter((j) => j.status?.toLowerCase() !== "open").length}
           </p>
         </div>
@@ -246,11 +247,17 @@ export default function RecruiterJobsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="font-semibold text-lg">{job.title}</h3>
+                    <Link
+                      href="/dashboard/recruiter/pipeline"
+                      className="font-semibold text-lg hover:text-emerald-500 transition-colors cursor-pointer"
+                    >
+                      {job.title}
+                    </Link>
                     <select
                       value={job.status?.toLowerCase() || "open"}
                       onChange={(e) => handleStatusChange(job.id, e.target.value as JobPosting["status"])}
-                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer ${
+                      aria-label={`Status for ${job.title}`}
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer ${
                         job.status?.toLowerCase() === "open"
                           ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                           : job.status?.toLowerCase() === "draft"
@@ -283,7 +290,7 @@ export default function RecruiterJobsPage() {
                       {job.skills.map((s, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700/60 text-slate-300 text-[10px]"
+                          className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700/60 text-slate-300 text-xs font-medium"
                         >
                           {s.name}
                         </span>
@@ -294,22 +301,18 @@ export default function RecruiterJobsPage() {
 
                 <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 shrink-0">
                   <div className="text-left sm:text-right">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Applicants</span>
-                    <span className="text-xl font-bold font-mono text-emerald-500">
+                    <span className="text-xs text-slate-400 font-medium block">Applicants</span>
+                    <span className="text-2xl font-bold font-mono leading-none text-emerald-500">
                       {job.applicant_count || 0}
                     </span>
                   </div>
 
-                  <a
+                  <Link
                     href="/dashboard/recruiter/pipeline"
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold border transition ${
-                      isDark
-                        ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
-                        : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
-                    }`}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
                   >
                     View Pipeline →
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
