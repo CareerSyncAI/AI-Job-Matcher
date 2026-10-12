@@ -34,7 +34,7 @@ export default function LandingPage() {
             <a href="#solutions" className="px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-lg transition">
               Solutions
             </a>
-            <a href="#free-forever" className="px-3.5 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 rounded-lg transition">
+            <a href="#free-forever" className="px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-lg transition">
               Free Access
             </a>
             <a href="#faq" className="px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-lg transition">
@@ -51,9 +51,9 @@ export default function LandingPage() {
               href="/register"
               className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white font-semibold text-sm rounded-xl transition shadow-md shadow-emerald-600/25 hover:shadow-lg hover:shadow-emerald-600/35 hover:-translate-y-0.5 flex items-center gap-1.5"
             >
-              Get Started Free
+              Create Free Account
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
@@ -119,10 +119,10 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto">
-            {/* Pill Kicker */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-8 backdrop-blur-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#059669] animate-ping" />
-              <span className="font-mono text-xs font-bold text-[#059669] tracking-wider uppercase">
+            {/* Informational Kicker Badge (distinct neutral border style to avoid looking like a clickable nav pill) */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200/80 mb-8">
+              <span className="w-2 h-2 rounded-full bg-[#059669]" />
+              <span className="text-xs font-semibold text-slate-700 tracking-normal">
                 100% Free AI Job Matcher &amp; ATS Resume Engine
               </span>
             </div>
@@ -155,7 +155,10 @@ export default function LandingPage() {
                 href="/login"
                 className="w-full sm:w-auto px-8 py-4 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl hover:border-emerald-500/50 hover:bg-slate-50 hover:-translate-y-0.5 transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                Sign In to Dashboard →
+                Sign in to Dashboard
+                <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
               </Link>
             </div>
 
@@ -196,7 +199,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
               <div className="space-y-3">
                 <h4 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider">Extracted Skill Graph</h4>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-x-2.5 gap-y-2.5">
                   {["React / Next.js", "FastAPI / Python", "TypeScript", "Vector DB", "PostgreSQL"].map((s, i) => (
                     <span key={i} className="px-2.5 py-1 text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                       {s}
@@ -208,11 +211,11 @@ export default function LandingPage() {
               <div className="space-y-3">
                 <h4 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider">ATS Score Breakdown</h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-slate-300">
+                  <div className="flex justify-between items-center text-xs text-slate-300">
                     <span>Semantic Match Alignment</span>
                     <span className="font-semibold text-emerald-400">96%</span>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-2">
+                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden flex">
                     <div className="bg-emerald-500 h-2 rounded-full w-[96%]" />
                   </div>
                 </div>
@@ -243,15 +246,15 @@ export default function LandingPage() {
               return (
                 <div
                   key={idx}
-                  className="p-8 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500/40 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group"
+                  className="p-8 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500/40 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group flex flex-col items-start"
                 >
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#059669] border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <IconComp size={24} className="text-[#059669]" />
+                    <IconComp size={22} className="text-[#059669]" />
                   </div>
                   <h3 className="font-display font-bold text-slate-900 text-lg mb-2">
                     {feat.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  <p className="text-sm text-slate-600 leading-relaxed">
                     {feat.description}
                   </p>
                 </div>
@@ -362,12 +365,12 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer className="py-12 bg-white border-t border-slate-200 text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
           <div className="flex items-center gap-3">
             <CareerSyncBrand size={24} showTagline={false} isLight={true} />
             <span className="text-slate-400">© {new Date().getFullYear()} CareerSync Platform</span>
           </div>
-          <p className="max-w-md text-[11px] leading-relaxed">
+          <p className="max-w-md text-xs leading-relaxed text-slate-500">
             Enterprise Semantic Matching &amp; ATS Resume Intelligence Environment.
           </p>
           <div className="flex items-center gap-4">
