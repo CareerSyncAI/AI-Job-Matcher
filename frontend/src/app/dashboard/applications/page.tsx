@@ -156,7 +156,7 @@ export default function CandidateApplicationsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Applied</span>
-          <p className="text-2xl font-bold mt-1 text-emerald-500">{applications.length}</p>
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-emerald-500">{applications.length}</p>
         </div>
         <div
           className={`p-5 rounded-2xl border ${
@@ -164,7 +164,7 @@ export default function CandidateApplicationsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Under Review</span>
-          <p className="text-2xl font-bold mt-1 text-amber-500">
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-amber-500">
             {applications.filter((a) => a.status?.toLowerCase() === "under_review").length}
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function CandidateApplicationsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Shortlisted</span>
-          <p className="text-2xl font-bold mt-1 text-purple-500">
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-purple-500">
             {applications.filter((a) => a.status?.toLowerCase() === "shortlisted").length}
           </p>
         </div>
@@ -184,7 +184,7 @@ export default function CandidateApplicationsPage() {
           }`}
         >
           <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Archived</span>
-          <p className="text-2xl font-bold mt-1 text-slate-400">
+          <p className="text-2xl font-bold font-mono leading-none mt-2 text-slate-400">
             {applications.filter((a) => a.status?.toLowerCase() === "rejected").length}
           </p>
         </div>
@@ -275,7 +275,7 @@ export default function CandidateApplicationsPage() {
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <h3 className="font-semibold text-base">{app.job_title || "Software Engineering Role"}</h3>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${badge.bg}`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badge.bg}`}>
                         {badge.label}
                       </span>
                     </div>
@@ -298,8 +298,8 @@ export default function CandidateApplicationsPage() {
                   <div className="flex items-center gap-4 shrink-0">
                     {app.match_score && (
                       <div className="text-right">
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Match Score</span>
-                        <span className="text-base font-bold font-mono text-emerald-500">{app.match_score}%</span>
+                        <span className="text-xs text-slate-400 font-medium block">Match Score</span>
+                        <span className="text-2xl font-bold font-mono leading-none text-emerald-500">{app.match_score}%</span>
                       </div>
                     )}
 

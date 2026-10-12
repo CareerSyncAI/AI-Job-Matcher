@@ -230,7 +230,7 @@ export default function LoginPage() {
 
           {/* Quick Demo Fill Buttons */}
           <div className="pt-4 border-t border-slate-800 text-center space-y-2">
-            <span className="text-[11px] font-mono text-slate-500 uppercase tracking-wider block">
+            <span className="text-xs font-semibold text-slate-400 block">
               Quick Test Profiles
             </span>
             <div className="grid grid-cols-2 gap-2">
@@ -324,7 +324,7 @@ export default function LoginPage() {
                     required
                     className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
                   />
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-400">
                     A secure password reset link or instructions will be dispatched to this address.
                   </p>
                 </div>

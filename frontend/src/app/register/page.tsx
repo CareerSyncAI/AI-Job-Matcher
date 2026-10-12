@@ -116,7 +116,7 @@ function RegisterForm() {
 
           {/* Role Toggle Selector */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider">Account Role</label>
+            <label className="block text-xs font-semibold text-slate-300">Account Role</label>
             <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950 border border-slate-800">
               <button
                 type="button"

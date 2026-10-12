@@ -260,7 +260,7 @@ export default function ProfilePage() {
                 <h1 className="font-display text-2xl font-bold tracking-tight">
                   {fullName || user?.email?.split("@")[0] || "My Profile"}
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-mono font-bold border border-emerald-500/20 uppercase">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-semibold border border-emerald-500/20 capitalize">
                   {user?.role || "Candidate"}
                 </span>
               </div>

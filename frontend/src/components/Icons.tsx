@@ -130,9 +130,9 @@ export const CareerSyncBrand: React.FC<CareerSyncBrandProps> = ({
         </div>
         {showTagline && (
           <span
-            className={`text-[8px] font-bold tracking-[0.14em] uppercase mt-0.5 leading-none truncate ${
+            className={`text-[10px] font-bold tracking-wider uppercase mt-0.5 leading-none truncate ${
               responsiveTagline ? "hidden sm:inline-block" : "inline-block"
-            } ${isLight ? "text-slate-500" : "text-cyan-400/90"}`}
+            } ${isLight ? "text-slate-500" : "text-cyan-400"}`}
           >
             AI-POWERED CAREER MATCHING
           </span>

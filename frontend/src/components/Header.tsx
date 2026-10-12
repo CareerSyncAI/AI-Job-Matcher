@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
               placeholder="Search talent, roles..."
               className="bg-transparent text-[#dae2fd] placeholder:text-[#908fa0] text-xs focus:outline-none w-full"
             />
-            <kbd className="text-[10px] text-[#c7c4d7] bg-[#171f33] px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
+            <kbd className="text-xs text-[#c7c4d7] bg-[#171f33] px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
           </div>
 
           <button
@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="relative p-2 rounded-lg text-[#c7c4d7] hover:text-[#dae2fd] hover:bg-[#222a3d] transition-colors"
           >
             <span className="material-symbols-outlined text-xl">notifications</span>
-            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#ffb4ab] text-[#690005] text-[10px] flex items-center justify-center font-bold">
+            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#ffb4ab] text-[#690005] text-xs flex items-center justify-center font-bold">
               3
             </span>
           </button>

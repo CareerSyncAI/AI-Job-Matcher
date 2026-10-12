@@ -38,7 +38,7 @@ export default function ResumePage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
+            <span className="text-xs font-semibold text-emerald-400">
               CareerSync Document Parser
             </span>
           </div>
@@ -47,8 +47,8 @@ export default function ResumePage() {
             Upload your CV to extract structured skill entities, verify ATS keyword compatibility, and generate vector profile matrices.
           </p>
         </div>
-        <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-semibold self-start sm:self-center">
-          VERIFIED ATS ENGINE
+        <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold self-start sm:self-center">
+          Verified ATS Engine
         </span>
       </div>
 
@@ -147,7 +147,7 @@ export default function ResumePage() {
             <h2 className="text-base font-bold text-slate-200">Extracted Vector Skill Graph</h2>
             
             <div>
-              <h3 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-2">Technical Skills Detected</h3>
+              <h3 className="text-xs font-semibold text-slate-300 mb-2">Technical Skills Detected</h3>
               <div className="flex flex-wrap gap-2">
                 {parsedData.skills.map((skill, idx) => (
                   <span key={idx} className="px-3 py-1 text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
@@ -158,7 +158,7 @@ export default function ResumePage() {
             </div>
 
             <div>
-              <h3 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-2">Work Experience Highlights</h3>
+              <h3 className="text-xs font-semibold text-slate-300 mb-2">Work Experience Highlights</h3>
               <div className="space-y-3">
                 {parsedData.experience.map((exp, idx) => (
                   <div key={idx} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">

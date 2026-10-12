@@ -198,7 +198,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
               <div className="space-y-3">
-                <h4 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider">Extracted Skill Graph</h4>
+                <h4 className="text-xs font-semibold text-slate-300">Extracted Skill Graph</h4>
                 <div className="flex flex-wrap gap-x-2.5 gap-y-2.5">
                   {["React / Next.js", "FastAPI / Python", "TypeScript", "Vector DB", "PostgreSQL"].map((s, i) => (
                     <span key={i} className="px-2.5 py-1 text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
@@ -209,7 +209,7 @@ export default function LandingPage() {
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider">ATS Score Breakdown</h4>
+                <h4 className="text-xs font-semibold text-slate-300">ATS Score Breakdown</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-xs text-slate-300">
                     <span>Semantic Match Alignment</span>
@@ -229,8 +229,8 @@ export default function LandingPage() {
       <section id="features" className="py-24 bg-white border-t border-slate-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="font-mono text-xs font-bold text-[#059669] tracking-widest uppercase mb-2 block">
-              PLATFORM FEATURES
+            <span className="text-xs font-semibold text-[#059669] mb-2 block">
+              Platform Features
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-3">
               Comprehensive Career &amp; Hiring Intelligence
@@ -268,8 +268,8 @@ export default function LandingPage() {
       <section id="how-it-works" className="py-24 bg-slate-50 border-y border-slate-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="font-mono text-xs font-bold text-[#059669] tracking-widest uppercase mb-2 block">
-              FOUR STEPS TO SUCCESS
+            <span className="text-xs font-semibold text-[#059669] mb-2 block">
+              Four Steps to Success
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
               Simple 4-Step Matching Workflow
@@ -300,8 +300,8 @@ export default function LandingPage() {
           <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-emerald-900 via-slate-900 to-teal-950 text-white border border-emerald-500/20 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="relative z-10 text-center max-w-2xl mx-auto space-y-6">
-              <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-xs font-bold tracking-wider uppercase inline-block border border-emerald-500/30">
-                100% FREE FOR ALL USERS
+              <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold inline-block border border-emerald-500/30">
+                100% Free For All Users
               </span>
               <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                 No Paid Subscriptions. No Gated Features.
@@ -326,8 +326,8 @@ export default function LandingPage() {
       <section id="faq" className="py-24 bg-slate-50 border-t border-slate-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="font-mono text-xs font-bold text-[#059669] tracking-widest uppercase mb-2 block">
-              FREQUENTLY ASKED QUESTIONS
+            <span className="text-xs font-semibold text-[#059669] mb-2 block">
+              Frequently Asked Questions
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
               Questions, answered
