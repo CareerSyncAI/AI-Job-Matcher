@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import api from "@/lib/api";
+import { useTheme } from "@/lib/theme";
 import {
   IconSearch,
   IconTarget,
@@ -9,6 +11,7 @@ import {
   IconBriefcase,
   IconMapPin,
   IconCheckCircle,
+  IconAlertTriangle,
 } from "@/components/Icons";
 
 interface JobSkill {
@@ -32,6 +35,8 @@ interface JobItem {
 }
 
 export default function JobsPage() {
+  const { isDark } = useTheme();
+
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +44,7 @@ export default function JobsPage() {
   const [selectedArrangement, setSelectedArrangement] = useState("all");
   const [sortBy, setSortBy] = useState<"match" | "recent">("recent");
   const [appliedJobs, setAppliedJobs] = useState<Record<string, boolean>>({});
-  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string; showResumeLink?: boolean } | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
 
@@ -131,32 +136,50 @@ export default function JobsPage() {
       setStatusMessage({
         type: "success",
         text: `Application submitted for "${jobTitle}"! Recruiter notified.`,
+        showResumeLink: false,
       });
     } catch (err: unknown) {
-      const errResponse = (err as { response?: { status?: number; data?: { detail?: string } } })?.response;
+      const errResponse = (err as { response?: { status?: number; data?: { detail?: unknown } } })?.response;
       const statusCode = errResponse?.status;
-      const detail = errResponse?.data?.detail;
+      const rawDetail = errResponse?.data?.detail;
+      const detailStr =
+        typeof rawDetail === "string"
+          ? rawDetail
+          : Array.isArray(rawDetail)
+          ? rawDetail.map((d: { msg?: string }) => d.msg || JSON.stringify(d)).join(", ")
+          : "";
 
       if (statusCode === 409) {
         setAppliedJobs((prev) => ({ ...prev, [jobId]: true }));
         setStatusMessage({
           type: "success",
           text: `You have already applied to "${jobTitle}".`,
+          showResumeLink: false,
         });
-      } else if (statusCode === 400 && typeof detail === "string" && detail.includes("resume")) {
+      } else if (
+        statusCode === 400 &&
+        detailStr.toLowerCase().includes("resume")
+      ) {
         setStatusMessage({
           type: "error",
-          text: "No resume on file. Please upload a resume in Resume Studio before applying.",
+          text: "No resume on file. Please upload your resume in Resume Studio before applying.",
+          showResumeLink: true,
+        });
+      } else if (statusCode === 403) {
+        setStatusMessage({
+          type: "error",
+          text: detailStr || "Only candidate accounts can apply to job requisitions.",
+          showResumeLink: false,
         });
       } else {
         setStatusMessage({
           type: "error",
-          text: typeof detail === "string" ? detail : "Failed to submit application. Please try again.",
+          text: detailStr || "Failed to submit application. Please upload your resume in Resume Studio first.",
+          showResumeLink: detailStr.toLowerCase().includes("resume") || !detailStr,
         });
       }
     } finally {
       setApplyingJobId(null);
-      setTimeout(() => setStatusMessage(null), 5000);
     }
   };
 
@@ -167,27 +190,38 @@ export default function JobsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto font-sans">
       {/* Search Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950/70 via-slate-900 to-teal-950/60 border border-emerald-500/20 p-6 sm:p-8 backdrop-blur-xl">
-        <div className="absolute -right-12 -top-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span className="text-xs font-semibold text-emerald-400">
+      <div
+        className={`p-6 sm:p-8 rounded-2xl border transition-all relative overflow-hidden ${
+          isDark
+            ? "bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border-slate-800 text-slate-100 shadow-xl"
+            : "bg-white border-slate-200 text-slate-900 shadow-sm"
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span className="text-xs font-semibold text-emerald-500">
                 CareerSync • Role Directory
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-100 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight">
               Opportunities &amp; Job Matches
             </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl">
+            <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isDark ? "text-slate-400" : "text-slate-600"}`}>
               Real-time engineering positions matched against your candidate skill matrix and experience level.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <div className="px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-semibold shadow-inner flex items-center gap-2">
-              <IconTarget size={15} />
+            <div
+              className={`px-4 py-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+                isDark
+                  ? "bg-slate-950 border-slate-800 text-emerald-400"
+                  : "bg-slate-50 border-slate-200 text-emerald-600"
+              }`}
+            >
+              <IconTarget size={16} />
               <span>{filteredJobs.length} Verified Roles</span>
             </div>
           </div>
@@ -197,49 +231,103 @@ export default function JobsPage() {
       {/* Instant Notification Toast */}
       {statusMessage && (
         <div
-          className={`p-4 rounded-2xl border text-xs font-medium flex items-center justify-between shadow-xl animate-fadeIn ${
+          role="alert"
+          className={`p-4 sm:p-5 rounded-2xl border text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg animate-fadeIn ${
             statusMessage.type === "error"
-              ? "bg-rose-500/20 border-rose-500/40 text-rose-200 shadow-rose-950/50"
-              : "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 shadow-emerald-950/50"
+              ? isDark
+                ? "bg-rose-950/80 border-rose-800 text-rose-200"
+                : "bg-rose-50 border-rose-300 text-rose-900 shadow-rose-100"
+              : isDark
+              ? "bg-emerald-950/80 border-emerald-800 text-emerald-200"
+              : "bg-emerald-50 border-emerald-300 text-emerald-900 shadow-emerald-100"
           }`}
         >
-          <div className="flex items-center gap-2.5">
-            <IconCheckCircle
-              size={18}
-              className={statusMessage.type === "error" ? "text-rose-300 shrink-0" : "text-emerald-300 shrink-0"}
-            />
-            <p className="font-semibold">{statusMessage.text}</p>
+          <div className="flex items-center gap-3">
+            {statusMessage.type === "error" ? (
+              <IconAlertTriangle
+                size={20}
+                className={isDark ? "text-rose-400 shrink-0" : "text-rose-600 shrink-0"}
+              />
+            ) : (
+              <IconCheckCircle
+                size={20}
+                className={isDark ? "text-emerald-400 shrink-0" : "text-emerald-600 shrink-0"}
+              />
+            )}
+            <div className="space-y-0.5">
+              <p className="font-semibold text-sm leading-snug">{statusMessage.text}</p>
+              {statusMessage.showResumeLink && (
+                <p className={`text-xs ${isDark ? "text-rose-300" : "text-rose-700"}`}>
+                  Upload your CV in{" "}
+                  <Link
+                    href="/dashboard/resume"
+                    className="underline font-bold hover:text-white transition"
+                  >
+                    AI Resume Studio →
+                  </Link>{" "}
+                  to enable one-click Quick Apply.
+                </p>
+              )}
+            </div>
           </div>
-          <button
-            onClick={() => setStatusMessage(null)}
-            className="text-slate-400 hover:text-white text-sm font-bold cursor-pointer"
-          >
-            ✕
-          </button>
+
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            {statusMessage.showResumeLink && (
+              <Link
+                href="/dashboard/resume"
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  isDark
+                    ? "bg-rose-900 hover:bg-rose-800 text-rose-100"
+                    : "bg-rose-600 hover:bg-rose-700 text-white"
+                }`}
+              >
+                Go to Resume Studio
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => setStatusMessage(null)}
+              aria-label="Dismiss notification"
+              className={`p-1.5 rounded-lg text-sm font-bold transition cursor-pointer ${
+                isDark
+                  ? "text-rose-400 hover:text-white hover:bg-rose-900/60"
+                  : "text-rose-700 hover:text-rose-950 hover:bg-rose-200"
+              }`}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
       {/* Search Input & Filtering Bar */}
-      <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md space-y-4 shadow-lg">
+      <div
+        className={`p-5 rounded-2xl border space-y-4 shadow-sm ${
+          isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+        }`}
+      >
         <div className="flex flex-col md:flex-row items-center gap-3">
           {/* Main Input */}
           <div className="relative flex-1 w-full">
-            <div className="absolute left-3.5 top-3.5 text-slate-400">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+            <div className={`absolute left-3.5 top-3.5 ${isDark ? "text-slate-400" : "text-slate-400"}`}>
+              <IconSearch size={16} />
             </div>
             <input
               type="text"
               placeholder="Search by title, department, or skill (e.g. Next.js, Python, Docker)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-xl pl-10 pr-10 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
+              className={`w-full text-xs rounded-xl pl-10 pr-10 py-3 border focus:outline-none focus:border-emerald-500 transition ${
+                isDark
+                  ? "bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600"
+                  : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"
+              }`}
             />
             {searchTerm && (
               <button
+                type="button"
                 onClick={() => setSearchTerm("")}
-                className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-200 text-sm"
+                className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-200 text-sm cursor-pointer"
               >
                 ✕
               </button>
@@ -250,7 +338,12 @@ export default function JobsPage() {
           <select
             value={selectedArrangement}
             onChange={(e) => setSelectedArrangement(e.target.value)}
-            className="w-full md:w-44 bg-slate-950 border border-slate-800 text-slate-300 text-xs font-medium rounded-xl px-3.5 py-3 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
+            aria-label="Filter by work arrangement"
+            className={`w-full md:w-44 text-xs font-semibold rounded-xl px-3.5 py-3 border focus:outline-none focus:border-emerald-500 transition cursor-pointer ${
+              isDark
+                ? "bg-slate-950 border-slate-800 text-slate-100"
+                : "bg-slate-50 border-slate-200 text-slate-900"
+            }`}
           >
             <option value="all">All Arrangements</option>
             <option value="remote">Remote</option>
@@ -262,7 +355,12 @@ export default function JobsPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as "match" | "recent")}
-            className="w-full md:w-44 bg-slate-950 border border-slate-800 text-slate-300 text-xs font-medium rounded-xl px-3.5 py-3 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
+            aria-label="Sort roles"
+            className={`w-full md:w-44 text-xs font-semibold rounded-xl px-3.5 py-3 border focus:outline-none focus:border-emerald-500 transition cursor-pointer ${
+              isDark
+                ? "bg-slate-950 border-slate-800 text-slate-100"
+                : "bg-slate-50 border-slate-200 text-slate-900"
+            }`}
           >
             <option value="match">Highest Match Score</option>
             <option value="recent">Most Recent</option>
@@ -270,8 +368,8 @@ export default function JobsPage() {
         </div>
 
         {/* Quick Filter Chips */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/80">
-          <span className="text-xs font-semibold text-slate-400 mr-1">
+        <div className={`flex flex-wrap items-center gap-2 pt-1 border-t ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+          <span className={`text-xs font-semibold mr-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             Quick Filter:
           </span>
           {filterChips.map((chip) => {
@@ -279,11 +377,14 @@ export default function JobsPage() {
             return (
               <button
                 key={chip.value}
+                type="button"
                 onClick={() => setSelectedCategory(chip.value)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
-                    : "bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800"
+                    ? "bg-[#059669] text-white shadow-xs"
+                    : isDark
+                    ? "bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800"
+                    : "bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200"
                 }`}
               >
                 {chip.label}
@@ -353,60 +454,71 @@ export default function JobsPage() {
             return (
               <div
                 key={job.id}
-                className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition-all duration-300 backdrop-blur-md group shadow-md hover:shadow-xl hover:shadow-emerald-950/20"
+                className={`p-6 rounded-2xl border transition-all duration-300 shadow-xs hover:shadow-md ${
+                  isDark
+                    ? "bg-slate-900 border-slate-800 hover:border-emerald-500/40 text-slate-100"
+                    : "bg-white border-slate-200 hover:border-emerald-500/50 text-slate-900"
+                }`}
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   {/* Job Details */}
                   <div className="space-y-3 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-lg font-bold text-slate-100 group-hover:text-emerald-300 transition-colors font-display">
+                      <h2 className="text-lg font-bold font-display leading-snug">
                         {job.title}
                       </h2>
                       {job.matchScore && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-full shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-full shadow-xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           <span>{job.matchScore}% Match Affinity</span>
                         </div>
                       )}
-                      <span className="px-2.5 py-0.5 text-xs font-medium text-teal-300 bg-teal-500/10 border border-teal-500/20 rounded-md">
+                      <span className="px-2.5 py-0.5 text-xs font-medium text-teal-600 dark:text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-md">
                         {job.work_arrangement || "Full-time"}
                       </span>
                     </div>
 
                     {/* Metadata line with SVG icons */}
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                      <span className="font-medium text-slate-300 flex items-center gap-1.5">
-                        <IconBuilding size={14} className="text-slate-400" />
+                    <div className={`flex flex-wrap items-center gap-4 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                      <span className="font-medium flex items-center gap-1.5">
+                        <IconBuilding size={14} className="text-emerald-500" />
                         {job.department || "Engineering"}
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <IconMapPin size={14} className="text-slate-400" />
+                        <IconMapPin size={14} />
                         {job.location || "Remote"}
                       </span>
                       {job.salary && (
-                        <span className="text-emerald-400/90 font-medium font-mono">
+                        <span className="text-emerald-500 font-semibold font-mono">
                           {job.salary}
                         </span>
                       )}
                       <span className="flex items-center gap-1.5">
-                        <IconBriefcase size={14} className="text-slate-400" />
+                        <IconBriefcase size={14} />
                         {job.employment_type || "Full-time"}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
+                    <p className={`text-xs max-w-3xl leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                       {job.description}
                     </p>
 
                     {/* Clickable Skill Badges */}
                     <div className="flex flex-wrap gap-1.5 pt-1 items-center">
-                      <span className="text-xs font-semibold text-slate-400 mr-1">Skills:</span>
+                      <span className={`text-xs font-semibold mr-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        Skills:
+                      </span>
                       {job.skills.map((s, idx) => (
                         <button
                           key={idx}
+                          type="button"
                           onClick={() => handleSkillClick(s.name)}
                           title={`Click to filter by ${s.name}`}
-                          className="px-2.5 py-1 text-xs font-medium text-slate-300 bg-slate-950 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/40 rounded-lg border border-slate-800 transition cursor-pointer"
+                          className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition cursor-pointer ${
+                            isDark
+                              ? "bg-slate-950 hover:bg-emerald-500/10 text-slate-300 hover:text-emerald-400 border-slate-800"
+                              : "bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border-slate-200"
+                          }`}
                         >
                           {s.name} {s.min_years ? `(${s.min_years}y)` : ""}
                         </button>
@@ -415,13 +527,17 @@ export default function JobsPage() {
                   </div>
 
                   {/* Actions Column */}
-                  <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center justify-center gap-2.5 shrink-0 border-t md:border-t-0 border-slate-800/80 pt-4 md:pt-0">
+                  <div className={`flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center justify-center gap-2.5 shrink-0 border-t md:border-t-0 pt-4 md:pt-0 ${
+                    isDark ? "border-slate-800" : "border-slate-100"
+                  }`}>
                     <button
                       disabled={isApplied || applyingJobId === job.id}
                       onClick={() => handleApply(job.id, job.title)}
                       className={`px-6 py-2.5 rounded-xl font-semibold text-xs transition-all shadow-md cursor-pointer ${
                         isApplied
-                          ? "bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default"
+                          ? isDark
+                            ? "bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default"
+                            : "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
                           : applyingJobId === job.id
                           ? "bg-emerald-700 text-white cursor-wait opacity-80"
                           : "bg-[#059669] hover:bg-[#047857] text-white hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5"
@@ -430,8 +546,13 @@ export default function JobsPage() {
                       {isApplied ? "✓ Application Sent" : applyingJobId === job.id ? "Submitting..." : "Quick Apply"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                      className="px-4 py-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 text-xs font-semibold rounded-xl transition cursor-pointer"
+                      className={`px-4 py-2 text-xs font-semibold rounded-xl border transition cursor-pointer ${
+                        isDark
+                          ? "bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-800"
+                          : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
+                      }`}
                     >
                       {isExpanded ? "Hide Details" : "Role Insights"}
                     </button>
@@ -440,20 +561,26 @@ export default function JobsPage() {
 
                 {/* Expanded Insights Drawer */}
                 {isExpanded && (
-                  <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs animate-fadeIn">
-                    <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <span className="text-xs text-emerald-400 font-semibold block mb-1">
+                  <div className={`mt-5 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4 text-xs animate-fadeIn ${
+                    isDark ? "border-slate-800" : "border-slate-100"
+                  }`}>
+                    <div className={`p-3.5 rounded-xl border ${
+                      isDark ? "bg-slate-950/70 border-slate-800" : "bg-slate-50 border-slate-200"
+                    }`}>
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold block mb-1">
                         Role Requirements Alignment
                       </span>
-                      <p className="text-slate-300 text-xs leading-relaxed">
+                      <p className={`text-xs leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
                         Required competencies: <strong>{job.skills?.filter((s) => s.required).map((s) => s.name).join(", ") || "General experience"}</strong>. These are evaluated against your uploaded ATS resume upon application.
                       </p>
                     </div>
-                    <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <span className="text-xs text-teal-400 font-semibold block mb-1">
+                    <div className={`p-3.5 rounded-xl border ${
+                      isDark ? "bg-slate-950/70 border-slate-800" : "bg-slate-50 border-slate-200"
+                    }`}>
+                      <span className="text-xs text-teal-600 dark:text-teal-400 font-semibold block mb-1">
                         ATS Resume Recommendations
                       </span>
-                      <p className="text-slate-300 text-xs leading-relaxed">
+                      <p className={`text-xs leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
                         Ensure quantified metrics and experience regarding <strong>{job.skills?.[0]?.name || "Core Skills"}</strong> are clearly present in your resume.
                       </p>
                     </div>
