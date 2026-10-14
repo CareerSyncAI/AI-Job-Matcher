@@ -143,7 +143,7 @@ export default function LoginPage() {
       </div>
 
       {/* Main Login Card */}
-      <div className="relative max-w-md mx-auto w-full z-10">
+      <main id="main-content" className="relative max-w-md mx-auto w-full z-10">
         <div className="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-6">
           <div className="text-center space-y-1">
             <h1 className="font-display text-2xl font-bold text-slate-100">Welcome Back</h1>
@@ -161,8 +161,9 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-slate-300">Email Address</label>
+              <label htmlFor="login-email" className="block text-xs font-medium text-slate-300">Email Address</label>
               <input
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -174,7 +175,7 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-medium text-slate-300">Password</label>
+                <label htmlFor="login-password" className="block text-xs font-medium text-slate-300">Password</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -188,6 +189,7 @@ export default function LoginPage() {
               </div>
               <div className="relative">
                 <input
+                  id="login-password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -199,7 +201,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition cursor-pointer p-0.5"
+                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-200 transition cursor-pointer p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg"
                 >
                   {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                 </button>
@@ -208,8 +210,9 @@ export default function LoginPage() {
 
             {/* Remember Me Checkbox */}
             <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+              <label htmlFor="login-remember" className="flex items-center gap-2 cursor-pointer select-none">
                 <input
+                  id="login-remember"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
@@ -253,7 +256,7 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
       <div className="relative z-10 text-center text-xs text-slate-500">
@@ -281,7 +284,7 @@ export default function LoginPage() {
                   setForgotSuccess(null);
                   setForgotError(null);
                 }}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+                className="text-slate-400 hover:text-white p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-slate-800 transition cursor-pointer"
                 aria-label="Close dialog"
               >
                 <IconX size={18} />
@@ -315,8 +318,9 @@ export default function LoginPage() {
                   </div>
                 )}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-300">Account Email</label>
+                  <label htmlFor="forgot-email" className="block text-xs font-medium text-slate-300">Account Email</label>
                   <input
+                    id="forgot-email"
                     type="email"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}

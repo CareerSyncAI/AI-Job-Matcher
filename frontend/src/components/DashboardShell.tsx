@@ -101,7 +101,9 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
             <CareerSyncBrand size={28} showTagline={false} isLight={!isDark} />
           </Link>
           {user?.role === "recruiter" && (
-            <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-xs font-semibold border border-emerald-500/20 shrink-0">
+            <span className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border shrink-0 ${
+              isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+            }`}>
               Recruiter
             </span>
           )}
@@ -155,7 +157,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
               >
                 {user?.email}
               </p>
-              <p className="text-xs text-emerald-500 font-medium capitalize">
+              <p className={`text-xs font-medium capitalize ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>
                 {user?.role || "Candidate"} • Active
               </p>
             </div>
@@ -250,7 +252,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                   <span className={`block text-xs font-semibold leading-tight ${isDark ? "text-slate-200" : "text-slate-800"}`}>
                     {user?.email?.split("@")[0]}
                   </span>
-                  <span className="block text-xs text-emerald-500 font-medium capitalize">
+                  <span className={`block text-xs font-medium capitalize ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>
                     {user?.role || "Candidate"}
                   </span>
                 </div>
@@ -281,7 +283,9 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                       {user?.email}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-xs font-semibold border border-emerald-500/20 capitalize">
+                      <span className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border capitalize ${
+                        isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      }`}>
                         {user?.role || "Candidate"}
                       </span>
                     </div>
@@ -297,7 +301,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                         : "hover:bg-slate-100 text-slate-700 hover:text-slate-900"
                     }`}
                   >
-                    <IconUser size={16} className="text-emerald-500" />
+                    <IconUser size={16} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                     <span>Profile &amp; Settings</span>
                   </Link>
 
@@ -322,7 +326,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                         className={`px-2.5 py-0.5 rounded text-xs font-medium transition cursor-pointer ${
                           isDark
                             ? "bg-slate-800 text-emerald-400 shadow-xs"
-                            : "text-slate-500 hover:text-slate-900"
+                            : "text-slate-600 hover:text-slate-900"
                         }`}
                       >
                         Dark
@@ -332,7 +336,7 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                         onClick={() => setTheme("light")}
                         className={`px-2.5 py-0.5 rounded text-xs font-medium transition cursor-pointer ${
                           !isDark
-                            ? "bg-white text-emerald-600 shadow-xs"
+                            ? "bg-white text-emerald-700 shadow-xs"
                             : "text-slate-500 hover:text-slate-300"
                         }`}
                       >
@@ -352,7 +356,11 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition cursor-pointer"
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                      isDark
+                        ? "text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                        : "text-rose-700 hover:text-rose-800 hover:bg-rose-50"
+                    }`}
                   >
                     <IconLogout size={16} />
                     <span>Sign Out</span>

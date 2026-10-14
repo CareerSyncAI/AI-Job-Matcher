@@ -171,8 +171,8 @@ export default function RecruiterJobsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Active Openings</span>
-          <p className="text-2xl font-bold font-mono leading-none mt-2 text-emerald-500">
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Active Openings</span>
+          <p className={`text-2xl font-bold font-mono leading-none mt-2 ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>
             {jobs.filter((j) => j.status?.toLowerCase() === "open").length}
           </p>
         </div>
@@ -181,16 +181,16 @@ export default function RecruiterJobsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Requisitions</span>
-          <p className="text-2xl font-bold font-mono leading-none mt-2 text-slate-200">{jobs.length}</p>
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Total Requisitions</span>
+          <p className={`text-2xl font-bold font-mono leading-none mt-2 ${isDark ? "text-slate-200" : "text-slate-900"}`}>{jobs.length}</p>
         </div>
         <div
           className={`p-5 rounded-2xl border ${
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Applicants</span>
-          <p className="text-2xl font-bold font-mono leading-none mt-2 text-teal-400">
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Total Applicants</span>
+          <p className={`text-2xl font-bold font-mono leading-none mt-2 ${isDark ? "text-teal-400" : "text-teal-700"}`}>
             {jobs.reduce((acc, curr) => acc + (curr.applicant_count || 0), 0)}
           </p>
         </div>
@@ -199,8 +199,8 @@ export default function RecruiterJobsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Draft / Closed</span>
-          <p className="text-2xl font-bold font-mono leading-none mt-2 text-amber-500">
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Draft / Closed</span>
+          <p className={`text-2xl font-bold font-mono leading-none mt-2 ${isDark ? "text-amber-400" : "text-amber-700"}`}>
             {jobs.filter((j) => j.status?.toLowerCase() !== "open").length}
           </p>
         </div>
@@ -211,7 +211,7 @@ export default function RecruiterJobsPage() {
         {loading && jobs.length === 0 ? (
           <div
             className={`p-12 text-center rounded-2xl border ${
-              isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-500"
+              isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-600"
             } animate-pulse`}
           >
             Loading job requisitions...
@@ -224,12 +224,12 @@ export default function RecruiterJobsPage() {
           >
             <IconBriefcase size={32} className="mx-auto text-slate-400 mb-3" />
             <h3 className="text-sm font-semibold">No job requisitions created yet</h3>
-            <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
               Create your first job posting to start receiving ranked candidate applications.
             </p>
             <button
               onClick={() => setModalOpen(true)}
-              className="mt-4 px-4 py-2 bg-[#059669] text-white text-xs font-semibold rounded-xl"
+              className="mt-4 px-4 py-2 bg-[#059669] text-white text-xs font-semibold rounded-xl cursor-pointer"
             >
               Post Job Opening
             </button>
@@ -259,10 +259,16 @@ export default function RecruiterJobsPage() {
                       aria-label={`Status for ${job.title}`}
                       className={`text-xs font-semibold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer ${
                         job.status?.toLowerCase() === "open"
-                          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                          ? isDark
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : job.status?.toLowerCase() === "draft"
-                          ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                          : "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                          ? isDark
+                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                          : isDark
+                          ? "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                          : "bg-slate-100 text-slate-700 border-slate-200"
                       }`}
                     >
                       <option value="open">Open (Active)</option>
@@ -272,9 +278,9 @@ export default function RecruiterJobsPage() {
                     </select>
                   </div>
 
-                  <div className={`flex flex-wrap items-center gap-4 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  <div className={`flex flex-wrap items-center gap-4 text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                     <span className="flex items-center gap-1 font-medium">
-                      <IconBuilding size={14} className="text-emerald-500" />
+                      <IconBuilding size={14} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                       {job.department || "Engineering"}
                     </span>
                     <span className="flex items-center gap-1">
@@ -290,7 +296,11 @@ export default function RecruiterJobsPage() {
                       {job.skills.map((s, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700/60 text-slate-300 text-xs font-medium"
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
+                            isDark
+                              ? "bg-slate-800 border-slate-700/60 text-slate-300"
+                              : "bg-slate-100 border-slate-200 text-slate-700"
+                          }`}
                         >
                           {s.name}
                         </span>
@@ -301,8 +311,8 @@ export default function RecruiterJobsPage() {
 
                 <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 shrink-0">
                   <div className="text-left sm:text-right">
-                    <span className="text-xs text-slate-400 font-medium block">Applicants</span>
-                    <span className="text-2xl font-bold font-mono leading-none text-emerald-500">
+                    <span className={`text-xs font-medium block ${isDark ? "text-slate-400" : "text-slate-600"}`}>Applicants</span>
+                    <span className={`text-2xl font-bold font-mono leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>
                       {job.applicant_count || 0}
                     </span>
                   </div>
@@ -358,8 +368,9 @@ export default function RecruiterJobsPage() {
               className="space-y-4"
             >
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium">Job Title *</label>
+                <label htmlFor="job-title" className="block text-xs font-medium">Job Title *</label>
                 <input
+                  id="job-title"
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -373,8 +384,9 @@ export default function RecruiterJobsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium">Department</label>
+                  <label htmlFor="job-department" className="block text-xs font-medium">Department</label>
                   <input
+                    id="job-department"
                     type="text"
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
@@ -386,8 +398,9 @@ export default function RecruiterJobsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium">Location</label>
+                  <label htmlFor="job-location" className="block text-xs font-medium">Location</label>
                   <input
+                    id="job-location"
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
@@ -401,8 +414,9 @@ export default function RecruiterJobsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium">Work Arrangement</label>
+                  <label htmlFor="job-work-arrangement" className="block text-xs font-medium">Work Arrangement</label>
                   <select
+                    id="job-work-arrangement"
                     value={workArrangement}
                     onChange={(e) => setWorkArrangement(e.target.value)}
                     className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:border-emerald-500 ${
@@ -416,8 +430,9 @@ export default function RecruiterJobsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium">Employment Type</label>
+                  <label htmlFor="job-employment-type" className="block text-xs font-medium">Employment Type</label>
                   <select
+                    id="job-employment-type"
                     value={employmentType}
                     onChange={(e) => setEmploymentType(e.target.value)}
                     className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:border-emerald-500 ${
@@ -431,8 +446,9 @@ export default function RecruiterJobsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium">Min Experience (Years)</label>
+                  <label htmlFor="job-exp-min" className="block text-xs font-medium">Min Experience (Years)</label>
                   <input
+                    id="job-exp-min"
                     type="number"
                     min={0}
                     value={experienceMinYears}
@@ -444,8 +460,9 @@ export default function RecruiterJobsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium">Education Level</label>
+                  <label htmlFor="job-education-level" className="block text-xs font-medium">Education Level</label>
                   <select
+                    id="job-education-level"
                     value={educationRequired}
                     onChange={(e) => setEducationRequired(e.target.value)}
                     className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:border-emerald-500 ${
@@ -463,9 +480,10 @@ export default function RecruiterJobsPage() {
 
               {/* Required Skills Matrix */}
               <div className="space-y-2">
-                <label className="block text-xs font-medium">Required Skill Competencies</label>
+                <label htmlFor="job-skills-input" className="block text-xs font-medium">Required Skill Competencies</label>
                 <div className="flex gap-2">
                   <input
+                    id="job-skills-input"
                     type="text"
                     value={skillsInput}
                     onChange={(e) => setSkillsInput(e.target.value)}
@@ -503,8 +521,9 @@ export default function RecruiterJobsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium">Job Description &amp; Responsibilities *</label>
+                <label htmlFor="job-desc-textarea" className="block text-xs font-medium">Job Description &amp; Responsibilities *</label>
                 <textarea
+                  id="job-desc-textarea"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}

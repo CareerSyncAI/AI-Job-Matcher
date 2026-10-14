@@ -260,7 +260,9 @@ export default function ProfilePage() {
                 <h1 className="font-display text-2xl font-bold tracking-tight">
                   {fullName || user?.email?.split("@")[0] || "My Profile"}
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-semibold border border-emerald-500/20 capitalize">
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${
+                  isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                }`}>
                   {user?.role || "Candidate"}
                 </span>
               </div>
@@ -270,7 +272,7 @@ export default function ProfilePage() {
               </p>
               <div className="flex items-center gap-2 pt-1 text-xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                <span className={isDark ? "text-slate-400" : "text-slate-600"}>
                   Live Account • Authenticated Session
                 </span>
               </div>
@@ -284,7 +286,7 @@ export default function ProfilePage() {
                 isDark ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-slate-100 border-slate-200 text-slate-700"
               }`}
             >
-              <span className={isDark ? "text-slate-500" : "text-slate-400"}>ID:</span> #{shortId}
+              <span className={isDark ? "text-slate-500" : "text-slate-600"}>ID:</span> #{shortId}
             </div>
           </div>
         </div>
@@ -356,10 +358,11 @@ export default function ProfilePage() {
                 <form onSubmit={handleSaveProfile} className="space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                      <label htmlFor="profile-full-name" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                         Full Name
                       </label>
                       <input
+                        id="profile-full-name"
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
@@ -373,10 +376,11 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                      <label htmlFor="profile-headline" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                         Professional Headline
                       </label>
                       <input
+                        id="profile-headline"
                         type="text"
                         value={headline}
                         onChange={(e) => setHeadline(e.target.value)}
@@ -392,11 +396,12 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                      <label htmlFor="profile-location" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                         Location
                       </label>
                       <div className="relative">
                         <input
+                          id="profile-location"
                           type="text"
                           value={location}
                           onChange={(e) => setLocation(e.target.value)}
@@ -412,11 +417,12 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                      <label htmlFor="profile-org" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                         {user?.role === "recruiter" ? "Organization / Company" : "Current Affiliation"}
                       </label>
                       <div className="relative">
                         <input
+                          id="profile-org"
                           type="text"
                           value={organizationName}
                           onChange={(e) => setOrganizationName(e.target.value)}
@@ -433,10 +439,11 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                    <label htmlFor="profile-bio" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                       Professional Bio &amp; Summary
                     </label>
                     <textarea
+                      id="profile-bio"
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       rows={4}
@@ -716,11 +723,12 @@ export default function ProfilePage() {
 
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                    <label htmlFor="profile-curr-pass" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                       Current Password
                     </label>
                     <div className="relative">
                       <input
+                        id="profile-curr-pass"
                         type={showCurrentPassword ? "text" : "password"}
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
@@ -736,7 +744,7 @@ export default function ProfilePage() {
                         type="button"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                         aria-label={showCurrentPassword ? "Hide password" : "Show password"}
-                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition cursor-pointer p-0.5"
+                        className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-200 transition cursor-pointer p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg"
                       >
                         {showCurrentPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                       </button>
@@ -745,11 +753,12 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                      <label htmlFor="profile-new-pass" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                         New Password (min 8 chars)
                       </label>
                       <div className="relative">
                         <input
+                          id="profile-new-pass"
                           type={showNewPassword ? "text" : "password"}
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
@@ -766,7 +775,7 @@ export default function ProfilePage() {
                           type="button"
                           onClick={() => setShowNewPassword(!showNewPassword)}
                           aria-label={showNewPassword ? "Hide new password" : "Show new password"}
-                          className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition cursor-pointer p-0.5"
+                          className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-200 transition cursor-pointer p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg"
                         >
                           {showNewPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                         </button>
@@ -774,11 +783,12 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                      <label htmlFor="profile-confirm-pass" className={`block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                         Confirm New Password
                       </label>
                       <div className="relative">
                         <input
+                          id="profile-confirm-pass"
                           type={showConfirmPassword ? "text" : "password"}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -795,7 +805,7 @@ export default function ProfilePage() {
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                          className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition cursor-pointer p-0.5"
+                          className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-200 transition cursor-pointer p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg"
                         >
                           {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                         </button>

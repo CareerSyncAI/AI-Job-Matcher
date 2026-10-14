@@ -99,7 +99,7 @@ function RegisterForm() {
       </div>
 
       {/* Main Register Card */}
-      <div className="relative max-w-md mx-auto w-full z-10">
+      <main id="main-content" className="relative max-w-md mx-auto w-full z-10">
         <div className="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-6">
           <div className="text-center space-y-1">
             <h1 className="font-display text-2xl font-bold text-slate-100">Create Free Account</h1>
@@ -116,11 +116,12 @@ function RegisterForm() {
 
           {/* Role Toggle Selector */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-300">Account Role</label>
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950 border border-slate-800">
+            <span className="block text-xs font-semibold text-slate-300">Account Role</span>
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950 border border-slate-800" role="group" aria-label="Account Role">
               <button
                 type="button"
                 onClick={() => setRole("candidate")}
+                aria-pressed={role === "candidate"}
                 className={`py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer ${
                   role === "candidate"
                     ? "bg-[#059669] text-white shadow-sm"
@@ -133,6 +134,7 @@ function RegisterForm() {
               <button
                 type="button"
                 onClick={() => setRole("recruiter")}
+                aria-pressed={role === "recruiter"}
                 className={`py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer ${
                   role === "recruiter"
                     ? "bg-[#059669] text-white shadow-sm"
@@ -149,8 +151,9 @@ function RegisterForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {role === "recruiter" && (
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-300">Company / Organization Name</label>
+                <label htmlFor="reg-org" className="block text-xs font-medium text-slate-300">Company / Organization Name</label>
                 <input
+                  id="reg-org"
                   type="text"
                   value={organizationName}
                   onChange={(e) => setOrganizationName(e.target.value)}
@@ -162,8 +165,9 @@ function RegisterForm() {
             )}
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-slate-300">Email Address</label>
+              <label htmlFor="reg-email" className="block text-xs font-medium text-slate-300">Email Address</label>
               <input
+                id="reg-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -174,9 +178,10 @@ function RegisterForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-slate-300">Password (min 8 chars)</label>
+              <label htmlFor="reg-password" className="block text-xs font-medium text-slate-300">Password (min 8 chars)</label>
               <div className="relative">
                 <input
+                  id="reg-password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -189,7 +194,7 @@ function RegisterForm() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition cursor-pointer p-0.5"
+                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-200 transition cursor-pointer p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg"
                 >
                   {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                 </button>
@@ -197,9 +202,10 @@ function RegisterForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-slate-300">Confirm Password</label>
+              <label htmlFor="reg-confirm-password" className="block text-xs font-medium text-slate-300">Confirm Password</label>
               <div className="relative">
                 <input
+                  id="reg-confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -212,7 +218,7 @@ function RegisterForm() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition cursor-pointer p-0.5"
+                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-200 transition cursor-pointer p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg"
                 >
                   {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                 </button>
@@ -222,13 +228,13 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={submitting || authLoading}
-              className="w-full py-3.5 bg-gradient-to-r from-[#059669] to-[#0d9488] hover:from-[#047857] hover:to-[#0f766e] text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+              className="w-full py-3.5 bg-gradient-to-r from-[#059669] to-[#0d9488] hover:from-[#047857] hover:to-[#0f766e] text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 disabled:opacity-50 cursor-pointer"
             >
               {submitting ? "Creating Free Account..." : "Create Account"}
             </button>
           </form>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
       <div className="relative z-10 text-center text-xs text-slate-500">

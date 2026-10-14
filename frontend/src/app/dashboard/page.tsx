@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme";
 import api from "@/lib/api";
 import {
   IconSearch,
@@ -47,6 +48,7 @@ interface RealCandidateCard {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const isCandidate = user?.role === "candidate" || !user?.role;
 
   const [loading, setLoading] = useState(true);
@@ -123,7 +125,7 @@ export default function DashboardPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
               Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{user?.full_name || user?.email?.split("@")[0] || "User"}</span>
             </h1>
-            <p className="text-slate-400 text-sm mt-1 max-w-xl">
+            <p className="text-slate-300 text-sm mt-1 max-w-xl">
               {isCandidate
                 ? `You have ${myApplications.length} active applications and ${openJobs.length} verified live requisitions ready for discovery.`
                 : `Managing ${recruiterJobs.length} requisitions with ${totalApplicants} evaluated candidate applications across your ATS pipeline.`}
@@ -173,95 +175,165 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {isCandidate ? (
           <>
-            <Link href="/dashboard/jobs" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/jobs"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">Open Verified Roles</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconSearch size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>Open Verified Roles</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconSearch size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">{openJobs.length}</span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">Live</span>
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
+                  {openJobs.length}
+                </span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Live</span>
               </div>
             </Link>
 
-            <Link href="/dashboard/applications" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/applications"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">Submitted Applications</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconDocument size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>Submitted Applications</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconDocument size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">{myApplications.length}</span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">Active</span>
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
+                  {myApplications.length}
+                </span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Active</span>
               </div>
             </Link>
 
-            <Link href="/dashboard/applications" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/applications"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">Under Review</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconCheckCircle size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>Under Review</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconCheckCircle size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
                   {myApplications.filter((a) => a.status === "under_review" || a.status === "shortlisted").length}
                 </span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">In Pipeline</span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>In Pipeline</span>
               </div>
             </Link>
 
-            <Link href="/dashboard/resume" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/resume"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">ATS Resume Status</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconDocument size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>ATS Resume Status</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconDocument size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">ATS Ready</span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">Deterministic</span>
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
+                  ATS Ready
+                </span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Deterministic</span>
               </div>
             </Link>
           </>
         ) : (
           <>
-            <Link href="/dashboard/recruiter/jobs" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/recruiter/jobs"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">Total Requisitions</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconBriefcase size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>Total Requisitions</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconBriefcase size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">{recruiterJobs.length}</span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">{activePostingsCount} Open</span>
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
+                  {recruiterJobs.length}
+                </span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>{activePostingsCount} Open</span>
               </div>
             </Link>
 
-            <Link href="/dashboard/recruiter/candidates" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/recruiter/candidates"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">Applicants Evaluated</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconUsers size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>Applicants Evaluated</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconUsers size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">{totalApplicants}</span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">Total Sourced</span>
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
+                  {totalApplicants}
+                </span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Total Sourced</span>
               </div>
             </Link>
 
-            <Link href="/dashboard/recruiter/pipeline" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/recruiter/pipeline"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">ATS Pipeline</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconLayers size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>ATS Pipeline</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconLayers size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">{topCandidates.length}</span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">Ranked</span>
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
+                  {topCandidates.length}
+                </span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Ranked</span>
               </div>
             </Link>
 
-            <Link href="/dashboard/recruiter/jobs" className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/30 transition backdrop-blur-md group block">
+            <Link
+              href="/dashboard/recruiter/jobs"
+              className={`p-5 rounded-2xl border transition backdrop-blur-md group block ${
+                isDark ? "bg-slate-900/80 border-slate-800 hover:border-emerald-500/30" : "bg-white border-slate-200 shadow-xs hover:border-emerald-500/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-xs font-medium">Scoring Engine</span>
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><IconNetwork size={18} /></div>
+                <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}>Scoring Engine</span>
+                <div className={`p-2.5 rounded-xl border ${isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                  <IconNetwork size={18} />
+                </div>
               </div>
               <div className="mt-4 flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition leading-none">v2.1</span>
-                <span className="text-xs font-medium text-emerald-400 leading-none">Deterministic</span>
+                <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
+                  v2.1
+                </span>
+                <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Deterministic</span>
               </div>
             </Link>
           </>
@@ -272,13 +344,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
+          <div className={`p-6 rounded-2xl border backdrop-blur-md ${isDark ? "bg-slate-900/80 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-lg font-bold text-slate-100">
+                <h2 className={`text-lg font-bold ${isDark ? "text-slate-100" : "text-slate-900"}`}>
                   {isCandidate ? "Live Open Requisitions" : "Recent Evaluated Candidates"}
                 </h2>
-                <p className="text-slate-400 text-xs mt-0.5">
+                <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                   {isCandidate
                     ? "Verified open positions scored by deterministic skill requirements"
                     : "Top candidates ranked by deterministic multi-tier coverage"}
@@ -286,7 +358,7 @@ export default function DashboardPage() {
               </div>
               <Link
                 href={isCandidate ? "/dashboard/jobs" : "/dashboard/recruiter/candidates"}
-                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
+                className={`text-xs font-semibold transition ${isDark ? "text-emerald-400 hover:text-emerald-300" : "text-emerald-700 hover:text-emerald-800"}`}
               >
                 {isCandidate ? "View All Jobs →" : "View All Candidates →"}
               </Link>
@@ -294,39 +366,54 @@ export default function DashboardPage() {
 
             <div className="space-y-4">
               {loading ? (
-                <div className="p-8 text-center text-xs text-slate-500">Loading directory...</div>
+                <div className={`p-8 text-center text-xs ${isDark ? "text-slate-500" : "text-slate-600"}`}>Loading directory...</div>
               ) : isCandidate ? (
                 openJobs.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-500">
+                  <div className={`p-8 text-center text-xs ${isDark ? "text-slate-500" : "text-slate-600"}`}>
                     No open requisitions posted yet. Check back soon!
                   </div>
                 ) : (
                   openJobs.map((job) => (
                     <div
                       key={job.id}
-                      className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/40 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      className={`p-4 rounded-xl border transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                        isDark
+                          ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/40"
+                          : "bg-slate-50/80 border-slate-200 hover:border-emerald-500/50 shadow-xs"
+                      }`}
                     >
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                          isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-700"
+                        }`}>
                           <IconBriefcase size={20} />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <Link href="/dashboard/jobs" className="group-hover:text-emerald-300 transition">
-                              <h3 className="font-semibold text-slate-100 group-hover:text-emerald-300 transition">
+                              <h3 className={`font-semibold transition ${
+                                isDark ? "text-slate-100 group-hover:text-emerald-300" : "text-slate-900 group-hover:text-emerald-700"
+                              }`}>
                                 {job.title}
                               </h3>
                             </Link>
-                            <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-mono">
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full font-mono border ${
+                              isDark ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-emerald-800 bg-emerald-50 border-emerald-200"
+                            }`}>
                               {job.employment_type}
                             </span>
                           </div>
-                          <p className="text-slate-400 text-xs mt-1">
+                          <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                             {job.department || "Enterprise"} • {job.location || "Remote"} • Min {job.experience_min_years} yrs exp
                           </p>
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {(job.skills || []).slice(0, 4).map((s, idx) => (
-                              <span key={idx} className="px-2 py-0.5 text-[10px] text-slate-300 bg-slate-900 rounded-md border border-slate-800">
+                              <span
+                                key={idx}
+                                className={`px-2 py-0.5 text-[10px] rounded-md border ${
+                                  isDark ? "text-slate-300 bg-slate-900 border-slate-800" : "text-slate-700 bg-slate-100 border-slate-200 font-medium"
+                                }`}
+                              >
                                 {s.name}
                               </span>
                             ))}
@@ -343,14 +430,18 @@ export default function DashboardPage() {
                   ))
                 )
               ) : topCandidates.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-500">
+                <div className={`p-8 text-center text-xs ${isDark ? "text-slate-500" : "text-slate-600"}`}>
                   No candidate evaluations recorded yet. Upload resumes to an open requisition to screen talent!
                 </div>
               ) : (
                 topCandidates.map((cand) => (
                   <div
                     key={cand.id}
-                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/40 transition group flex items-center justify-between"
+                    className={`p-4 rounded-xl border transition group flex items-center justify-between ${
+                      isDark
+                        ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/40"
+                        : "bg-slate-50/80 border-slate-200 hover:border-emerald-500/50 shadow-xs"
+                    }`}
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#059669] to-[#0d9488] flex items-center justify-center font-bold text-white text-xs">
@@ -358,21 +449,29 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-slate-100 group-hover:text-emerald-300 transition">
+                          <h3 className={`font-semibold transition ${
+                            isDark ? "text-slate-100 group-hover:text-emerald-300" : "text-slate-900 group-hover:text-emerald-700"
+                          }`}>
                             {cand.name}
                           </h3>
-                          <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-mono">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full font-mono border ${
+                            isDark ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-emerald-800 bg-emerald-50 border-emerald-200"
+                          }`}>
                             {cand.matchScore}% Match
                           </span>
                         </div>
-                        <p className="text-slate-400 text-xs mt-0.5">
+                        <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                           {cand.currentRole || "Candidate"} • {cand.experienceYears} yrs experience
                         </p>
                       </div>
                     </div>
                     <Link
                       href="/dashboard/recruiter/candidates"
-                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition"
+                      className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition ${
+                        isDark
+                          ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+                          : "bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-xs"
+                      }`}
                     >
                       Screen Candidate
                     </Link>
@@ -385,8 +484,8 @@ export default function DashboardPage() {
 
         {/* Right Column: Actions & Quick Links */}
         <div className="space-y-6">
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
-            <h2 className="text-base font-bold text-slate-100 tracking-normal mb-4">
+          <div className={`p-6 rounded-2xl border backdrop-blur-md ${isDark ? "bg-slate-900/80 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+            <h2 className={`text-base font-bold tracking-normal mb-4 ${isDark ? "text-slate-100" : "text-slate-900"}`}>
               Quick Actions
             </h2>
             <div className="space-y-2.5">
@@ -394,66 +493,90 @@ export default function DashboardPage() {
                 <>
                   <Link
                     href="/dashboard/jobs"
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
+                    className={`p-3 rounded-xl border transition flex items-center justify-between text-xs group ${
+                      isDark
+                        ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/30 text-slate-300"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-500/40 text-slate-700 hover:bg-slate-100/80"
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <IconSearch size={14} className="text-emerald-400" />
+                      <IconSearch size={14} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                       Browse Live Engineering Roles
                     </div>
-                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
+                    <span className={`font-bold transition ${isDark ? "text-slate-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-700"}`}>→</span>
                   </Link>
                   <Link
                     href="/dashboard/resume"
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
+                    className={`p-3 rounded-xl border transition flex items-center justify-between text-xs group ${
+                      isDark
+                        ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/30 text-slate-300"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-500/40 text-slate-700 hover:bg-slate-100/80"
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <IconDocument size={14} className="text-emerald-400" />
+                      <IconDocument size={14} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                       Upload &amp; Analyze ATS Resume
                     </div>
-                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
+                    <span className={`font-bold transition ${isDark ? "text-slate-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-700"}`}>→</span>
                   </Link>
                   <Link
                     href="/dashboard/applications"
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
+                    className={`p-3 rounded-xl border transition flex items-center justify-between text-xs group ${
+                      isDark
+                        ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/30 text-slate-300"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-500/40 text-slate-700 hover:bg-slate-100/80"
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <IconCheckCircle size={14} className="text-emerald-400" />
+                      <IconCheckCircle size={14} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                       Track Submitted Applications
                     </div>
-                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
+                    <span className={`font-bold transition ${isDark ? "text-slate-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-700"}`}>→</span>
                   </Link>
                 </>
               ) : (
                 <>
                   <Link
                     href="/dashboard/recruiter/jobs"
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
+                    className={`p-3 rounded-xl border transition flex items-center justify-between text-xs group ${
+                      isDark
+                        ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/30 text-slate-300"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-500/40 text-slate-700 hover:bg-slate-100/80"
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <IconBriefcase size={14} className="text-emerald-400" />
+                      <IconBriefcase size={14} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                       Post New Requisition
                     </div>
-                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
+                    <span className={`font-bold transition ${isDark ? "text-slate-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-700"}`}>→</span>
                   </Link>
                   <Link
                     href="/dashboard/recruiter/candidates"
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
+                    className={`p-3 rounded-xl border transition flex items-center justify-between text-xs group ${
+                      isDark
+                        ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/30 text-slate-300"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-500/40 text-slate-700 hover:bg-slate-100/80"
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <IconUsers size={14} className="text-emerald-400" />
+                      <IconUsers size={14} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                       Sourcing Directory &amp; Evaluator
                     </div>
-                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
+                    <span className={`font-bold transition ${isDark ? "text-slate-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-700"}`}>→</span>
                   </Link>
                   <Link
                     href="/dashboard/recruiter/pipeline"
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/30 transition flex items-center justify-between text-xs text-slate-300 group"
+                    className={`p-3 rounded-xl border transition flex items-center justify-between text-xs group ${
+                      isDark
+                        ? "bg-slate-950/60 border-slate-800 hover:border-emerald-500/30 text-slate-300"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-500/40 text-slate-700 hover:bg-slate-100/80"
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <IconLayers size={14} className="text-emerald-400" />
+                      <IconLayers size={14} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
                       ATS Kanban Pipeline Board
                     </div>
-                    <span className="text-slate-500 font-bold group-hover:text-emerald-400">→</span>
+                    <span className={`font-bold transition ${isDark ? "text-slate-500 group-hover:text-emerald-400" : "text-slate-400 group-hover:text-emerald-700"}`}>→</span>
                   </Link>
                 </>
               )}

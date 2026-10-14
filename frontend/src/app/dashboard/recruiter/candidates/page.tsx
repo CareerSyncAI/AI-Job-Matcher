@@ -179,7 +179,7 @@ export default function RecruiterCandidatesPage() {
                 isDark ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-slate-100 border-slate-200 text-slate-700"
               }`}
             >
-              Shortlisted: <strong className="text-emerald-500 font-mono">{shortlistedCount}</strong>
+              Shortlisted: <strong className={`font-mono ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>{shortlistedCount}</strong>
             </div>
           </div>
         </div>
@@ -192,10 +192,10 @@ export default function RecruiterCandidatesPage() {
         }`}
       >
         <div className="flex items-center gap-3">
-          <IconBriefcase size={18} className="text-emerald-500" />
-          <span className="text-xs font-semibold text-slate-400">Target Requisition:</span>
+          <IconBriefcase size={18} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
+          <span className={`text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-700"}`}>Target Requisition:</span>
           {jobs.length === 0 ? (
-            <span className="text-xs text-slate-400">No active requisitions found</span>
+            <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>No active requisitions found</span>
           ) : (
             <select
               value={selectedJobId}
@@ -216,7 +216,9 @@ export default function RecruiterCandidatesPage() {
 
         <Link
           href="/dashboard/recruiter/jobs"
-          className="text-xs font-semibold text-emerald-500 hover:text-emerald-400 transition flex items-center gap-1 self-start sm:self-auto"
+          className={`text-xs font-semibold transition flex items-center gap-1 self-start sm:self-auto ${
+            isDark ? "text-emerald-400 hover:text-emerald-300" : "text-emerald-700 hover:text-emerald-800"
+          }`}
         >
           Manage All Requisitions →
         </Link>
@@ -319,35 +321,41 @@ export default function RecruiterCandidatesPage() {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-xs text-slate-400 font-medium block">Deterministic Match</span>
-                      <span className="text-2xl font-bold font-mono leading-none text-emerald-500">{candidate.matchScore}%</span>
+                      <span className={`text-xs font-medium block ${isDark ? "text-slate-400" : "text-slate-600"}`}>Deterministic Match</span>
+                      <span className={`text-2xl font-bold font-mono leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>{candidate.matchScore}%</span>
                     </div>
                   </div>
 
-                  <div className={`flex flex-wrap items-center gap-3 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  <div className={`flex flex-wrap items-center gap-3 text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                     <span className="flex items-center gap-1">
                       <IconMapPin size={13} />
                       {candidate.location || "Remote / Not Specified"}
                     </span>
                     <span>{candidate.experienceYears} Yrs Experience</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-semibold border border-emerald-500/20 capitalize">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${
+                      isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    }`}>
                       {candidate.status?.replace("_", " ") || "Under Review"}
                     </span>
                   </div>
 
                   {candidate.education && (
                     <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                      Degree: <span className="font-medium text-slate-200">{candidate.education}</span>
+                      Degree: <span className={`font-medium ${isDark ? "text-slate-200" : "text-slate-800"}`}>{candidate.education}</span>
                     </p>
                   )}
 
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-xs font-semibold text-slate-400 block">Verified Skills Breakdown:</span>
+                    <span className={`text-xs font-semibold block ${isDark ? "text-slate-400" : "text-slate-700"}`}>Verified Skills Breakdown:</span>
                     <div className="flex flex-wrap gap-1.5">
                       {candidate.matchedSkills.map((skill) => (
                         <span
                           key={skill}
-                          className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium"
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
+                            isDark
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          }`}
                         >
                           ✓ {skill}
                         </span>
@@ -355,7 +363,11 @@ export default function RecruiterCandidatesPage() {
                       {candidate.missingSkills.map((skill) => (
                         <span
                           key={skill}
-                          className="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-medium"
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
+                            isDark
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                              : "bg-amber-50 text-amber-800 border-amber-200"
+                          }`}
                         >
                           ✕ {skill} (Missing)
                         </span>
@@ -364,7 +376,7 @@ export default function RecruiterCandidatesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-3 border-t border-slate-800">
+                <div className={`flex items-center gap-3 pt-3 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}>
                   <button
                     type="button"
                     onClick={() => setSelectedCandidate(candidate)}

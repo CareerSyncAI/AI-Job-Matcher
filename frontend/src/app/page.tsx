@@ -12,9 +12,18 @@ import {
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [policyModal, setPolicyModal] = useState<"privacy" | "terms" | null>(null);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-emerald-500/20 selection:text-emerald-700 antialiased overflow-x-hidden">
+      {/* Skip to Main Content Link for Accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-emerald-600 focus:text-white focus:rounded-md focus:shadow-lg font-medium text-xs"
+      >
+        Skip to main content
+      </a>
+
       {/* FIXED GLASS NAVIGATION BAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -30,9 +39,6 @@ export default function LandingPage() {
             </a>
             <a href="#how-it-works" className="px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-lg transition">
               How it works
-            </a>
-            <a href="#solutions" className="px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-lg transition">
-              Solutions
             </a>
             <a href="#free-forever" className="px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-lg transition">
               Free Access
@@ -61,7 +67,9 @@ export default function LandingPage() {
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+            className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg cursor-pointer"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {mobileMenuOpen ? (
@@ -82,8 +90,8 @@ export default function LandingPage() {
             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
               How it works
             </a>
-            <a href="#solutions" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
-              Solutions
+            <a href="#free-forever" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
+              Free Access
             </a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
               FAQ
@@ -100,8 +108,10 @@ export default function LandingPage() {
         )}
       </nav>
 
-      {/* HERO SECTION */}
-      <section className="relative min-h-[90vh] flex items-center pt-32 pb-24 overflow-hidden bg-gradient-to-b from-emerald-50/70 via-white to-slate-50/50">
+      {/* Semantic Main Landmark */}
+      <main id="main-content">
+        {/* HERO SECTION */}
+        <section className="relative min-h-[90vh] flex items-center pt-32 pb-24 overflow-hidden bg-gradient-to-b from-emerald-50/70 via-white to-slate-50/50">
         {/* Animated Background Mesh & Grids */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
@@ -185,9 +195,9 @@ export default function LandingPage() {
                   96%
                 </div>
                 <div>
-                  <h3 className="text-slate-100 font-bold text-sm sm:text-base">
+                  <p className="text-slate-100 font-bold text-sm sm:text-base">
                     Senior Full Stack AI Engineer
-                  </h3>
+                  </p>
                   <p className="text-slate-400 text-xs">Vector Match Affinity • High Confidence</p>
                 </div>
               </div>
@@ -198,7 +208,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-slate-300">Extracted Skill Graph</h4>
+                <p className="text-xs font-semibold text-slate-300">Extracted Skill Graph</p>
                 <div className="flex flex-wrap gap-x-2.5 gap-y-2.5">
                   {["React / Next.js", "FastAPI / Python", "TypeScript", "Vector DB", "PostgreSQL"].map((s, i) => (
                     <span key={i} className="px-2.5 py-1 text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
@@ -209,7 +219,7 @@ export default function LandingPage() {
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-slate-300">ATS Score Breakdown</h4>
+                <p className="text-xs font-semibold text-slate-300">ATS Score Breakdown</p>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-xs text-slate-300">
                     <span>Semantic Match Alignment</span>
@@ -226,7 +236,8 @@ export default function LandingPage() {
       </section>
 
       {/* FEATURES SECTION */}
-      <section id="features" className="py-24 bg-white border-t border-slate-200/80">
+      <section id="features" className="py-24 bg-white border-t border-slate-200/80 relative">
+        <div id="solutions" className="absolute -top-24" />
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-semibold text-[#059669] mb-2 block">
@@ -362,23 +373,102 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+    </main>
 
-      {/* FOOTER */}
-      <footer className="py-12 bg-white border-t border-slate-200 text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
-          <div className="flex items-center gap-3">
-            <CareerSyncBrand size={24} showTagline={false} isLight={true} />
-            <span className="text-slate-400">© {new Date().getFullYear()} CareerSync Platform</span>
+    {/* Anchor targets for fragment links */}
+    <div id="privacy" className="sr-only" />
+    <div id="terms" className="sr-only" />
+
+    {/* FOOTER */}
+    <footer className="py-12 bg-white border-t border-slate-200 text-xs text-slate-500">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+        <div className="flex items-center gap-3">
+          <CareerSyncBrand size={24} showTagline={false} isLight={true} />
+          <span className="text-slate-400">© {new Date().getFullYear()} CareerSync Platform</span>
+        </div>
+        <p className="max-w-md text-xs leading-relaxed text-slate-500">
+          Enterprise Semantic Matching &amp; ATS Resume Intelligence Environment.
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPolicyModal("privacy")}
+            className="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition min-h-[36px] inline-flex items-center cursor-pointer font-medium"
+          >
+            Privacy Policy
+          </button>
+          <button
+            type="button"
+            onClick={() => setPolicyModal("terms")}
+            className="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition min-h-[36px] inline-flex items-center cursor-pointer font-medium"
+          >
+            Terms of Service
+          </button>
+        </div>
+      </div>
+    </footer>
+
+    {/* Accessible Policy Modal Dialog */}
+    {policyModal && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="policy-dialog-title"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
+      >
+        <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 id="policy-dialog-title" className="text-base font-bold text-slate-900">
+              {policyModal === "privacy" ? "Privacy Policy" : "Terms of Service"}
+            </h3>
+            <button
+              type="button"
+              onClick={() => setPolicyModal(null)}
+              aria-label="Close dialog"
+              className="p-2 text-slate-400 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center"
+            >
+              ✕
+            </button>
           </div>
-          <p className="max-w-md text-xs leading-relaxed text-slate-500">
-            Enterprise Semantic Matching &amp; ATS Resume Intelligence Environment.
-          </p>
-          <div className="flex items-center gap-4">
-            <a href="#privacy" className="hover:text-slate-900 transition">Privacy</a>
-            <a href="#terms" className="hover:text-slate-900 transition">Terms</a>
+          <div className="text-xs text-slate-600 space-y-3 leading-relaxed">
+            {policyModal === "privacy" ? (
+              <>
+                <p>
+                  At <strong>CareerSync AI</strong>, we take your privacy and data security seriously. Candidate resumes and recruiter postings are processed exclusively for computing skill graph embeddings and ATS compatibility scores.
+                </p>
+                <p>
+                  We do not sell, rent, or monetize your personal credentials or resume data. All vector representations are secured within your workspace.
+                </p>
+                <p>
+                  You can modify or request complete deletion of your profile, resumes, and submitted applications at any time from your account settings.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  Welcome to <strong>CareerSync AI</strong>. By accessing our platform, you agree to utilize our deterministic vector matching and resume optimization features in accordance with our community guidelines.
+                </p>
+                <p>
+                  The service is provided completely free of charge to both candidates and recruiters without hidden paywalls. Users agree not to submit fraudulent job postings or infringing intellectual property.
+                </p>
+                <p>
+                  CareerSync AI reserves the right to suspend accounts engaged in abusive automated requests or malicious activities.
+                </p>
+              </>
+            )}
+          </div>
+          <div className="pt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setPolicyModal(null)}
+              className="px-5 py-2.5 bg-slate-900 text-white font-semibold text-xs rounded-xl hover:bg-slate-800 transition cursor-pointer"
+            >
+              Close
+            </button>
           </div>
         </div>
-      </footer>
+      </div>
+    )}
     </div>
   );
 }

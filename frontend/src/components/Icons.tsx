@@ -125,14 +125,14 @@ export const CareerSyncBrand: React.FC<CareerSyncBrandProps> = ({
               isLight ? "text-slate-900" : "text-white"
             }`}
           >
-            Career<span className="text-[#00f5c4]">Sync</span>
+            Career<span className={isLight ? "text-emerald-700" : "text-[#00f5c4]"}>Sync</span>
           </span>
         </div>
         {showTagline && (
           <span
             className={`text-[10px] font-bold tracking-wider uppercase mt-0.5 leading-none truncate ${
               responsiveTagline ? "hidden sm:inline-block" : "inline-block"
-            } ${isLight ? "text-slate-500" : "text-cyan-400"}`}
+            } ${isLight ? "text-slate-600" : "text-cyan-400"}`}
           >
             AI-POWERED CAREER MATCHING
           </span>

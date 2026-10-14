@@ -237,12 +237,12 @@ export default function RecruiterPipelinePage() {
                 }`}
               >
                 {/* Column Header */}
-                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div className={`p-4 border-b flex items-center justify-between ${isDark ? "border-slate-800" : "border-slate-200"}`}>
                   <div className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full border-2 ${col.color.split(" ")[0]}`} />
-                    <h3 className="text-xs font-bold text-slate-200">{col.title}</h3>
+                    <h3 className={`text-xs font-bold ${isDark ? "text-slate-200" : "text-slate-900"}`}>{col.title}</h3>
                   </div>
-                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${isDark ? "bg-slate-800 text-slate-300" : "bg-slate-200 text-slate-800"}`}>
                     {stageCandidates.length}
                   </span>
                 </div>
@@ -262,11 +262,11 @@ export default function RecruiterPipelinePage() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <h4 className="font-semibold text-sm leading-snug">{cand.name}</h4>
-                          <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                             {cand.currentRole || "Candidate"}
                           </p>
                         </div>
-                        <span className="text-sm font-bold font-mono text-emerald-500 shrink-0">
+                        <span className={`text-sm font-bold font-mono shrink-0 ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>
                           {cand.matchScore}%
                         </span>
                       </div>
@@ -276,13 +276,17 @@ export default function RecruiterPipelinePage() {
                           {cand.matchedSkills.slice(0, 3).map((s) => (
                             <span
                               key={s}
-                              className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium"
+                              className={`px-2 py-0.5 rounded text-xs font-medium border ${
+                                isDark
+                                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              }`}
                             >
                               {s}
                             </span>
                           ))}
                           {cand.matchedSkills.length > 3 && (
-                            <span className="text-xs text-slate-400 self-center">
+                            <span className={`text-xs self-center ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                               +{cand.matchedSkills.length - 3}
                             </span>
                           )}
@@ -290,7 +294,7 @@ export default function RecruiterPipelinePage() {
                       )}
 
                       {/* Stage Progression Buttons */}
-                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-1 text-xs">
+                      <div className={`pt-2 border-t flex items-center justify-between gap-1 text-xs ${isDark ? "border-slate-800/80" : "border-slate-200"}`}>
                         {col.key !== "under_review" && (
                           <button
                             type="button"
@@ -298,7 +302,7 @@ export default function RecruiterPipelinePage() {
                               e.stopPropagation();
                               moveStage(cand, "under_review");
                             }}
-                            className="text-amber-400 hover:underline cursor-pointer"
+                            className={`${isDark ? "text-amber-400" : "text-amber-700"} hover:underline cursor-pointer`}
                           >
                             → Review
                           </button>
@@ -310,7 +314,7 @@ export default function RecruiterPipelinePage() {
                               e.stopPropagation();
                               moveStage(cand, "shortlisted");
                             }}
-                            className="text-emerald-400 font-semibold hover:underline cursor-pointer"
+                            className={`${isDark ? "text-emerald-400" : "text-emerald-700"} font-semibold hover:underline cursor-pointer`}
                           >
                             ✓ Shortlist
                           </button>
@@ -322,7 +326,7 @@ export default function RecruiterPipelinePage() {
                               e.stopPropagation();
                               moveStage(cand, "rejected");
                             }}
-                            className="text-slate-400 hover:text-rose-400 hover:underline cursor-pointer"
+                            className={`${isDark ? "text-slate-400 hover:text-rose-400" : "text-slate-600 hover:text-rose-700"} hover:underline cursor-pointer`}
                           >
                             ✕ Archive
                           </button>
@@ -345,7 +349,7 @@ export default function RecruiterPipelinePage() {
               isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
             }`}
           >
-            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+            <div className={`flex items-start justify-between border-b pb-4 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
               <div>
                 <h3 className="text-base font-bold">{selectedCandidate.name}</h3>
                 <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
