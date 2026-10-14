@@ -39,9 +39,15 @@ echo.
 set "PYTHON_EXE=python"
 if exist "%PROJECT_DIR%\backend\.venv\Scripts\python.exe" (
     set "PYTHON_EXE=%PROJECT_DIR%\backend\.venv\Scripts\python.exe"
-    echo [INFO] Python: Using virtual environment [venv]
+    echo [INFO] Backend Python: Using virtual environment [venv]
 ) else (
-    echo [INFO] Python: Using system Python
+    echo [INFO] Backend Python: Using system Python
+)
+
+set "AI_PYTHON_EXE=%PYTHON_EXE%"
+if exist "%PROJECT_DIR%\ai-services\.venv\Scripts\python.exe" (
+    set "AI_PYTHON_EXE=%PROJECT_DIR%\ai-services\.venv\Scripts\python.exe"
+    echo [INFO] AI Services Python: Using virtual environment [ai-services\.venv]
 )
 
 if "%1"=="--test" (
@@ -60,9 +66,12 @@ if %errorlevel% neq 0 (
 )
 echo [INFO] Node.js / npm: Detected
 
-:: 4. Clean up any existing processes on ports 8000 and 3000
-echo [INFO] Checking ports 8000 and 3000 for previous instances...
+:: 4. Clean up any existing processes on ports 8000, 8001, and 3000
+echo [INFO] Checking ports 8000, 8001, and 3000 for previous instances...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>nul
+)
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8001" ^| findstr "LISTENING"') do (
     taskkill /f /pid %%a >nul 2>nul
 )
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
@@ -73,16 +82,22 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING
 echo [INFO] Starting Backend API (FastAPI) on http://127.0.0.1:8000 ...
 start "CareerSync AI - Backend API (Port 8000)" cmd /k "cd /d "%PROJECT_DIR%\backend" && title CareerSync AI - Backend API && "%PYTHON_EXE%" -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
 
-:: 6. Launch Frontend Server in its own window
+:: 6. Launch AI Microservice in its own window (if present)
+if exist "%PROJECT_DIR%\ai-services\src\api\app.py" (
+    echo [INFO] Starting AI Microservice (FastAPI) on http://127.0.0.1:8001 ...
+    start "CareerSync AI - AI Services (Port 8001)" cmd /k "cd /d "%PROJECT_DIR%\ai-services" && title CareerSync AI - AI Services && "%AI_PYTHON_EXE%" -m uvicorn src.api.app:app --host 127.0.0.1 --port 8001"
+)
+
+:: 7. Launch Frontend Server in its own window
 echo [INFO] Starting Frontend Web (Next.js) on http://localhost:3000 ...
 start "CareerSync AI - Frontend Web (Port 3000)" cmd /k "cd /d "%PROJECT_DIR%\frontend" && title CareerSync AI - Frontend Web && npm run dev"
 
-:: 7. Wait for servers to spin up
+:: 8. Wait for servers to spin up
 echo.
 echo [INFO] Initializing application services, please wait...
 timeout /t 5 /nobreak >nul
 
-:: 8. Automatically open browser
+:: 9. Automatically open browser
 echo [INFO] Opening CareerSync AI in your default web browser...
 start http://localhost:3000
 
@@ -91,19 +106,22 @@ echo ======================================================================
 echo                  CareerSync AI is now LIVE!                          
 echo ======================================================================
 echo   Frontend Web  : http://localhost:3000
-echo   Backend API   : http://127.0.0.1:8000
-echo   API Docs      : http://127.0.0.1:8000/docs
+echo   Backend API   : http://127.0.0.1:8000 (Docs: /docs)
+echo   AI Service    : http://127.0.0.1:8001 (Docs: /docs)
 echo ======================================================================
 echo.
 echo Leave this window open while using CareerSync AI.
 echo.
-echo When you want to STOP both servers, press any key below.
+echo When you want to STOP all servers, press any key below.
 echo ======================================================================
 pause >nul
 
 echo.
 echo [INFO] Shutting down CareerSync AI services...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>nul
+)
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8001" ^| findstr "LISTENING"') do (
     taskkill /f /pid %%a >nul 2>nul
 )
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
