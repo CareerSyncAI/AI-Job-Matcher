@@ -136,7 +136,7 @@ def test_extract_entities_endpoint(client):
 
 
 def test_semantic_match_endpoint(client):
-    """Verifies POST /api/v1/ai/semantic-match endpoint conforms to contract."""
+    """Verifies POST /api/v1/ai/semantic-match endpoint conforms to contract v1.1.0."""
     payload = {
         "candidate_id": "cand-01",
         "candidate_profile": {
@@ -163,6 +163,50 @@ def test_semantic_match_endpoint(client):
     assert "Python" in data["matched_key_concepts"]
     assert "PyTorch" in data["matched_key_concepts"]
     assert "Kubernetes" in data["missing_or_gap_concepts"]
+
+    # Contract v1.1.0 fields
+    assert "raw_similarity" in data
+    assert 0.0 <= data["raw_similarity"] <= 1.0
+    assert "similarity_index" in data
+    assert 0.0 <= data["similarity_index"] <= 100.0
+    assert data["method"] in ["tf_cosine_baseline", "sentence_embedding"]
+    assert data["status"] == "ok"
+    assert "diagnostics" in data
+    assert "chunks_processed" in data["diagnostics"]
+    assert "model_info" in data
+    assert "vector_dimensions" in data["model_info"]
+
+
+def test_semantic_match_embedding_mode_api(client):
+    """Verifies POST /api/v1/ai/semantic-match with explicit method='embedding'."""
+    payload = {
+        "candidate_id": "cand-embed-01",
+        "candidate_profile": {
+            "headline": "Full-Stack React & Node Engineer",
+            "skills": ["React", "TypeScript", "Node.js", "Docker"],
+            "experience_summary": "Built scalable cloud applications using React and Node.js microservices."
+        },
+        "job_requisition": {
+            "job_id": "job-embed-01",
+            "title": "Senior Full-Stack Engineer",
+            "required_skills": ["React", "Node.js"],
+            "preferred_skills": ["TypeScript", "Docker"],
+            "description": "Design modular web apps with React frontend and Node backend."
+        },
+        "method": "embedding"
+    }
+    response = client.post("/api/v1/ai/semantic-match", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["candidate_id"] == "cand-embed-01"
+    assert data["method"] == "sentence_embedding"
+    assert data["status"] == "ok"
+    assert data["model_info"]["engine"] == "sentence-transformers/all-MiniLM-L6-v2"
+    assert data["model_info"]["vector_dimensions"] == 384
+    assert 0.0 <= data["raw_similarity"] <= 1.0
+    assert data["diagnostics"]["chunks_processed"] >= 2
+    assert "React" in data["matched_key_concepts"]
 
 
 def test_unsupported_file_type_error(client):

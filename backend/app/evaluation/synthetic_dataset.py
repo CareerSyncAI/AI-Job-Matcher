@@ -1,5 +1,5 @@
 """
-CareerSync AI — Curated Ground-Truth Synthetic Evaluation Benchmark Dataset.
+CareerSync AI — Curated Synthetic Regression Benchmark Dataset.
 
 Contains diverse candidate-job pairs spanning the full spectrum:
 1. Tier 1 (High Match, 98%): Direct skills, exceeding tenure, exact education
@@ -51,7 +51,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
             Bachelor of Science in Computer Science | University of California, Berkeley (2014 - 2018)
             """,
             expected_skills=["Python", "TypeScript", "JavaScript", "FastAPI", "React", "Next.js", "Django", "Node.js", "Docker", "Kubernetes", "AWS", "CI/CD", "PostgreSQL", "Redis", "SQL"],
-            expected_experience_years=6.0,
+            expected_experience_years=6.5,
             expected_education_degree="Bachelor",
         ),
         job=GroundTruthJob(
@@ -66,7 +66,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
         expected_matched_required_skills=["Python", "FastAPI", "React", "Next.js"],
         expected_missing_required_skills=[],
         expected_coverage_tier=1,
-        expected_human_fit_rating=99.0,
+        expected_fixture_fit_rating=99.0,
         notes="Top match: 100% required skills, 100% preferred skills, 6 years tenure against 5 years minimum, Bachelor degree.",
     ),
 
@@ -97,7 +97,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
             Master of Science in Computer Engineering | University of Washington (2018 - 2020)
             """,
             expected_skills=["C", "C++", "Go", "Docker", "Linux", "Kubernetes", "gRPC"],
-            expected_experience_years=4.0,
+            expected_experience_years=4.5,
             expected_education_degree="Master",
         ),
         job=GroundTruthJob(
@@ -112,7 +112,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
         expected_matched_required_skills=["C++", "Go", "Docker", "Linux"],
         expected_missing_required_skills=[],
         expected_coverage_tier=1,
-        expected_human_fit_rating=96.5,
+        expected_fixture_fit_rating=96.5,
         notes="Strong match: Tests disambiguation of C and Go, Master degree exceeds Bachelor requirement.",
     ),
 
@@ -141,7 +141,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
             Bachelor of Technology in Information Technology | Boston University (2016 - 2020)
             """,
             expected_skills=["Python", "Django", "REST APIs", "PostgreSQL", "Redis", "Docker", "Git"],
-            expected_experience_years=4.0,
+            expected_experience_years=4.5,
             expected_education_degree="Bachelor",
         ),
         job=GroundTruthJob(
@@ -156,7 +156,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
         expected_matched_required_skills=["Python", "REST APIs", "PostgreSQL"],
         expected_missing_required_skills=[],
         expected_coverage_tier=1,
-        expected_human_fit_rating=98.0,
+        expected_fixture_fit_rating=98.0,
         notes="Good match: Direct Python and REST API match.",
     ),
 
@@ -200,7 +200,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
         expected_matched_required_skills=["React", "TypeScript"],
         expected_missing_required_skills=[],
         expected_coverage_tier=1,
-        expected_human_fit_rating=70.0,
+        expected_fixture_fit_rating=70.0,
         notes="Has required skills but significant experience tenure deficit (1.5 yrs vs 5 yrs).",
     ),
 
@@ -232,7 +232,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
             Associate Degree in Information Technology | Austin Community College (2019 - 2021)
             """,
             expected_skills=["Java", "Spring Boot", "MySQL", "Git", "Linux", "Unit Testing", "REST APIs"],
-            expected_experience_years=3.0,
+            expected_experience_years=3.5,
             expected_education_degree="Associate",
         ),
         job=GroundTruthJob(
@@ -247,7 +247,7 @@ BENCHMARK_DATASET: list[GroundTruthItem] = [
         expected_matched_required_skills=[],
         expected_missing_required_skills=["Python", "FastAPI", "React", "Next.js"],
         expected_coverage_tier=3,
-        expected_human_fit_rating=25.0,
+        expected_fixture_fit_rating=25.0,
         notes="Multiple required skill gaps (Python, FastAPI, React, Next.js), tenure deficit, and degree deficit.",
     ),
 ]

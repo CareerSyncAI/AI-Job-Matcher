@@ -16,6 +16,10 @@ class CapabilitiesSchema(BaseModel):
     skill_normalization: bool = True
     experience_structuring: bool = True
     semantic_similarity: bool = True
+    embedding_matcher_available: bool = True
+    active_matcher_engine: str = "baseline"
+    embedding_model_id: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_model_loaded: bool = False
 
 
 class HealthResponse(BaseModel):
@@ -122,22 +126,32 @@ class SemanticMatchRequest(BaseModel):
     candidate_id: Optional[str] = None
     candidate_profile: CandidateProfilePayload
     job_requisition: JobRequisitionPayload
+    method: Optional[str] = None  # "baseline" or "embedding"
 
 
 class ModelInfoPayload(BaseModel):
     engine: str = "semantic-cosine-v1"
+    model_id: Optional[str] = None
+    model_revision: Optional[str] = None
     vector_dimensions: int = 384
+    device: Optional[str] = "cpu"
     offline_compatible: bool = True
 
 
 class SemanticMatchResponse(BaseModel):
     candidate_id: Optional[str] = None
     job_id: Optional[str] = None
-    semantic_similarity_score: float
+    semantic_similarity_score: float  # Normalized 0.0 - 100.0 (backward compatibility)
+    raw_similarity: Optional[float] = None  # Raw unscaled cosine similarity [0.0 - 1.0]
+    similarity_index: Optional[float] = None  # Normalized presentation index [0.0 - 100.0]
     alignment_grade: str
+    method: str = "tf_cosine_baseline"
+    status: str = "ok"
+    fallback_reason: Optional[str] = None
     matched_key_concepts: List[str] = Field(default_factory=list)
     missing_or_gap_concepts: List[str] = Field(default_factory=list)
     model_info: ModelInfoPayload = Field(default_factory=ModelInfoPayload)
+    diagnostics: Dict[str, Any] = Field(default_factory=dict)
 
 
 # Standard Error Schema

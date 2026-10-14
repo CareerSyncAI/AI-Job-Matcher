@@ -1,15 +1,16 @@
 """
-CareerSync AI — Ground-Truth Evaluation Benchmark Schemas.
+CareerSync AI — synthetic regression benchmark schemas.
 
 Defines standard schemas for:
-- Ground-truth evaluation datasets (resumes + jobs + human annotations)
+- Synthetic regression fixtures and separately labeled evaluation datasets
 - Evaluation metric scorecards (Precision, Recall, F1, MAE, Rank Correlation)
 - Systematic error analysis logs (ambiguity flags, gap discrepancies, tenure drift)
 """
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import date
+from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
@@ -40,7 +41,17 @@ class GroundTruthItem(BaseModel):
     expected_matched_required_skills: list[str]
     expected_missing_required_skills: list[str]
     expected_coverage_tier: int  # 1 = No Gaps, 2 = Insufficient Evidence, 3 = Required Gap
-    expected_human_fit_rating: float  # 0.0 to 100.0
+    # Synthetic fixtures may provide an illustrative ordering score. It must
+    # never be represented as an independently reviewed human rating.
+    expected_fixture_fit_rating: float | None = None
+    relevance_label: Literal[
+        "strong_match", "partial_match", "weak_match", "insufficient_information"
+    ] | None = None
+    relevance_label_source: Literal["synthetic", "human_reviewed"] = "synthetic"
+    split: Literal["development", "held_out", "regression"] = "regression"
+    candidate_source: Literal["synthetic", "permitted_public", "permissioned"] = "synthetic"
+    annotator_id: str | None = None
+    adjudication_status: Literal["not_applicable", "pending", "adjudicated"] = "not_applicable"
     notes: str | None = None
 
 
@@ -65,13 +76,15 @@ class EducationMetrics(BaseModel):
     accuracy: float = 0.0
 
 
-class GapDetectionMetrics(BaseModel):
-    true_positive_gaps: int = 0
-    false_positive_gaps: int = 0
-    false_negative_gaps: int = 0
-    gap_precision: float = 0.0
-    gap_recall: float = 0.0
-    gap_f1: float = 0.0
+class RequiredSkillEvidenceMetrics(BaseModel):
+    """Measures resume evidence mentions; absence is not a confirmed skill gap."""
+
+    true_positive_not_detected: int = 0
+    false_positive_not_detected: int = 0
+    false_negative_not_detected: int = 0
+    precision: float = 0.0
+    recall: float = 0.0
+    f1_score: float = 0.0
 
 
 class ErrorAnalysisLog(BaseModel):
@@ -85,10 +98,13 @@ class ErrorAnalysisLog(BaseModel):
 
 class BenchmarkSummaryReport(BaseModel):
     dataset_version: str
+    dataset_type: Literal["synthetic_regression", "human_labeled_evaluation"]
+    evaluation_reference_date: date | None = None
     total_test_pairs: int
     skill_extraction_metrics: ExtractionMetrics
-    required_gap_metrics: GapDetectionMetrics
+    required_skill_evidence_metrics: RequiredSkillEvidenceMetrics
     experience_tenure_metrics: ExperienceMetrics
     education_hierarchy_metrics: EducationMetrics
-    rank_correlation_spearman: float
+    rank_correlation_spearman: float | None = None
+    ranking_metric_note: str
     error_analysis_logs: list[ErrorAnalysisLog]

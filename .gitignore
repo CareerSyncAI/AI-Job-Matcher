@@ -40,11 +40,14 @@ Thumbs.db
 # AI Services & Real Resume Evaluation Fixtures (Strict Privacy)
 ai-services/fixtures/real/
 ai-services/fixtures/data/
+ai-services/models/cache/
 ai-services/.venv/
 ai-services/.pytest_cache/
+data/raw/
 *.onnx
 *.pt
 *.bin
+*.safetensors
 
 # Database & Storage
 *.db

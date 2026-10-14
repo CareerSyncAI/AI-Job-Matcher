@@ -112,7 +112,21 @@ semantic_matcher = SemanticMatcher()
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Verify AI microservice health and active capabilities."""
-    return HealthResponse()
+    info = semantic_matcher.get_active_engine_info()
+    return HealthResponse(
+        capabilities={
+            "pdf_parsing": True,
+            "docx_parsing": True,
+            "skill_extraction": True,
+            "skill_normalization": True,
+            "experience_structuring": True,
+            "semantic_similarity": True,
+            "embedding_matcher_available": True,
+            "active_matcher_engine": info["default_method"],
+            "embedding_model_id": info["embedding_model_id"],
+            "embedding_model_loaded": info["embedding_model_loaded"]
+        }
+    )
 
 
 @app.post("/api/v1/ai/parse-resume", response_model=ParseResumeResponse, dependencies=[Depends(verify_ai_service_key)])
@@ -257,19 +271,25 @@ async def normalize_skills(payload: NormalizeSkillsRequest):
 
 @app.post("/api/v1/ai/semantic-match", response_model=SemanticMatchResponse, dependencies=[Depends(verify_ai_service_key)])
 async def semantic_match(payload: SemanticMatchRequest):
-
     """Compute vector/semantic alignment between candidate profile and job requisition."""
     match_result = semantic_matcher.match(
         candidate_profile=payload.candidate_profile.model_dump(),
-        job_requisition=payload.job_requisition.model_dump()
+        job_requisition=payload.job_requisition.model_dump(),
+        method=payload.method
     )
 
     return SemanticMatchResponse(
         candidate_id=payload.candidate_id,
         job_id=payload.job_requisition.job_id,
         semantic_similarity_score=match_result["semantic_similarity_score"],
+        raw_similarity=match_result.get("raw_similarity"),
+        similarity_index=match_result.get("similarity_index"),
         alignment_grade=match_result["alignment_grade"],
+        method=match_result.get("method", "tf_cosine_baseline"),
+        status=match_result.get("status", "ok"),
+        fallback_reason=match_result.get("fallback_reason"),
         matched_key_concepts=match_result["matched_key_concepts"],
         missing_or_gap_concepts=match_result["missing_or_gap_concepts"],
-        model_info=match_result["model_info"]
+        model_info=match_result["model_info"],
+        diagnostics=match_result.get("diagnostics", {})
     )

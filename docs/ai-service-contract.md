@@ -1,10 +1,10 @@
 # CareerSync AI — AI/NLP Service Contract
 
-**Document Version:** 1.0.0  
+**Document Version:** 1.1.0  
 **Status:** Authoritative (Single Source of Truth)  
-**Author:** Antigravity (AI/NLP Engineering Track)  
-**Consumer:** AGY (Core Application Engineering Track)  
-**Last Updated:** September 18, 2026  
+**Author:** Antigravity (AI/NLP Engineering Track) & Codex (Backend Integration Track)  
+**Consumer:** Core Application Track & AI Service Track  
+**Last Updated:** October 14, 2026  
 
 ---
 
@@ -78,7 +78,11 @@ Verifies AI service availability and lists active models/parsers.
     "skill_extraction": true,
     "skill_normalization": true,
     "experience_structuring": true,
-    "semantic_similarity": true
+    "semantic_similarity": true,
+    "embedding_matcher_available": true,
+    "active_matcher_engine": "baseline",
+    "embedding_model_id": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_model_loaded": false
   }
 }
 ```
@@ -233,6 +237,7 @@ Maps arbitrary raw skill strings and variations to the canonical taxonomy.
 `POST /api/v1/ai/semantic-match`
 
 Computes vector/semantic similarity between candidate profile representation and target job requisition.
+Supports selectable deterministic baseline (`tf_cosine_baseline`) or dense sentence embedding (`sentence_embedding`).
 
 **Request `application/json`:**
 ```json
@@ -249,33 +254,60 @@ Computes vector/semantic similarity between candidate profile representation and
     "required_skills": ["React", "TypeScript", "Next.js"],
     "preferred_skills": ["Tailwind CSS", "GraphQL", "Turbopack"],
     "description": "Lead web platform architecture, modern design system tokens, and App Router optimization."
-  }
+  },
+  "method": "embedding"
 }
 ```
+
+*Note:* `method` is optional (`"baseline"` or `"embedding"`). Defaults to system configuration (`SEMANTIC_MATCHER`).
 
 **Response `200 OK`:**
 ```json
 {
   "candidate_id": "cand-001",
   "job_id": "job-101",
-  "semantic_similarity_score": 93.5,
+  "semantic_similarity_score": 75.4,
+  "raw_similarity": 0.7541,
+  "similarity_index": 75.4,
   "alignment_grade": "High",
+  "method": "sentence_embedding",
+  "status": "ok",
+  "fallback_reason": null,
   "matched_key_concepts": [
-    "Modern Web Architecture",
-    "Next.js App Router",
-    "Design System Engineering",
-    "GraphQL API Integration"
+    "React",
+    "TypeScript",
+    "Next.js",
+    "GraphQL",
+    "Tailwind CSS"
   ],
   "missing_or_gap_concepts": [
     "Turbopack"
   ],
   "model_info": {
-    "engine": "semantic-cosine-v1",
+    "engine": "sentence-transformers/all-MiniLM-L6-v2",
+    "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+    "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
     "vector_dimensions": 384,
+    "device": "cpu",
     "offline_compatible": true
+  },
+  "diagnostics": {
+    "candidate_char_count": 182,
+    "job_char_count": 215,
+    "candidate_chunks_count": 2,
+    "job_chunks_count": 2,
+    "chunks_processed": 4,
+    "truncated": false,
+    "latency_ms": 28.5
   }
 }
 ```
+
+*Contract Invariant:*
+- `raw_similarity`: Raw cosine similarity in `[0.0, 1.0]`. Not a probability.
+- `similarity_index`: Normalized presentation index `[0.0, 100.0]` for UI display.
+- `semantic_similarity_score`: Backward-compatible presentation score identical to `similarity_index`.
+- `matched_key_concepts` & `missing_or_gap_concepts`: Strictly extracted from observable resume and job tokens (Zero Hallucination). No generative hallucinated skill names.
 
 ---
 

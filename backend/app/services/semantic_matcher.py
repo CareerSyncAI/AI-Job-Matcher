@@ -15,7 +15,9 @@ import re
 from abc import ABC, abstractmethod
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
+
+import httpx
 
 
 @dataclass(frozen=True)
@@ -173,3 +175,129 @@ class SublinearTFCosineMatcher(BaseSemanticMatcher):
             return 0.0
 
         return dot_product / (math.sqrt(norm_a) * math.sqrt(norm_b))
+
+
+class AIServiceDiagnosticMatcher(BaseSemanticMatcher):
+    """Calls the agreed AI-service endpoint without changing ranking semantics.
+
+    The backend has no approved embedding-to-ranking score mapping. Therefore
+    the deterministic matcher remains the returned scoring component while a
+    successful or failed embedding request is retained as diagnostics.
+    """
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        timeout_seconds: float = 15.0,
+        fallback_matcher: BaseSemanticMatcher | None = None,
+        client_factory: Callable[..., Any] = httpx.Client,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.timeout_seconds = timeout_seconds
+        self.fallback_matcher = fallback_matcher or SublinearTFCosineMatcher()
+        self.client_factory = client_factory
+
+    def match(
+        self,
+        *,
+        candidate_text: str,
+        job_text: str,
+        candidate_skills: list[str] | None = None,
+        job_skills: list[str] | None = None,
+    ) -> SemanticMatchResult:
+        baseline = self.fallback_matcher.match(
+            candidate_text=candidate_text,
+            job_text=job_text,
+            candidate_skills=candidate_skills,
+            job_skills=job_skills,
+        )
+        diagnostics = dict(baseline.diagnostics)
+
+        if not candidate_text.strip() or not job_text.strip():
+            diagnostics["ai_service"] = {
+                "requested_method": "embedding",
+                "status": "not_requested",
+                "reason": "empty_input",
+            }
+            return self._with_diagnostics(baseline, diagnostics)
+
+        payload = {
+            "candidate_profile": {
+                "headline": "",
+                "skills": candidate_skills or [],
+                "experience_summary": candidate_text,
+            },
+            "job_requisition": {
+                "title": "Candidate-job semantic comparison",
+                "required_skills": job_skills or [],
+                "preferred_skills": [],
+                "description": job_text,
+            },
+            "method": "embedding",
+        }
+        try:
+            with self.client_factory(timeout=self.timeout_seconds) as client:
+                response = client.post(
+                    f"{self.base_url}/api/v1/ai/semantic-match",
+                    json=payload,
+                    headers={"X-AI-Service-Key": self.api_key},
+                )
+            response.raise_for_status()
+            service_result = response.json()
+            self._validate_service_result(service_result)
+            diagnostics["ai_service"] = {
+                "requested_method": "embedding",
+                "status": service_result["status"],
+                "method": service_result["method"],
+                "raw_similarity": service_result["raw_similarity"],
+                "similarity_index": service_result["similarity_index"],
+                "fallback_reason": service_result.get("fallback_reason"),
+                "model_info": service_result["model_info"],
+                "diagnostics": service_result.get("diagnostics", {}),
+                "used_for_ranking": False,
+            }
+        except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
+            diagnostics["ai_service"] = {
+                "requested_method": "embedding",
+                "status": "error",
+                "reason": type(exc).__name__,
+                "used_for_ranking": False,
+            }
+        return self._with_diagnostics(baseline, diagnostics)
+
+    @staticmethod
+    def _validate_service_result(result: Any) -> None:
+        if not isinstance(result, dict):
+            raise ValueError("Semantic service response must be an object.")
+        if result.get("status") not in {"ok", "fallback", "disabled"}:
+            raise ValueError("Semantic service returned an unsupported status.")
+        if not isinstance(result.get("method"), str):
+            raise ValueError("Semantic service response is missing method.")
+        raw_similarity = result.get("raw_similarity")
+        similarity_index = result.get("similarity_index")
+        compatibility_score = result.get("semantic_similarity_score")
+        if not isinstance(raw_similarity, (int, float)) or not 0.0 <= raw_similarity <= 1.0:
+            raise ValueError("Semantic service raw_similarity must be in [0, 1].")
+        if not isinstance(similarity_index, (int, float)) or not 0.0 <= similarity_index <= 100.0:
+            raise ValueError("Semantic service similarity_index must be in [0, 100].")
+        if not isinstance(compatibility_score, (int, float)) or not 0.0 <= compatibility_score <= 100.0:
+            raise ValueError("Semantic service semantic_similarity_score must be in [0, 100].")
+        if not isinstance(result.get("model_info"), dict):
+            raise ValueError("Semantic service response is missing model_info.")
+
+    @staticmethod
+    def _with_diagnostics(
+        result: SemanticMatchResult, diagnostics: dict[str, Any]
+    ) -> SemanticMatchResult:
+        return SemanticMatchResult(
+            similarity_score=result.similarity_score,
+            alignment_grade=result.alignment_grade,
+            matched_concepts=result.matched_concepts,
+            missing_concepts=result.missing_concepts,
+            model_version=result.model_version,
+            confidence=result.confidence,
+            diagnostics=diagnostics,
+        )

@@ -1,116 +1,67 @@
 """Explainable Semantic Similarity Engine for CareerSync AI.
 
-Computes semantic alignment between candidate profile representations and job requisitions
-using offline cosine vector representations and outputs transparent concept diagnostics.
+Pluggable facade supporting:
+1. Baseline: Sublinear token-frequency cosine matcher (deterministic, zero neural weights)
+2. Experimental: Sentence-transformers dense embedding matcher (all-MiniLM-L6-v2)
+
+Provides seamless configuration via SEMANTIC_MATCHER env variable ('baseline' or 'embedding'),
+transparent fallback handling, and strictly verifiable evidence extraction.
 """
 
 from __future__ import annotations
-import math
-import re
-from typing import Dict, List, Set, Tuple
-from collections import Counter
+
+import os
+from typing import Any, Dict, Optional
+
+from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
+from src.similarity.baseline_matcher import BaselineSemanticMatcher
+from src.similarity.embedding_matcher import SentenceEmbeddingMatcher
 
 
-class SemanticMatcher:
-    """Computes explainable semantic similarity between candidate and job representations."""
+class SemanticMatcher(BaseSimilarityEngine):
+    """Unified pluggable semantic matcher coordinating baseline and embedding implementations."""
 
-    def __init__(self):
-        self.engine_name = "semantic-cosine-v1"
+    def __init__(self, default_engine: Optional[str] = None) -> None:
+        configured = default_engine or os.getenv("SEMANTIC_MATCHER", "baseline").lower()
+        self.default_method = "embedding" if configured in ("embedding", "neural", "sentence_transformers") else "baseline"
+
+        # Initialize engines
+        self.baseline_engine = BaselineSemanticMatcher()
+        self.embedding_engine = SentenceEmbeddingMatcher(lazy_load=True)
+
+        # Retain legacy attributes for backward compatibility
+        self.engine_name = "sentence-transformers/all-MiniLM-L6-v2" if self.default_method == "embedding" else "semantic-cosine-v1"
         self.vector_dimensions = 384
 
     def match(
         self,
-        candidate_profile: Dict[str, any],
-        job_requisition: Dict[str, any]
-    ) -> Dict[str, any]:
-        """Calculate semantic similarity score and explainable concept overlap."""
-        # 1. Build composite candidate text
-        cand_headline = candidate_profile.get("headline", "")
-        cand_skills = candidate_profile.get("skills", [])
-        cand_summary = candidate_profile.get("experience_summary", "")
-        candidate_corpus = f"{cand_headline} {' '.join(cand_skills)} {cand_summary}".lower()
+        candidate_profile: Dict[str, Any],
+        job_requisition: Dict[str, Any],
+        method: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Calculate semantic similarity score and explainable concept overlap.
 
-        # 2. Build composite job text
-        job_title = job_requisition.get("title", "")
-        job_req_skills = job_requisition.get("required_skills", [])
-        job_pref_skills = job_requisition.get("preferred_skills", [])
-        job_desc = job_requisition.get("description", "")
-        job_corpus = f"{job_title} {' '.join(job_req_skills)} {' '.join(job_pref_skills)} {job_desc}".lower()
+        Args:
+            candidate_profile: Dict with 'headline', 'skills', 'experience_summary'
+            job_requisition: Dict with 'title', 'required_skills', 'preferred_skills', 'description'
+            method: Optional override ("baseline" or "embedding")
+        """
+        target_method = (method or self.default_method).lower()
 
-        # 3. Compute Vector Cosine Similarity
-        cosine_sim = self._compute_cosine_similarity(candidate_corpus, job_corpus)
-        # Calibrated scaling: in document text vectors, cosine similarity >= 0.45 indicates strong semantic alignment
-        calibrated_sim = min(1.0, cosine_sim * 1.8)
-        similarity_score = round(min(100.0, max(0.0, calibrated_sim * 100)), 1)
-
-        # 4. Extract explainable concept overlaps
-        job_skills_set = set(s.lower() for s in (job_req_skills + job_pref_skills))
-        cand_skills_set = set(s.lower() for s in cand_skills)
-
-        matched_concepts = []
-        for s in job_req_skills + job_pref_skills:
-            if s.lower() in cand_skills_set or s.lower() in candidate_corpus:
-                matched_concepts.append(s)
-
-        missing_concepts = [
-            s for s in (job_req_skills + job_pref_skills)
-            if s.lower() not in cand_skills_set and s.lower() not in candidate_corpus
-        ]
-
-        # Determine alignment grade
-        if similarity_score >= 80.0:
-            grade = "High"
-        elif similarity_score >= 55.0:
-            grade = "Moderate"
+        if target_method in ("embedding", "sentence_embedding", "neural"):
+            output: SemanticMatchOutput = self.embedding_engine.match(candidate_profile, job_requisition)
         else:
-            grade = "Low"
+            output = self.baseline_engine.match(candidate_profile, job_requisition)
 
+        return output.to_dict()
+
+    def get_active_engine_info(self) -> Dict[str, Any]:
+        """Return diagnostic information about active engine and model status."""
         return {
-            "semantic_similarity_score": similarity_score,
-            "alignment_grade": grade,
-            "matched_key_concepts": matched_concepts[:8],
-            "missing_or_gap_concepts": missing_concepts[:5],
-            "model_info": {
-                "engine": self.engine_name,
-                "vector_dimensions": self.vector_dimensions,
-                "offline_compatible": True
-            }
+            "default_method": self.default_method,
+            "embedding_model_loaded": self.embedding_engine.is_model_loaded(),
+            "embedding_model_id": self.embedding_engine.model_id,
+            "embedding_model_revision": self.embedding_engine.model_revision,
+            "fallback_enabled": self.embedding_engine.fallback_enabled,
+            "vector_dimensions": 384,
         }
-
-    def _compute_cosine_similarity(self, text_a: str, text_b: str) -> float:
-        """Compute cosine similarity over sublinear token frequencies."""
-        tokens_a = self._tokenize(text_a)
-        tokens_b = self._tokenize(text_b)
-
-        if not tokens_a or not tokens_b:
-            return 0.0
-
-        vec_a = Counter(tokens_a)
-        vec_b = Counter(tokens_b)
-
-        # Sublinear TF: 1 + ln(tf)
-        all_terms = set(vec_a.keys()).union(set(vec_b.keys()))
-        dot_product = 0.0
-        norm_a = 0.0
-        norm_b = 0.0
-
-        for term in all_terms:
-            tf_a = 1.0 + math.log(vec_a[term]) if term in vec_a else 0.0
-            tf_b = 1.0 + math.log(vec_b[term]) if term in vec_b else 0.0
-            dot_product += tf_a * tf_b
-            norm_a += tf_a ** 2
-            norm_b += tf_b ** 2
-
-        if norm_a == 0.0 or norm_b == 0.0:
-            return 0.0
-
-        return dot_product / (math.sqrt(norm_a) * math.sqrt(norm_b))
-
-    def _tokenize(self, text: str) -> List[str]:
-        # Filter stopwords and punctuation
-        raw_tokens = re.findall(r"\b[a-zA-Z0-9+#.]{2,}\b", text.lower())
-        stopwords = {
-            "the", "and", "is", "in", "to", "of", "with", "for", "on", "at", "by", "from",
-            "an", "be", "this", "that", "are", "was", "as", "or", "have", "has", "had", "will"
-        }
-        return [t for t in raw_tokens if t not in stopwords]

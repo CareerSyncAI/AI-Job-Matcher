@@ -1,0 +1,154 @@
+{
+  "metadata": {
+    "evaluation_timestamp": "2026-10-14T11:19:52Z",
+    "benchmark_version": "1.0.0",
+    "models_evaluated": {
+      "baseline": {
+        "engine": "tf-cosine-v1",
+        "method": "tf_cosine_baseline",
+        "dimensions": 384,
+        "cold_start_ms": 0.0
+      },
+      "embedding": {
+        "engine": "sentence-transformers/all-MiniLM-L6-v2",
+        "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+        "method": "sentence_embedding",
+        "dimensions": 384,
+        "device": "cpu",
+        "cold_start_ms": 12303.07
+      }
+    },
+    "limitations_and_qualifications": [
+      "Small exploratory sample size (N=30 total: 15 dev, 15 held-out). Not statistically sufficient to claim generalized production-level hiring ranking accuracy.",
+      "Synthetic and curated benchmark archetypes do not substitute for multi-annotator, independently reviewed real recruiter evaluation sets.",
+      "Metric scores represent text-vector geometric similarity, NOT hiring suitability, candidate competency, or model confidence.",
+      "Held-out split was strictly held out and not used for model hyperparameter or threshold tuning."
+    ]
+  },
+  "dev_split": {
+    "baseline": {
+      "sample_size": 15,
+      "spearman_rho": 0.8325,
+      "pearson_r": 0.888,
+      "pairwise_accuracy_pct": 88.31,
+      "tier_mean_scores": {
+        "strong_match": 98.27,
+        "partial_match": 10.37,
+        "weak_match": 7.92,
+        "insufficient_information": 0.0
+      },
+      "negative_control_mean_score": 8.55,
+      "latency_ms": {
+        "mean": 0.15,
+        "median": 0.13,
+        "p95": 0.28,
+        "min": 0.04,
+        "max": 0.44
+      }
+    },
+    "embedding": {
+      "sample_size": 15,
+      "spearman_rho": 0.8552,
+      "pearson_r": 0.938,
+      "pairwise_accuracy_pct": 92.21,
+      "tier_mean_scores": {
+        "strong_match": 68.92,
+        "partial_match": 32.03,
+        "weak_match": 27.34,
+        "insufficient_information": 0.0
+      },
+      "negative_control_mean_score": 26.8,
+      "latency_ms": {
+        "mean": 65.23,
+        "median": 69.51,
+        "p95": 89.12,
+        "min": 0.02,
+        "max": 104.42
+      }
+    }
+  },
+  "held_out_test_split": {
+    "baseline": {
+      "sample_size": 15,
+      "spearman_rho": 0.8946,
+      "pearson_r": 0.8962,
+      "pairwise_accuracy_pct": 85.71,
+      "tier_mean_scores": {
+        "strong_match": 97.77,
+        "partial_match": 10.5,
+        "weak_match": 1.58,
+        "insufficient_information": 0.0
+      },
+      "negative_control_mean_score": 0.0,
+      "latency_ms": {
+        "mean": 0.06,
+        "median": 0.06,
+        "p95": 0.08,
+        "min": 0.04,
+        "max": 0.1
+      }
+    },
+    "embedding": {
+      "sample_size": 15,
+      "spearman_rho": 0.8892,
+      "pearson_r": 0.9165,
+      "pairwise_accuracy_pct": 94.81,
+      "tier_mean_scores": {
+        "strong_match": 73.13,
+        "partial_match": 28.2,
+        "weak_match": 21.84,
+        "insufficient_information": 10.0
+      },
+      "negative_control_mean_score": 21.6,
+      "latency_ms": {
+        "mean": 31.82,
+        "median": 31.46,
+        "p95": 37.79,
+        "min": 21.99,
+        "max": 39.47
+      }
+    }
+  },
+  "overall_benchmark": {
+    "baseline": {
+      "sample_size": 30,
+      "spearman_rho": 0.8508,
+      "pearson_r": 0.8918,
+      "pairwise_accuracy_pct": 86.69,
+      "tier_mean_scores": {
+        "strong_match": 98.02,
+        "partial_match": 10.43,
+        "weak_match": 4.75,
+        "insufficient_information": 0.0
+      },
+      "negative_control_mean_score": 4.28,
+      "latency_ms": {
+        "mean": 0.05,
+        "median": 0.05,
+        "p95": 0.06,
+        "min": 0.02,
+        "max": 0.11
+      }
+    },
+    "embedding": {
+      "sample_size": 30,
+      "spearman_rho": 0.8793,
+      "pearson_r": 0.9249,
+      "pairwise_accuracy_pct": 94.16,
+      "tier_mean_scores": {
+        "strong_match": 71.02,
+        "partial_match": 30.12,
+        "weak_match": 24.59,
+        "insufficient_information": 5.0
+      },
+      "negative_control_mean_score": 24.2,
+      "latency_ms": {
+        "mean": 37.43,
+        "median": 34.12,
+        "p95": 70.06,
+        "min": 0.02,
+        "max": 93.94
+      }
+    }
+  }
+}

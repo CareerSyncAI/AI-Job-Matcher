@@ -13,6 +13,7 @@ Executes ground-truth benchmark datasets against the resume intelligence layer a
 from __future__ import annotations
 
 import math
+from datetime import datetime
 from typing import Any
 
 from app.evaluation.benchmark_schema import (
@@ -21,7 +22,7 @@ from app.evaluation.benchmark_schema import (
     ErrorAnalysisLog,
     ExperienceMetrics,
     ExtractionMetrics,
-    GapDetectionMetrics,
+    RequiredSkillEvidenceMetrics,
     GroundTruthItem,
 )
 from app.evaluation.synthetic_dataset import BENCHMARK_DATASET
@@ -37,8 +38,16 @@ from app.services.taxonomy import taxonomy
 class BenchmarkRunner:
     """Evaluates the resume intelligence engine against ground-truth benchmark datasets."""
 
-    def __init__(self, dataset: list[GroundTruthItem] | None = None) -> None:
+    def __init__(
+        self,
+        dataset: list[GroundTruthItem] | None = None,
+        *,
+        evaluation_reference_date: datetime | None = None,
+    ) -> None:
         self.dataset = dataset or BENCHMARK_DATASET
+        # The bundled fixture labels use this fixed date for "Present" roles.
+        # Production extraction continues to use the current time by default.
+        self.evaluation_reference_date = evaluation_reference_date or datetime(2024, 7, 1)
         self.engine = DeterministicEvaluationEngine()
 
     def run_benchmark(self) -> BenchmarkSummaryReport:
@@ -47,10 +56,11 @@ class BenchmarkRunner:
         total_extracted_fp = 0
         total_extracted_fn = 0
 
-        # Gap detection counters
-        gap_tp = 0
-        gap_fp = 0
-        gap_fn = 0
+        # Required-skill evidence counters. A missing mention is explicitly
+        # distinct from a confirmed requirement gap.
+        not_detected_tp = 0
+        not_detected_fp = 0
+        not_detected_fn = 0
 
         # Experience error tracking
         exp_errors: list[float] = []
@@ -58,10 +68,6 @@ class BenchmarkRunner:
 
         # Education accuracy tracking
         edu_correct = 0
-
-        # Ranking correlation pairs
-        system_scores: list[float] = []
-        human_ratings: list[float] = []
 
         # Error analysis logs
         error_logs: list[ErrorAnalysisLog] = []
@@ -93,7 +99,9 @@ class BenchmarkRunner:
                 ))
 
             # 2. Extract Actual Experience and Compute Real MAE
-            pred_exp_years = extract_experience_years_from_text(item.candidate.resume_text)
+            pred_exp_years = extract_experience_years_from_text(
+                item.candidate.resume_text, as_of=self.evaluation_reference_date
+            )
             exp_err = abs((pred_exp_years or 0.0) - item.candidate.expected_experience_years)
             exp_errors.append(exp_err)
             if round(pred_exp_years or 0.0, 1) == round(item.candidate.expected_experience_years, 1):
@@ -167,7 +175,9 @@ class BenchmarkRunner:
                 weights=weights,
             )
 
-            # 5. Evaluate Required Skill Gap Accuracy
+            # 5. Evaluate required-skill evidence detection. The fixture's
+            # expected_missing_required_skills means "not detected in the
+            # supplied resume", not proof that the candidate lacks the skill.
             req_skills_set = {s.casefold() for s in item.job.required_skills}
             system_missing_skills = [
                 s["name"] for s in eval_res["evaluated_skills"]
@@ -183,29 +193,30 @@ class BenchmarkRunner:
             g_fp = len(sys_missing_set.difference(exp_missing_set))
             g_fn = len(exp_missing_set.difference(sys_missing_set))
 
-            gap_tp += g_tp
-            gap_fp += g_fp
-            gap_fn += g_fn
-
-            # 6. Track Score Correlation
-            system_scores.append(eval_res["overall_score"])
-            human_ratings.append(item.expected_human_fit_rating)
+            not_detected_tp += g_tp
+            not_detected_fp += g_fp
+            not_detected_fn += g_fn
 
         # Calculate Skill Extraction Precision, Recall, F1
         prec = total_extracted_tp / (total_extracted_tp + total_extracted_fp) if (total_extracted_tp + total_extracted_fp) > 0 else 0.0
         rec = total_extracted_tp / (total_extracted_tp + total_extracted_fn) if (total_extracted_tp + total_extracted_fn) > 0 else 0.0
         f1 = (2 * prec * rec) / (prec + rec) if (prec + rec) > 0 else 0.0
 
-        # Calculate Gap Detection Precision, Recall, F1
-        g_prec = gap_tp / (gap_tp + gap_fp) if (gap_tp + gap_fp) > 0 else 1.0
-        g_rec = gap_tp / (gap_tp + gap_fn) if (gap_tp + gap_fn) > 0 else 1.0
+        # Calculate required-skill evidence precision, recall, F1.
+        g_prec = (
+            not_detected_tp / (not_detected_tp + not_detected_fp)
+            if (not_detected_tp + not_detected_fp) > 0 else 1.0
+        )
+        g_rec = (
+            not_detected_tp / (not_detected_tp + not_detected_fn)
+            if (not_detected_tp + not_detected_fn) > 0 else 1.0
+        )
         g_f1 = (2 * g_prec * g_rec) / (g_prec + g_rec) if (g_prec + g_rec) > 0 else 1.0
 
-        # Spearman's Rank Correlation Coefficient
-        spearman_rho = self._calculate_spearman_rho(system_scores, human_ratings)
-
         return BenchmarkSummaryReport(
-            dataset_version="benchmark-v1.0-groundtruth",
+            dataset_version="benchmark-v2.0-synthetic-regression",
+            dataset_type="synthetic_regression",
+            evaluation_reference_date=self.evaluation_reference_date.date(),
             total_test_pairs=len(self.dataset),
             skill_extraction_metrics=ExtractionMetrics(
                 true_positives=total_extracted_tp,
@@ -215,13 +226,13 @@ class BenchmarkRunner:
                 recall=round(rec, 4),
                 f1_score=round(f1, 4),
             ),
-            required_gap_metrics=GapDetectionMetrics(
-                true_positive_gaps=gap_tp,
-                false_positive_gaps=gap_fp,
-                false_negative_gaps=gap_fn,
-                gap_precision=round(g_prec, 4),
-                gap_recall=round(g_rec, 4),
-                gap_f1=round(g_f1, 4),
+            required_skill_evidence_metrics=RequiredSkillEvidenceMetrics(
+                true_positive_not_detected=not_detected_tp,
+                false_positive_not_detected=not_detected_fp,
+                false_negative_not_detected=not_detected_fn,
+                precision=round(g_prec, 4),
+                recall=round(g_rec, 4),
+                f1_score=round(g_f1, 4),
             ),
             experience_tenure_metrics=ExperienceMetrics(
                 mean_absolute_error_years=round(sum(exp_errors) / len(exp_errors), 4) if exp_errors else 0.0,
@@ -233,7 +244,11 @@ class BenchmarkRunner:
                 total_evaluated=len(self.dataset),
                 accuracy=round(edu_correct / len(self.dataset), 4) if self.dataset else 1.0,
             ),
-            rank_correlation_spearman=round(spearman_rho, 4),
+            rank_correlation_spearman=None,
+            ranking_metric_note=(
+                "Unavailable: the five synthetic regression fixtures have no "
+                "independent human relevance judgments."
+            ),
             error_analysis_logs=error_logs,
         )
 

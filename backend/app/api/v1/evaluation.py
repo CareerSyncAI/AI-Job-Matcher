@@ -14,13 +14,13 @@ router = APIRouter(prefix="/evaluation", tags=["evaluation-benchmarks"])
 @router.get("/benchmark", response_model=BenchmarkSummaryReport)
 def run_benchmark_evaluation(current_user: User = Depends(require_roles(UserRole.ADMIN))) -> BenchmarkSummaryReport:
     """
-    Run automated ground-truth benchmark evaluation across diverse test pairs.
+    Run automated synthetic regression evaluation across the bundled fixtures.
     Returns:
     - Skill extraction Precision, Recall, F1
-    - Required-Gap Detection Precision & Recall
+    - Required-skill evidence detection Precision & Recall
     - Experience calculation MAE
     - Education classification accuracy
-    - Spearman's Rank Correlation Coefficient
+    - Ranking metrics only when independently reviewed relevance labels exist
     - Systematic Error Analysis Logs
     """
     return run_ground_truth_evaluation()

@@ -28,13 +28,14 @@ from app.models.enums import (
     EvidenceKind,
 )
 from app.schemas.evaluations import CandidateCardDTO, CandidateEvidenceItem
+from app.core.config import get_settings
 from app.services.scoring import (
     EvaluatedRequirement,
     Weights,
     calculate_weighted_score,
     education_satisfies,
 )
-from app.services.semantic_matcher import BaseSemanticMatcher, SublinearTFCosineMatcher
+from app.services.semantic_matcher import AIServiceDiagnosticMatcher, BaseSemanticMatcher, SublinearTFCosineMatcher
 from app.services.taxonomy import taxonomy
 
 logger = logging.getLogger(__name__)
@@ -409,6 +410,7 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                 "matched_skills": matched_skills,
                 "transferable_skills": transferable_skills,
                 "missing_skills": missing_skills,
+                "semantic_diagnostics": semantic_result.diagnostics,
             },
             "evaluated_skills": evaluated_skills_records,
             "evidence_claims": evidence_claims_records,
@@ -423,7 +425,20 @@ class EvaluationService:
     """Orchestrates evaluation runs and persistence of MatchResult and evidence claims."""
 
     def __init__(self, engine: BaseEvaluationEngine | None = None) -> None:
-        self.engine = engine or DeterministicEvaluationEngine()
+        if engine is not None:
+            self.engine = engine
+            return
+
+        settings = get_settings()
+        if settings.semantic_matcher.lower() == "embedding":
+            matcher: BaseSemanticMatcher = AIServiceDiagnosticMatcher(
+                base_url=settings.ai_service_url,
+                api_key=settings.ai_service_api_key,
+                timeout_seconds=settings.ai_semantic_timeout_seconds,
+            )
+        else:
+            matcher = SublinearTFCosineMatcher()
+        self.engine = DeterministicEvaluationEngine(semantic_matcher=matcher)
 
     def evaluate_application(
         self,

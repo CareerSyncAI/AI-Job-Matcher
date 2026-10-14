@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     auto_seed_demo_data: bool = False
     ai_service_url: str = "http://localhost:8001"
     ai_service_api_key: str = "careersync-internal-ai-service-key-dev"
+    semantic_matcher: str = "baseline"
+    ai_semantic_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
 
     @field_validator("jwt_secret")
     @classmethod

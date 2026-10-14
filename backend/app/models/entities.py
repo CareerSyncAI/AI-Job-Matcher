@@ -239,7 +239,7 @@ class MatchResult(Base):
     rapidfuzz_score: Mapped[float] = mapped_column(Float)
     tenure_delta_years: Mapped[float | None] = mapped_column(Float, nullable=True)
     signal_quality: Mapped[str] = mapped_column(String(64))
-    ranking_attribution: Mapped[dict[str, list[str]]] = mapped_column(JSON)
+    ranking_attribution: Mapped[dict[str, Any]] = mapped_column(JSON)
     why_ranked_here: Mapped[list[str]] = mapped_column(JSON)
     why_not_higher: Mapped[list[str]] = mapped_column(JSON)
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -34,7 +34,9 @@ COMMON_ROLE_TITLES = [
 class ExperienceExtractor:
     """Extracts employment history and calculates verified tenure."""
 
-    def extract(self, experience_text: str) -> dict[str, Any]:
+    def extract(
+        self, experience_text: str, *, as_of: datetime | None = None
+    ) -> dict[str, Any]:
         if not experience_text or not experience_text.strip():
             return {
                 "entries": [],
@@ -60,7 +62,9 @@ class ExperienceExtractor:
             match = DATE_RANGE_PATTERN.search(line)
             if match:
                 raw_start, raw_end = match.group(1), match.group(2)
-                start_dt, end_dt, is_current = self._parse_date_pair(raw_start, raw_end)
+                start_dt, end_dt, is_current = self._parse_date_pair(
+                    raw_start, raw_end, as_of=as_of
+                )
 
                 if start_dt and end_dt and end_dt >= start_dt:
                     duration_months = max(1, (end_dt.year - start_dt.year) * 12 + (end_dt.month - start_dt.month))
@@ -90,12 +94,14 @@ class ExperienceExtractor:
             "total_experience_years": round(total_months / 12.0, 1),
         }
 
-    def _parse_date_pair(self, start_str: str, end_str: str) -> tuple[datetime | None, datetime | None, bool]:
+    def _parse_date_pair(
+        self, start_str: str, end_str: str, *, as_of: datetime | None = None
+    ) -> tuple[datetime | None, datetime | None, bool]:
         start_dt = self._parse_single_date(start_str)
         is_current = bool(re.search(r"present|current|now", end_str, re.IGNORECASE))
 
         if is_current:
-            end_dt = datetime.now()
+            end_dt = as_of or datetime.now()
         else:
             end_dt = self._parse_single_date(end_str)
 
@@ -191,8 +197,10 @@ class ExperienceExtractor:
 experience_extractor = ExperienceExtractor()
 
 
-def extract_experience_years_from_text(experience_text: str) -> float | None:
+def extract_experience_years_from_text(
+    experience_text: str, *, as_of: datetime | None = None
+) -> float | None:
     """Convenience helper to extract total experience years from text."""
-    res = experience_extractor.extract(experience_text)
+    res = experience_extractor.extract(experience_text, as_of=as_of)
     years = res.get("total_experience_years", 0.0)
     return float(years) if years > 0 else None

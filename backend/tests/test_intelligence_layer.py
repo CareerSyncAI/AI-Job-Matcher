@@ -9,12 +9,26 @@ Comprehensive tests for CareerSync AI Intelligence Layer:
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pytest
 
 from app.evaluation.benchmark_runner import run_ground_truth_evaluation
 from app.services.ats_analyzer import ats_analyzer
 from app.services.semantic_matcher import SublinearTFCosineMatcher
 from app.services.taxonomy import taxonomy
+
+
+def test_experience_extraction_honors_fixed_reference_date():
+    """Benchmark tenure remains reproducible when a role ends in Present."""
+    from app.services.experience_extractor import extract_experience_years_from_text
+
+    years = extract_experience_years_from_text(
+        "Software Engineer | Example Corp (2020 - Present)",
+        as_of=datetime(2024, 7, 1),
+    )
+
+    assert years == 4.5
 
 
 def test_taxonomy_canonical_normalization():
@@ -90,6 +104,30 @@ def test_semantic_sublinear_tf_cosine_matcher():
     assert "raw_cosine" in result.diagnostics
 
 
+def test_semantic_baseline_preserves_documented_score_transformation():
+    """The current 0-100 component remains stable until shared approval changes it."""
+    matcher = SublinearTFCosineMatcher()
+    result = matcher.match(
+        candidate_text="Python FastAPI Docker PostgreSQL",
+        job_text="Python FastAPI Docker cloud",
+    )
+
+    raw_cosine = result.diagnostics["raw_cosine"]
+    assert result.similarity_score == round(min(100.0, raw_cosine * 1.8 * 100), 1)
+    assert 0.0 <= raw_cosine <= 1.0
+    assert 0.0 <= result.similarity_score <= 100.0
+
+
+def test_semantic_baseline_empty_input_is_explicit_and_safe():
+    matcher = SublinearTFCosineMatcher()
+    result = matcher.match(candidate_text="", job_text="Python FastAPI")
+
+    assert result.similarity_score == 0.0
+    assert result.diagnostics["reason"] == "Empty token corpus"
+    assert result.matched_concepts == []
+    assert result.missing_concepts == []
+
+
 def test_ats_resume_analyzer_strong_resume():
     sample_resume = """
     Alice Vance — Senior Full-Stack Engineer
@@ -161,7 +199,7 @@ def test_ats_metric_detection_ignores_bare_years_and_versions():
     assert res.impact_score < 60.0
 
 
-def test_ground_truth_benchmark_runner():
+def test_synthetic_regression_benchmark_runner():
     report = run_ground_truth_evaluation()
 
     assert report.total_test_pairs >= 4
@@ -170,12 +208,17 @@ def test_ground_truth_benchmark_runner():
     assert report.skill_extraction_metrics.recall >= 0.80
     assert report.skill_extraction_metrics.f1_score >= 0.80
 
-    # Required gap precision
-    assert report.required_gap_metrics.gap_precision >= 0.75
-    assert report.required_gap_metrics.gap_recall >= 0.75
+    # These fixtures measure required-skill evidence detection. A missing
+    # mention is not a confirmed candidate skill gap.
+    assert report.required_skill_evidence_metrics.precision >= 0.75
+    assert report.required_skill_evidence_metrics.recall >= 0.75
 
-    # Spearman rank correlation should be strongly positive
-    assert report.rank_correlation_spearman >= 0.80
+    # Ranking correlation requires independently reviewed relevance labels;
+    # this synthetic regression set deliberately does not report one.
+    assert report.rank_correlation_spearman is None
+    assert "independent human relevance" in report.ranking_metric_note
+    assert str(report.evaluation_reference_date) == "2024-07-01"
+    assert report.experience_tenure_metrics.mean_absolute_error_years == 0.0
 
 
 def test_benchmark_metrics_degrade_on_poor_predictions():
@@ -206,7 +249,7 @@ def test_benchmark_metrics_degrade_on_poor_predictions():
         expected_matched_required_skills=[],
         expected_missing_required_skills=["Kubernetes", "Docker"],
         expected_coverage_tier=3,
-        expected_human_fit_rating=10.0,
+        expected_fixture_fit_rating=10.0,
     )
 
     runner = BenchmarkRunner([degraded_item])

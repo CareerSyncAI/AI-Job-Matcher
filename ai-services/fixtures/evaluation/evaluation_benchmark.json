@@ -1,0 +1,678 @@
+{
+  "benchmark_metadata": {
+    "version": "1.0.0",
+    "description": "CareerSync AI Curated Candidate-Job Relevance Benchmark",
+    "total_pairs": 30,
+    "dev_count": 15,
+    "held_out_test_count": 15,
+    "label_scale": {
+      "strong_match": 3,
+      "partial_match": 2,
+      "weak_match": 1,
+      "insufficient_information": 0
+    }
+  },
+  "pairs": [
+    {
+      "pair_id": "pair-dev-01",
+      "split": "dev",
+      "role_family": "AI & Machine Learning",
+      "candidate_id": "cand-dev-ai-01",
+      "job_id": "job-dev-ai-01",
+      "candidate_profile": {
+        "headline": "Lead AI Engineer & NLP Researcher",
+        "skills": ["Python", "PyTorch", "Transformers", "Hugging Face", "FastAPI", "Docker", "PostgreSQL"],
+        "experience_summary": "5+ years building and deploying transformer-based language models, fine-tuning LLMs, and optimizing model inference pipelines with FastAPI and Docker."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-ai-01",
+        "title": "Senior NLP & LLM Engineer",
+        "required_skills": ["Python", "PyTorch", "Transformers"],
+        "preferred_skills": ["FastAPI", "Docker", "Hugging Face"],
+        "description": "Looking for a Senior NLP Engineer to develop production LLM pipelines, fine-tune transformer models, and deploy scalable inference microservices."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Direct overlap across all required (Python, PyTorch, Transformers) and preferred (FastAPI, Docker, Hugging Face) skills with deep NLP domain experience."
+    },
+    {
+      "pair_id": "pair-dev-02",
+      "split": "dev",
+      "role_family": "AI & Machine Learning",
+      "candidate_id": "cand-dev-ai-02",
+      "job_id": "job-dev-ai-01",
+      "candidate_profile": {
+        "headline": "Junior Data Analyst",
+        "skills": ["Python", "Pandas", "Excel", "SQL", "Tableau"],
+        "experience_summary": "1 year analyzing sales trends, generating executive dashboards in Tableau, and running SQL queries."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-ai-01",
+        "title": "Senior NLP & LLM Engineer",
+        "required_skills": ["Python", "PyTorch", "Transformers"],
+        "preferred_skills": ["FastAPI", "Docker", "Hugging Face"],
+        "description": "Looking for a Senior NLP Engineer to develop production LLM pipelines, fine-tune transformer models, and deploy scalable inference microservices."
+      },
+      "relevance_label": "partial_match",
+      "expected_ordinal": 2,
+      "rationale": "Shares Python foundation, but completely lacks PyTorch, Transformers, deep learning experience, and seniority requirements."
+    },
+    {
+      "pair_id": "pair-dev-03",
+      "split": "dev",
+      "role_family": "Negative Control - HR",
+      "candidate_id": "cand-dev-hr-01",
+      "job_id": "job-dev-ai-01",
+      "candidate_profile": {
+        "headline": "Senior Technical Recruiter & HR Business Partner",
+        "skills": ["Talent Acquisition", "Employee Relations", "HRIS", "Interviewing", "Onboarding", "Payroll"],
+        "experience_summary": "7 years leading full-cycle recruiting for technology companies, managing compensation benchmarking and employee retention programs."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-ai-01",
+        "title": "Senior NLP & LLM Engineer",
+        "required_skills": ["Python", "PyTorch", "Transformers"],
+        "preferred_skills": ["FastAPI", "Docker", "Hugging Face"],
+        "description": "Looking for a Senior NLP Engineer to develop production LLM pipelines, fine-tune transformer models, and deploy scalable inference microservices."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Completely unrelated domain (HR/Recruitment candidate applied to Senior Machine Learning Engineering vacancy)."
+    },
+    {
+      "pair_id": "pair-dev-04",
+      "split": "dev",
+      "role_family": "Backend Engineering",
+      "candidate_id": "cand-dev-be-01",
+      "job_id": "job-dev-be-01",
+      "candidate_profile": {
+        "headline": "Senior Distributed Backend Architect",
+        "skills": ["Go", "Kubernetes", "gRPC", "PostgreSQL", "Kafka", "Docker", "AWS"],
+        "experience_summary": "8 years designing high-throughput microservices in Go. Engineered real-time event streaming systems handling 50k requests/sec using Kafka and PostgreSQL."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-be-01",
+        "title": "Principal Go Backend Systems Engineer",
+        "required_skills": ["Go", "Kubernetes", "PostgreSQL"],
+        "preferred_skills": ["Kafka", "gRPC", "Docker"],
+        "description": "Seeking a Principal Go Engineer to architect distributed cloud services, high-throughput event buses, and microservice meshes."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Complete alignment with Go, Kubernetes, PostgreSQL, Kafka, and gRPC with proven distributed systems tenure."
+    },
+    {
+      "pair_id": "pair-dev-05",
+      "split": "dev",
+      "role_family": "Backend Engineering",
+      "candidate_id": "cand-dev-be-02",
+      "job_id": "job-dev-be-01",
+      "candidate_profile": {
+        "headline": "Junior PHP Web Developer",
+        "skills": ["PHP", "Laravel", "MySQL", "HTML", "CSS"],
+        "experience_summary": "1.5 years maintaining e-commerce websites and developing custom Laravel plugins with MySQL."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-be-01",
+        "title": "Principal Go Backend Systems Engineer",
+        "required_skills": ["Go", "Kubernetes", "PostgreSQL"],
+        "preferred_skills": ["Kafka", "gRPC", "Docker"],
+        "description": "Seeking a Principal Go Engineer to architect distributed cloud services, high-throughput event buses, and microservice meshes."
+      },
+      "relevance_label": "partial_match",
+      "expected_ordinal": 2,
+      "rationale": "Has basic backend web concepts (MySQL/HTTP), but zero experience with Go, Kubernetes, Kafka, or distributed architectures."
+    },
+    {
+      "pair_id": "pair-dev-06",
+      "split": "dev",
+      "role_family": "Frontend Engineering",
+      "candidate_id": "cand-dev-fe-01",
+      "job_id": "job-dev-fe-01",
+      "candidate_profile": {
+        "headline": "Staff Frontend UI/UX Engineer",
+        "skills": ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux", "GraphQL", "Jest"],
+        "experience_summary": "6 years building responsive design systems and enterprise web applications in Next.js, React, and TypeScript with 99% Lighthouse performance scores."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-fe-01",
+        "title": "Senior Frontend React/Next.js Engineer",
+        "required_skills": ["React", "TypeScript", "Next.js"],
+        "preferred_skills": ["Tailwind CSS", "GraphQL", "Redux"],
+        "description": "Lead the modernization of our customer dashboard using Next.js 14 App Router, TypeScript, and modern component systems."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Exemplary match across all core React, TypeScript, Next.js, and design system requirements."
+    },
+    {
+      "pair_id": "pair-dev-07",
+      "split": "dev",
+      "role_family": "Frontend Engineering",
+      "candidate_id": "cand-dev-fe-02",
+      "job_id": "job-dev-fe-01",
+      "candidate_profile": {
+        "headline": "C++ Embedded Systems Engineer",
+        "skills": ["C++", "C", "RTOS", "Linux Kernel", "Assembly", "I2C", "SPI"],
+        "experience_summary": "5 years developing firmware for microcontroller sensor arrays and automotive electronic control units."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-fe-01",
+        "title": "Senior Frontend React/Next.js Engineer",
+        "required_skills": ["React", "TypeScript", "Next.js"],
+        "preferred_skills": ["Tailwind CSS", "GraphQL", "Redux"],
+        "description": "Lead the modernization of our customer dashboard using Next.js 14 App Router, TypeScript, and modern component systems."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Low relevance embedded engineering skillset applied to web frontend stack."
+    },
+    {
+      "pair_id": "pair-dev-08",
+      "split": "dev",
+      "role_family": "Cloud & DevOps",
+      "candidate_id": "cand-dev-devops-01",
+      "job_id": "job-dev-devops-01",
+      "candidate_profile": {
+        "headline": "Senior Site Reliability Engineer & DevOps Lead",
+        "skills": ["Kubernetes", "Terraform", "AWS", "Docker", "Prometheus", "CI/CD", "Ansible", "Python"],
+        "experience_summary": "Managed multi-region Kubernetes clusters on AWS using Terraform. Automated zero-downtime deployment pipelines with GitHub Actions."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-devops-01",
+        "title": "Lead DevOps / SRE Infrastructure Engineer",
+        "required_skills": ["Kubernetes", "AWS", "Terraform", "Docker"],
+        "preferred_skills": ["CI/CD", "Prometheus", "Python"],
+        "description": "Seeking a Lead SRE to maintain highly resilient AWS Kubernetes infrastructure, manage Terraform IAC, and improve monitoring."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Direct domain match with all four required tools (Kubernetes, AWS, Terraform, Docker) and strong SRE tenure."
+    },
+    {
+      "pair_id": "pair-dev-09",
+      "split": "dev",
+      "role_family": "Cloud & DevOps",
+      "candidate_id": "cand-dev-devops-02",
+      "job_id": "job-dev-devops-01",
+      "candidate_profile": {
+        "headline": "IT Helpdesk & System Support Technician",
+        "skills": ["Windows Server", "Active Directory", "Hardware Troubleshooting", "Office 365", "Network Cabling"],
+        "experience_summary": "3 years providing desktop support, configuring user accounts in Active Directory, and setting up office workstations."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-devops-01",
+        "title": "Lead DevOps / SRE Infrastructure Engineer",
+        "required_skills": ["Kubernetes", "AWS", "Terraform", "Docker"],
+        "preferred_skills": ["CI/CD", "Prometheus", "Python"],
+        "description": "Seeking a Lead SRE to maintain highly resilient AWS Kubernetes infrastructure, manage Terraform IAC, and improve monitoring."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Basic internal IT desktop support, zero cloud infrastructure, IAC, or containerization competencies."
+    },
+    {
+      "pair_id": "pair-dev-10",
+      "split": "dev",
+      "role_family": "Data Engineering",
+      "candidate_id": "cand-dev-data-01",
+      "job_id": "job-dev-data-01",
+      "candidate_profile": {
+        "headline": "Senior Data Platform Engineer",
+        "skills": ["Python", "Apache Spark", "Airflow", "Snowflake", "SQL", "Kafka", "AWS"],
+        "experience_summary": "6 years building robust ETL/ELT data pipelines with PySpark and Airflow. Architected data lakehouse feeding BI dashboards and ML feature stores."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-data-01",
+        "title": "Senior Data Engineer (Spark / Airflow)",
+        "required_skills": ["Python", "Apache Spark", "SQL", "Airflow"],
+        "preferred_skills": ["Snowflake", "Kafka", "AWS"],
+        "description": "Design and maintain petabyte-scale batch and streaming data pipelines using Apache Spark, Airflow, and Snowflake."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Exact match across required pipeline stack (Python, Spark, SQL, Airflow) and preferred data warehouses."
+    },
+    {
+      "pair_id": "pair-dev-11",
+      "split": "dev",
+      "role_family": "Data Engineering",
+      "candidate_id": "cand-dev-data-02",
+      "job_id": "job-dev-data-01",
+      "candidate_profile": {
+        "headline": "Marketing Data Analyst",
+        "skills": ["SQL", "Excel", "Google Analytics", "Power BI", "Tableau"],
+        "experience_summary": "2 years writing SQL reporting queries and analyzing marketing conversion funnels."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-data-01",
+        "title": "Senior Data Engineer (Spark / Airflow)",
+        "required_skills": ["Python", "Apache Spark", "SQL", "Airflow"],
+        "preferred_skills": ["Snowflake", "Kafka", "AWS"],
+        "description": "Design and maintain petabyte-scale batch and streaming data pipelines using Apache Spark, Airflow, and Snowflake."
+      },
+      "relevance_label": "partial_match",
+      "expected_ordinal": 2,
+      "rationale": "Matches basic SQL, but lacks distributed computing (Spark), workflow orchestration (Airflow), and software engineering capabilities."
+    },
+    {
+      "pair_id": "pair-dev-12",
+      "split": "dev",
+      "role_family": "Negative Control - Design",
+      "candidate_id": "cand-dev-design-01",
+      "job_id": "job-dev-data-01",
+      "candidate_profile": {
+        "headline": "Senior Creative Visual Designer",
+        "skills": ["Adobe Illustrator", "Photoshop", "InDesign", "Figma", "Branding", "Print Production"],
+        "experience_summary": "7 years creating vector branding logos, product packaging, and promotional banners for consumer brands."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-data-01",
+        "title": "Senior Data Engineer (Spark / Airflow)",
+        "required_skills": ["Python", "Apache Spark", "SQL", "Airflow"],
+        "preferred_skills": ["Snowflake", "Kafka", "AWS"],
+        "description": "Design and maintain petabyte-scale batch and streaming data pipelines using Apache Spark, Airflow, and Snowflake."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Creative graphic arts candidate with zero technical or data engineering alignment."
+    },
+    {
+      "pair_id": "pair-dev-13",
+      "split": "dev",
+      "role_family": "Fullstack Engineering",
+      "candidate_id": "cand-dev-fs-01",
+      "job_id": "job-dev-fs-01",
+      "candidate_profile": {
+        "headline": "Full-Stack Software Engineer (React / Node / PostgreSQL)",
+        "skills": ["JavaScript", "TypeScript", "React", "Node.js", "Express", "PostgreSQL", "Docker", "Git"],
+        "experience_summary": "4 years developing responsive web frontends with React and RESTful API microservices in Node.js and PostgreSQL."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-fs-01",
+        "title": "Fullstack Engineer (React & Node.js)",
+        "required_skills": ["React", "Node.js", "JavaScript", "PostgreSQL"],
+        "preferred_skills": ["TypeScript", "Docker"],
+        "description": "Looking for a fullstack engineer to build modern customer-facing web applications from database to UI."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Direct alignment across entire fullstack technology spectrum (React, Node, JS, PostgreSQL, TypeScript)."
+    },
+    {
+      "pair_id": "pair-dev-14",
+      "split": "dev",
+      "role_family": "Fullstack Engineering",
+      "candidate_id": "cand-dev-fs-02",
+      "job_id": "job-dev-fs-01",
+      "candidate_profile": {
+        "headline": "Junior Manual QA Tester",
+        "skills": ["Manual Testing", "Test Cases", "Jira", "Bug Reporting", "Regression Testing"],
+        "experience_summary": "1 year executing manual UI test scenarios and logging bug tickets in Jira."
+      },
+      "job_requisition": {
+        "job_id": "job-dev-fs-01",
+        "title": "Fullstack Engineer (React & Node.js)",
+        "required_skills": ["React", "Node.js", "JavaScript", "PostgreSQL"],
+        "preferred_skills": ["TypeScript", "Docker"],
+        "description": "Looking for a fullstack engineer to build modern customer-facing web applications from database to UI."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Manual QA testing profile lacking software development and programming skills."
+    },
+    {
+      "pair_id": "pair-dev-15",
+      "split": "dev",
+      "role_family": "Edge Case - Insufficient Data",
+      "candidate_id": "cand-dev-empty-01",
+      "job_id": "job-dev-fs-01",
+      "candidate_profile": {
+        "headline": "",
+        "skills": [],
+        "experience_summary": ""
+      },
+      "job_requisition": {
+        "job_id": "job-dev-fs-01",
+        "title": "Fullstack Engineer (React & Node.js)",
+        "required_skills": ["React", "Node.js", "JavaScript", "PostgreSQL"],
+        "preferred_skills": ["TypeScript", "Docker"],
+        "description": "Looking for a fullstack engineer to build modern customer-facing web applications from database to UI."
+      },
+      "relevance_label": "insufficient_information",
+      "expected_ordinal": 0,
+      "rationale": "Empty candidate text payload provides zero observable signal."
+    },
+
+    {
+      "pair_id": "pair-test-01",
+      "split": "held_out_test",
+      "role_family": "AI & Machine Learning",
+      "candidate_id": "cand-test-ai-01",
+      "job_id": "job-test-ai-01",
+      "candidate_profile": {
+        "headline": "Senior Computer Vision & Deep Learning Engineer",
+        "skills": ["Python", "PyTorch", "OpenCV", "TensorFlow", "CUDA", "Docker", "C++"],
+        "experience_summary": "5 years developing real-time object detection models (YOLO), image segmentation, and model quantization for edge deployment."
+      },
+      "job_requisition": {
+        "job_id": "job-test-ai-01",
+        "title": "Senior Computer Vision Engineer",
+        "required_skills": ["Python", "PyTorch", "OpenCV"],
+        "preferred_skills": ["CUDA", "Docker", "TensorFlow"],
+        "description": "Develop and deploy cutting-edge deep learning perception models for automated inspection systems."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Strong candidate matching all core vision requirements (Python, PyTorch, OpenCV, CUDA, Docker)."
+    },
+    {
+      "pair_id": "pair-test-02",
+      "split": "held_out_test",
+      "role_family": "AI & Machine Learning",
+      "candidate_id": "cand-test-ai-02",
+      "job_id": "job-test-ai-01",
+      "candidate_profile": {
+        "headline": "BI Analyst & SQL Developer",
+        "skills": ["SQL", "Power BI", "Excel", "Data Modeling", "ETL"],
+        "experience_summary": "3 years building relational data models and financial executive summaries in Power BI."
+      },
+      "job_requisition": {
+        "job_id": "job-test-ai-01",
+        "title": "Senior Computer Vision Engineer",
+        "required_skills": ["Python", "PyTorch", "OpenCV"],
+        "preferred_skills": ["CUDA", "Docker", "TensorFlow"],
+        "description": "Develop and deploy cutting-edge deep learning perception models for automated inspection systems."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Business intelligence background with zero computer vision, PyTorch, or deep learning competencies."
+    },
+    {
+      "pair_id": "pair-test-03",
+      "split": "held_out_test",
+      "role_family": "Backend Engineering",
+      "candidate_id": "cand-test-be-01",
+      "job_id": "job-test-be-01",
+      "candidate_profile": {
+        "headline": "Staff Java / Spring Boot Microservices Architect",
+        "skills": ["Java", "Spring Boot", "Kafka", "PostgreSQL", "Docker", "Kubernetes", "Microservices"],
+        "experience_summary": "9 years building high-resilience transactional banking engines using Java and Spring Boot. Integrated event brokers with Kafka."
+      },
+      "job_requisition": {
+        "job_id": "job-test-be-01",
+        "title": "Senior Java Backend Engineer",
+        "required_skills": ["Java", "Spring Boot", "PostgreSQL"],
+        "preferred_skills": ["Kafka", "Docker", "Kubernetes"],
+        "description": "Seeking an experienced Java developer to scale core fintech backend microservices using Spring Boot and relational databases."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Complete alignment across Java, Spring Boot, PostgreSQL, Kafka, and enterprise microservices architecture."
+    },
+    {
+      "pair_id": "pair-test-04",
+      "split": "held_out_test",
+      "role_family": "Backend Engineering",
+      "candidate_id": "cand-test-be-02",
+      "job_id": "job-test-be-01",
+      "candidate_profile": {
+        "headline": "Junior Python Scripting Specialist",
+        "skills": ["Python", "Flask", "SQLite", "HTML"],
+        "experience_summary": "1 year building small internal automation scripts and basic Flask dashboards."
+      },
+      "job_requisition": {
+        "job_id": "job-test-be-01",
+        "title": "Senior Java Backend Engineer",
+        "required_skills": ["Java", "Spring Boot", "PostgreSQL"],
+        "preferred_skills": ["Kafka", "Docker", "Kubernetes"],
+        "description": "Seeking an experienced Java developer to scale core fintech backend microservices using Spring Boot and relational databases."
+      },
+      "relevance_label": "partial_match",
+      "expected_ordinal": 2,
+      "rationale": "Basic backend awareness, but lacks Java language foundation, enterprise Spring Boot frameworks, and senior microservices depth."
+    },
+    {
+      "pair_id": "pair-test-05",
+      "split": "held_out_test",
+      "role_family": "Negative Control - Sales",
+      "candidate_id": "cand-test-sales-01",
+      "job_id": "job-test-be-01",
+      "candidate_profile": {
+        "headline": "Enterprise Account Executive & SaaS Sales Leader",
+        "skills": ["SaaS Sales", "Lead Generation", "Salesforce", "Cold Calling", "Negotiation", "B2B Sales"],
+        "experience_summary": "6 years exceeding enterprise quota, selling cloud software solutions to Fortune 500 accounts and managing Salesforce pipelines."
+      },
+      "job_requisition": {
+        "job_id": "job-test-be-01",
+        "title": "Senior Java Backend Engineer",
+        "required_skills": ["Java", "Spring Boot", "PostgreSQL"],
+        "preferred_skills": ["Kafka", "Docker", "Kubernetes"],
+        "description": "Seeking an experienced Java developer to scale core fintech backend microservices using Spring Boot and relational databases."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "B2B commercial sales profile applying to backend engineering vacancy (negative control)."
+    },
+    {
+      "pair_id": "pair-test-06",
+      "split": "held_out_test",
+      "role_family": "Frontend Engineering",
+      "candidate_id": "cand-test-fe-01",
+      "job_id": "job-test-fe-01",
+      "candidate_profile": {
+        "headline": "Lead Vue.js & Frontend Architect",
+        "skills": ["Vue.js", "Nuxt.js", "JavaScript", "TypeScript", "Tailwind CSS", "Pinia", "Vite"],
+        "experience_summary": "5 years building high-scale single page applications in Vue.js and Nuxt. Engineered component libraries with Tailwind CSS."
+      },
+      "job_requisition": {
+        "job_id": "job-test-fe-01",
+        "title": "Senior Vue.js / Nuxt Developer",
+        "required_skills": ["Vue.js", "JavaScript", "TypeScript"],
+        "preferred_skills": ["Nuxt.js", "Tailwind CSS"],
+        "description": "Seeking a talented frontend developer to build intuitive client web interfaces with Vue.js and modern tooling."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Direct domain match on Vue.js, Nuxt.js, TypeScript, and modern frontend tooling."
+    },
+    {
+      "pair_id": "pair-test-07",
+      "split": "held_out_test",
+      "role_family": "Frontend Engineering",
+      "candidate_id": "cand-test-fe-02",
+      "job_id": "job-test-fe-01",
+      "candidate_profile": {
+        "headline": "Network & Firewall Security Administrator",
+        "skills": ["Cisco CCNA", "Firewalls", "VPN", "Routing", "TCP/IP", "Wireshark"],
+        "experience_summary": "6 years configuring enterprise Cisco switches, routing tables, and perimeter firewall security rules."
+      },
+      "job_requisition": {
+        "job_id": "job-test-fe-01",
+        "title": "Senior Vue.js / Nuxt Developer",
+        "required_skills": ["Vue.js", "JavaScript", "TypeScript"],
+        "preferred_skills": ["Nuxt.js", "Tailwind CSS"],
+        "description": "Seeking a talented frontend developer to build intuitive client web interfaces with Vue.js and modern tooling."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Infrastructure network engineering profile with zero web development or frontend alignment."
+    },
+    {
+      "pair_id": "pair-test-08",
+      "split": "held_out_test",
+      "role_family": "Cloud & DevOps",
+      "candidate_id": "cand-test-cloud-01",
+      "job_id": "job-test-cloud-01",
+      "candidate_profile": {
+        "headline": "Senior Cloud Infrastructure Architect (GCP / Kubernetes)",
+        "skills": ["Google Cloud Platform", "Kubernetes", "Terraform", "Docker", "GKE", "Helm", "Go"],
+        "experience_summary": "5 years automating GCP infrastructure via Terraform and Helm. Scaled multi-tenant GKE clusters with automated autoscaling."
+      },
+      "job_requisition": {
+        "job_id": "job-test-cloud-01",
+        "title": "Senior GCP Cloud DevOps Engineer",
+        "required_skills": ["Google Cloud Platform", "Kubernetes", "Terraform"],
+        "preferred_skills": ["Docker", "Helm", "Go"],
+        "description": "Lead cloud operations and GKE cluster management on Google Cloud Platform using Terraform infrastructure-as-code."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Direct alignment across GCP, Kubernetes, Terraform, Docker, and Helm."
+    },
+    {
+      "pair_id": "pair-test-09",
+      "split": "held_out_test",
+      "role_family": "Cloud & DevOps",
+      "candidate_id": "cand-test-cloud-02",
+      "job_id": "job-test-cloud-01",
+      "candidate_profile": {
+        "headline": "Junior Web Designer",
+        "skills": ["HTML", "CSS", "WordPress", "Canva"],
+        "experience_summary": "1 year designing custom WordPress themes and social media banners."
+      },
+      "job_requisition": {
+        "job_id": "job-test-cloud-01",
+        "title": "Senior GCP Cloud DevOps Engineer",
+        "required_skills": ["Google Cloud Platform", "Kubernetes", "Terraform"],
+        "preferred_skills": ["Docker", "Helm", "Go"],
+        "description": "Lead cloud operations and GKE cluster management on Google Cloud Platform using Terraform infrastructure-as-code."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Entry-level web designer applying to cloud infrastructure vacancy."
+    },
+    {
+      "pair_id": "pair-test-10",
+      "split": "held_out_test",
+      "role_family": "Data Engineering",
+      "candidate_id": "cand-test-data-01",
+      "job_id": "job-test-data-01",
+      "candidate_profile": {
+        "headline": "Principal Big Data & Analytics Engineer",
+        "skills": ["Python", "Hadoop", "Apache Spark", "Kafka", "SQL", "Scala", "AWS EMR"],
+        "experience_summary": "7 years optimizing distributed big data pipelines on Hadoop and Spark. Built low-latency ingestion queues with Kafka."
+      },
+      "job_requisition": {
+        "job_id": "job-test-data-01",
+        "title": "Lead Big Data Engineer (Spark / Kafka)",
+        "required_skills": ["Apache Spark", "Kafka", "Python", "SQL"],
+        "preferred_skills": ["Hadoop", "Scala"],
+        "description": "Seeking a Big Data Engineer to build distributed stream processing engines and real-time Kafka consumers."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Exemplary match across Spark, Kafka, Python, SQL, and Hadoop big data infrastructure."
+    },
+    {
+      "pair_id": "pair-test-11",
+      "split": "held_out_test",
+      "role_family": "Data Engineering",
+      "candidate_id": "cand-test-data-02",
+      "job_id": "job-test-data-01",
+      "candidate_profile": {
+        "headline": "Junior Python Automation Developer",
+        "skills": ["Python", "Selenium", "BeautifulSoup", "Web Scraping"],
+        "experience_summary": "1 year writing web scrapers to gather pricing data from retail websites."
+      },
+      "job_requisition": {
+        "job_id": "job-test-data-01",
+        "title": "Lead Big Data Engineer (Spark / Kafka)",
+        "required_skills": ["Apache Spark", "Kafka", "Python", "SQL"],
+        "preferred_skills": ["Hadoop", "Scala"],
+        "description": "Seeking a Big Data Engineer to build distributed stream processing engines and real-time Kafka consumers."
+      },
+      "relevance_label": "partial_match",
+      "expected_ordinal": 2,
+      "rationale": "Has Python scripting background, but lacks Spark, Kafka, SQL, and big data architecture."
+    },
+    {
+      "pair_id": "pair-test-12",
+      "split": "held_out_test",
+      "role_family": "Fullstack Engineering",
+      "candidate_id": "cand-test-fs-01",
+      "job_id": "job-test-fs-01",
+      "candidate_profile": {
+        "headline": "Full Stack Web Developer (Django / React)",
+        "skills": ["Python", "Django", "React", "PostgreSQL", "Docker", "REST APIs", "Git"],
+        "experience_summary": "4 years developing full-stack web applications with Python/Django on the backend and React on the frontend."
+      },
+      "job_requisition": {
+        "job_id": "job-test-fs-01",
+        "title": "Full Stack Engineer (Django + React)",
+        "required_skills": ["Python", "Django", "React"],
+        "preferred_skills": ["PostgreSQL", "Docker"],
+        "description": "Build modern responsive web applications combining Python Django REST APIs with modular React frontends."
+      },
+      "relevance_label": "strong_match",
+      "expected_ordinal": 3,
+      "rationale": "Complete match across Django, React, Python, PostgreSQL, and Docker."
+    },
+    {
+      "pair_id": "pair-test-13",
+      "split": "held_out_test",
+      "role_family": "Fullstack Engineering",
+      "candidate_id": "cand-test-fs-02",
+      "job_id": "job-test-fs-01",
+      "candidate_profile": {
+        "headline": "Senior iOS Mobile Developer",
+        "skills": ["Swift", "SwiftUI", "Xcode", "CocoaPods", "CoreData", "iOS SDK"],
+        "experience_summary": "5 years architecting native iOS mobile applications for App Store deployment with SwiftUI and CoreData."
+      },
+      "job_requisition": {
+        "job_id": "job-test-fs-01",
+        "title": "Full Stack Engineer (Django + React)",
+        "required_skills": ["Python", "Django", "React"],
+        "preferred_skills": ["PostgreSQL", "Docker"],
+        "description": "Build modern responsive web applications combining Python Django REST APIs with modular React frontends."
+      },
+      "relevance_label": "partial_match",
+      "expected_ordinal": 2,
+      "rationale": "Strong senior software engineering skills, but domain is native iOS/Swift rather than web Django/React."
+    },
+    {
+      "pair_id": "pair-test-14",
+      "split": "held_out_test",
+      "role_family": "Negative Control - Finance",
+      "candidate_id": "cand-test-fin-01",
+      "job_id": "job-test-fs-01",
+      "candidate_profile": {
+        "headline": "Senior Financial Controller & Certified Accountant",
+        "skills": ["Financial Auditing", "GAAP", "Tax Compliance", "Budgeting", "QuickBooks", "P&L Analysis"],
+        "experience_summary": "8 years managing statutory financial audits, balance sheet reconciliation, and corporate tax compliance."
+      },
+      "job_requisition": {
+        "job_id": "job-test-fs-01",
+        "title": "Full Stack Engineer (Django + React)",
+        "required_skills": ["Python", "Django", "React"],
+        "preferred_skills": ["PostgreSQL", "Docker"],
+        "description": "Build modern responsive web applications combining Python Django REST APIs with modular React frontends."
+      },
+      "relevance_label": "weak_match",
+      "expected_ordinal": 1,
+      "rationale": "Financial accountant applying to fullstack software engineering role."
+    },
+    {
+      "pair_id": "pair-test-15",
+      "split": "held_out_test",
+      "role_family": "Edge Case - Insufficient Data",
+      "candidate_id": "cand-test-empty-01",
+      "job_id": "job-test-fs-01",
+      "candidate_profile": {
+        "headline": "Candidate with no details",
+        "skills": [],
+        "experience_summary": ""
+      },
+      "job_requisition": {
+        "job_id": "job-test-fs-01",
+        "title": "Full Stack Engineer (Django + React)",
+        "required_skills": ["Python", "Django", "React"],
+        "preferred_skills": ["PostgreSQL", "Docker"],
+        "description": "Build modern responsive web applications combining Python Django REST APIs with modular React frontends."
+      },
+      "relevance_label": "insufficient_information",
+      "expected_ordinal": 0,
+      "rationale": "Missing resume and skills evidence."
+    }
+  ]
+}

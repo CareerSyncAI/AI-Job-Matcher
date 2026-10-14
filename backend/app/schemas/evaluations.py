@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import Field
@@ -45,7 +46,7 @@ class MatchResultSchema(APIModel):
     rapidfuzz_score: float = 0.0
     tenure_delta_years: float | None = None
     signal_quality: str = "high"
-    ranking_attribution: dict[str, list[str]] = Field(default_factory=dict)
+    ranking_attribution: dict[str, Any] = Field(default_factory=dict)
     why_ranked_here: list[str] = Field(default_factory=list)
     why_not_higher: list[str] = Field(default_factory=list)
     generated_at: datetime
