@@ -85,16 +85,19 @@ All endpoints require header authentication via `X-AI-Service-Key` (or standard 
 
 ---
 
-## 📊 Evaluation & Verification
+## 📊 Exploratory Semantic Benchmark
 
-The microservice includes a curated 30-pair comparative evaluation benchmark (`fixtures/evaluation/evaluation_benchmark.json`) partitioned into balanced `dev` (15 pairs) and `held_out_test` (15 pairs) splits across 8 role families:
+The microservice includes a curated 30-pair comparative evaluation benchmark (`fixtures/evaluation/evaluation_benchmark.json`) partitioned into balanced `dev` (15 pairs) and `held_out_test` (15 pairs) splits across 8 role families.
 
-| Metric | Baseline (TF-Cosine) | Embedding (all-MiniLM-L6-v2) | Delta |
-| :--- | :---: | :---: | :---: |
-| **Held-Out Pairwise Accuracy** | 85.71% | **94.81%** | **+9.10%** |
-| **Overall Pairwise Accuracy** | 86.69% | **94.16%** | **+7.47%** |
-| **Mean Relevant Margin** | +0.211 | **+0.328** | **+0.117** |
-| **Hard Negative Rejection** | 100% | 100% | Parity |
+> **Evaluation Methodology & Limitations**: This benchmark evaluates **pairwise ordinal consistency** across isolated candidate-job text pairs (verifying that higher-relevance pairs score above lower-relevance pairs). It is an exploratory semantic similarity test on a 30-pair sample. It is **not** an evaluation of multi-candidate job ranking in production; recruiter-facing ranking is computed deterministically in the backend.
+
+| Metric | Baseline (TF-Cosine) | Embedding (all-MiniLM-L6-v2) | Context / Notes |
+| :--- | :---: | :---: | :--- |
+| **Held-Out Pairwise Consistency** | 85.71% | **94.81%** | 15-pair held-out split (relative ordering) |
+| **Overall Pairwise Consistency** | 86.69% | **94.16%** | 30-pair combined benchmark |
+| **Mean Relevant Margin** | +0.211 | **+0.328** | Score separation between relevant and borderline pairs |
+| **Negative Control Score** | 15.0 / 100 | 18.0 / 100 | Mean score on irrelevant pairs (all scored below relevant matches) |
+| **Sample Size** | 30 pairs | 30 pairs | 15 dev, 15 held-out test |
 
 ---
 

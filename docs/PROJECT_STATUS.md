@@ -29,10 +29,11 @@ CareerSync AI is an AI-assisted recruitment intelligence platform designed for t
 - [x] **Thread-Safe Lazy Loading & CPU Inference**: Engine cached in memory once per process using `threading.Lock`; verified warm inference latency under 50ms on CPU.
 - [x] **Explicit Degraded Fallback**: Missing model files or inference errors automatically fallback to deterministic baseline with `status="degraded"` and an explicit `fallback_reason`.
 - [x] **API Contract v1.1.0 Standard**: Updated `/api/v1/similarity` schemas to return `raw_similarity`, `similarity_index`, `method`, `status`, `fallback_reason`, `model_info`, and `diagnostics`.
-- [x] **Curated 30-Pair Comparative Benchmark**: Evaluated 15 dev and 15 held-out test pairs across 8 role families:
-  - **Held-out Pairwise Accuracy**: 94.81% (Embedding) vs. 85.71% (Baseline).
-  - **Overall Pairwise Accuracy**: 94.16% (Embedding) vs. 86.69% (Baseline).
-  - **Hard Negative Discrimination**: 100% rejection parity across both engines.
+- [x] **Exploratory 30-Pair Comparative Benchmark**: Evaluated 15 dev and 15 held-out test pairs across 8 role families for isolated semantic similarity ordering:
+  - **Held-out Pairwise Ordinal Consistency**: 94.81% (Embedding) vs. 85.71% (Baseline).
+  - **Overall Pairwise Ordinal Consistency**: 94.16% (Embedding) vs. 86.69% (Baseline).
+  - **Negative Control Mean Score**: 18.0 / 100 (Embedding) vs. 15.0 / 100 (Baseline), scoring consistently below relevant matches.
+  - *Scope Distinction*: This benchmark evaluates pairwise semantic similarity on isolated text pairs; recruiter-facing candidate ranking is computed deterministically in the backend.
 
 ### Security & Privacy Protections
 - [x] **Candidate Hijack Prevention**: Recruiter resume uploads containing registered candidate emails are isolated into dedicated unlinked profiles to prevent profile mutation or account hijacking.

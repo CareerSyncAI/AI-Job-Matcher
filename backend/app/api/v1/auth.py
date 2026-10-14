@@ -252,6 +252,7 @@ def update_profile(
 @router.post("/password", response_model=MessageResponse)
 def change_password(
     payload: ChangePasswordRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> MessageResponse:
@@ -261,9 +262,16 @@ def change_password(
             detail="The current password provided is incorrect.",
         )
     current_user.password_hash = hash_password(payload.new_password)
-    # Invalidate all active sessions upon password change
-    from app.models.entities import RefreshToken
-    db.query(RefreshToken).filter(RefreshToken.user_id == current_user.id).delete()
+    # Invalidate all active refresh sessions upon password change
+    AuthenticationService.revoke_all_user_sessions(db, current_user.id)
+    record_audit_event(
+        db,
+        action="password_changed",
+        resource_type="user",
+        actor_user_id=current_user.id,
+        resource_id=current_user.id,
+        request_id=getattr(request.state, "request_id", None),
+    )
     db.commit()
     return MessageResponse(message="Password successfully updated.")
 

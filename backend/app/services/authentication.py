@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -86,3 +87,15 @@ class AuthenticationService:
         )
         if existing and existing.revoked_at is None:
             existing.revoked_at = datetime.now(UTC)
+
+    @staticmethod
+    def revoke_all_user_sessions(db: Session, user_id: UUID) -> int:
+        now = datetime.now(UTC)
+        sessions = (
+            db.query(RefreshSession)
+            .filter(RefreshSession.user_id == user_id, RefreshSession.revoked_at.is_(None))
+            .all()
+        )
+        for s in sessions:
+            s.revoked_at = now
+        return len(sessions)

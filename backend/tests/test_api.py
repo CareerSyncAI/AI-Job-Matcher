@@ -649,4 +649,85 @@ def test_evaluation_benchmark_restricted_to_admin(client):
     assert res.status_code == 403
 
 
+def test_apply_to_job_handles_evaluation_failure_cleanly(client, monkeypatch):
+    """When auto-evaluation raises an exception, the application is created, failed run is recorded, and duplicates are prevented."""
+    # 1. Register recruiter and create job
+    client.post("/api/v1/auth/register", json={"email": "rec.evalfail@example.com", "password": "Password123456!", "role": "recruiter"})
+    rec_tok = client.post("/api/v1/auth/login", json={"email": "rec.evalfail@example.com", "password": "Password123456!"}).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+    job_res = client.post(
+        "/api/v1/jobs",
+        headers=rec_h,
+        json={
+            "title": "Backend Dev",
+            "department": "Engineering",
+            "location": "Remote",
+            "employment_type": "Full-time",
+            "work_arrangement": "Remote",
+            "experience_min_years": 3.0,
+            "education_required": "Bachelor",
+            "description": "Python, SQL, APIs",
+            "skills": [{"name": "Python", "required": True, "min_years": 2.0}],
+            "evaluation_weights": {"skills": 40, "experience": 30, "education": 15, "semantic": 15},
+            "status": "open",
+        },
+    )
+    assert job_res.status_code == 201
+    job_id = job_res.json()["id"]
+
+    # 2. Register candidate and upload resume
+    client.post("/api/v1/auth/register", json={"email": "cand.evalfail@example.com", "password": "Password123456!", "role": "candidate"})
+    cand_tok = client.post("/api/v1/auth/login", json={"email": "cand.evalfail@example.com", "password": "Password123456!"}).json()["access_token"]
+    cand_h = {"Authorization": f"Bearer {cand_tok}"}
+
+    docx_bytes = _create_docx_resume_bytes("Python Software Engineer with 4 years experience in SQL and FastAPI.")
+    upload_res = client.post(
+        "/api/v1/profile/resumes",
+        headers=cand_h,
+        files={"file": ("my_resume.docx", docx_bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    )
+    assert upload_res.status_code == 202
+    resume_id = upload_res.json()["id"]
+
+    # 3. Mock EvaluationService.evaluate_application to simulate unexpected evaluation crash
+    from app.services.evaluation import EvaluationService
+    def crashing_evaluate(self, db, *, application_id, recruiter_id):
+        raise RuntimeError("Simulated transient evaluation failure")
+
+    monkeypatch.setattr(EvaluationService, "evaluate_application", crashing_evaluate)
+
+    # 4. Apply to job: Should succeed with 201 Created
+    apply_res = client.post(
+        f"/api/v1/jobs/{job_id}/applications",
+        headers=cand_h,
+        json={"resume_id": resume_id},
+    )
+    assert apply_res.status_code == 201
+    app_data = apply_res.json()
+    assert app_data["status"] == "new"
+    app_id = app_data["id"]
+
+    # 5. Verify that duplicate application is rejected with 409
+    dup_res = client.post(
+        f"/api/v1/jobs/{job_id}/applications",
+        headers=cand_h,
+        json={"resume_id": resume_id},
+    )
+    assert dup_res.status_code == 409
+
+    # 6. Verify that an EvaluationRun with status FAILED was recorded
+    from app.db.session import SessionLocal
+    from app.models.entities import EvaluationRun
+    from app.models.enums import EvaluationStatus
+    from uuid import UUID
+    db = SessionLocal()
+    try:
+        run = db.query(EvaluationRun).filter(EvaluationRun.application_id == UUID(app_id)).first()
+        assert run is not None
+        assert run.status == EvaluationStatus.FAILED
+    finally:
+        db.close()
+
+
+
 

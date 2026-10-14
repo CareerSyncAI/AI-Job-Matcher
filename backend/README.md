@@ -89,6 +89,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ### 6. Running Tests
 ```bash
-# Run complete backend test suite (44 tests)
+# Run complete backend test suite (48 tests)
 pytest -v
 ```

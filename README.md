@@ -91,22 +91,26 @@ CareerSync AI decouples semantic analysis into a modular engine facade complying
 | **Failure Mode** | Pure deterministic math | Automatic fallback to `baseline` |
 | **Production Default** | **Active (Default)** | Selectable via `SEMANTIC_MATCHER` |
 
-### Uncalibrated Decision Support
-The similarity API explicitly separates `raw_similarity` (the mathematical cosine similarity $[-1.0, 1.0]$) from any downstream ranking score. The backend applies configured weights; similarity is never treated as a hiring probability or confidence score.
+### Uncalibrated Decision Support & Production Ranking Separation
+- **Production Recruiter Ranking**: In the live application, candidate ranking in the recruiter dashboard is computed **100% deterministically** by `DeterministicEvaluationEngine` using canonical taxonomy extractions and the `SublinearTFCosineMatcher` ($1 + \ln(\text{tf})$).
+- **AI Microservice Semantic Scores**: The neural dense vector model (`all-MiniLM-L6-v2`) in `ai-services` is currently a standalone semantic inference service under Contract v1.1.0 providing **diagnostic and exploratory** semantic similarity scores. It does **not** currently override the backend's deterministic recruiter ranking.
+- **Uncalibrated Signal**: The similarity API returns `raw_similarity` as mathematical cosine similarity $[-1.0, 1.0]$. It is an uncalibrated decision-support signal, **never** a hiring probability or candidate confidence score.
 
 ---
 
-## 📊 Evaluation Benchmark
+## 📊 Exploratory Semantic Similarity Benchmark
 
-CareerSync AI includes a curated 30-pair comparative evaluation benchmark (`ai-services/fixtures/evaluation/evaluation_benchmark.json`) partitioned into balanced `dev` (15 pairs) and `held_out_test` (15 pairs) splits across 8 diverse role families (Backend, Frontend, Full Stack, DevOps, Data Science, Security, Mobile, Product):
+The AI microservice includes a curated 30-pair comparative evaluation benchmark (`ai-services/fixtures/evaluation/evaluation_benchmark.json`) partitioned into balanced `dev` (15 pairs) and `held_out_test` (15 pairs) splits across 8 role families.
 
-| Evaluation Metric | Baseline (TF-Cosine) | Embedding (all-MiniLM-L6-v2) | Improvement |
-| :--- | :---: | :---: | :---: |
-| **Held-Out Test Accuracy** | 85.71% | **94.81%** | **+9.10%** |
-| **Overall Dataset Accuracy** | 86.69% | **94.16%** | **+7.47%** |
-| **Relevant vs. Borderline Margin**| +0.211 | **+0.328** | **+0.117** |
-| **Hard Negative Rejection Rate** | **100.0%** | **100.0%** | Parity |
-| **Total Benchmark Pairs** | 30 | 30 | Complete |
+> **Important Scope & Methodology Note**: This benchmark measures **pairwise ordinal consistency** across isolated text pairs (evaluating whether a known more-relevant candidate-job pair receives a higher similarity score than a less-relevant pair). It is an exploratory semantic similarity metric on a 30-pair sample; it is **not** an evaluation of multi-candidate job ranking quality across real recruiter applicant pools.
+
+| Evaluation Metric | Baseline (TF-Cosine) | Embedding (all-MiniLM-L6-v2) | Context / Notes |
+| :--- | :---: | :---: | :--- |
+| **Held-Out Pairwise Consistency** | 85.71% | **94.81%** | 15-pair held-out split (evaluating relative ordering) |
+| **Overall Pairwise Consistency** | 86.69% | **94.16%** | 30-pair combined benchmark |
+| **Relevant vs. Borderline Margin**| +0.211 | **+0.328** | Separation between relevant and borderline matches |
+| **Negative Control Discrimination**| 15.0 / 100 | 18.0 / 100 | Mean score on irrelevant domain pairs (scored below all relevant pairs) |
+| **Sample Size** | 30 pairs | 30 pairs | Exploratory benchmark (15 dev, 15 held-out) |
 
 ---
 
@@ -125,7 +129,7 @@ AI-Job-Matcher/
 ├── backend/                       # FastAPI backend monolith
 │   ├── alembic/                   # PostgreSQL schema migrations (single head)
 │   ├── app/                       # Auth, domain routes, deterministic scoring
-│   ├── tests/                     # 44 passing Pytest integration tests
+│   ├── tests/                     # 48 passing Pytest integration tests
 │   └── pyproject.toml             # Backend dependencies and Poetry configuration
 ├── frontend/                      # Next.js 16 web application
 │   ├── app/                       # App Router (Recruiter & Candidate portals)
@@ -201,7 +205,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 The repository enforces automated testing across all service layers:
 
 ```bash
-# 1. Run Backend Pytest Suite (44 tests)
+# 1. Run Backend Pytest Suite (48 tests)
 cd backend
 pytest -v
 

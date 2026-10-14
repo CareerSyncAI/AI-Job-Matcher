@@ -33,14 +33,27 @@ This document tracks major architectural decisions (ADRs), release trajectory ch
 
 ## 📜 Release Trajectory & Changelog
 
-### Version 1.1.0 (Current)
+### Version 1.1.1 (Current)
+- **Security & Session Invalidation**:
+  - Fixed `change_password` endpoint bug in `backend/app/api/v1/auth.py` by replacing invalid `RefreshToken` reference with `AuthenticationService.revoke_all_user_sessions` targeting `RefreshSession`.
+  - Added audit event recording for `password_changed`.
+  - Added comprehensive regression tests in `backend/tests/test_auth.py` covering successful password update, invalidation of existing refresh sessions, old password rejection, and unauthorized access.
+- **Application Evaluation Resilience**:
+  - Wrapped auto-evaluation in `backend/app/api/v1/applications.py` with SQLAlchemy nested savepoint (`db.begin_nested()`).
+  - Upon evaluation exception, candidate application record is safely preserved (preventing duplicate submission collisions), while an explicit `EvaluationRun(status=EvaluationStatus.FAILED)` and `application_evaluation_failed` audit event are recorded.
+  - Added regression test `test_apply_to_job_handles_evaluation_failure_cleanly` in `backend/tests/test_api.py`.
+- **Evaluation Claims & Architecture Transparency**:
+  - Accurately scoped the 30-pair benchmark across `README.md`, `ai-services/README.md`, and `docs/` as measuring pairwise ordinal consistency on isolated text pairs.
+  - Explicitly documented that production recruiter-facing candidate ranking is driven deterministically by `DeterministicEvaluationEngine` and `SublinearTFCosineMatcher`, with the neural embedding model serving as an opt-in/diagnostic service.
+
+### Version 1.1.0
 - **AI Microservice**:
   - Implemented pluggable architecture (`BaselineSimilarityEngine` vs `SentenceEmbeddingMatcher`).
   - Added thread-safe model caching and section-aware bounded chunking (500-char max).
   - Pinned `sentence-transformers/all-MiniLM-L6-v2` to immutable revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`.
   - Added smoke test and verified local CPU inference latency (~40ms).
   - Implemented API Contract v1.1.0 with diagnostics and explicit fallback fields.
-  - Curated 30-pair comparative evaluation benchmark (`fixtures/evaluation/evaluation_benchmark.json`) with 94.8% held-out accuracy.
+  - Curated 30-pair comparative evaluation benchmark (`fixtures/evaluation/evaluation_benchmark.json`) showing 94.8% held-out pairwise ordinal consistency on isolated candidate-job text pairs.
 - **Repository Modernization**:
   - Cleaned root folder: organized presentation decks into `docs/presentations/` and audit logs into `docs/audits/`.
   - Upgraded documentation across all modules (`ai-services/README.md`, `frontend/README.md`, `backend/README.md`, `docs/README.md`).

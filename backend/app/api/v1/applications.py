@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
@@ -18,7 +19,7 @@ from app.models.entities import (
     Resume,
     User,
 )
-from app.models.enums import AttentionReason, JobStatus, ProcessingStatus, UserRole
+from app.models.enums import AttentionReason, EvaluationStatus, JobStatus, ProcessingStatus, UserRole
 from app.schemas.applications import (
     ApplicationCreate,
     ApplicationResponse,
@@ -109,16 +110,39 @@ def apply_to_job(
     db.add(application)
     db.flush()
 
-    # Trigger evaluation immediately upon application creation
+    # Trigger evaluation immediately upon application creation with savepoint protection
     try:
-        evaluation_service = EvaluationService()
-        evaluation_service.evaluate_application(
-            db,
-            application_id=application.id,
-            recruiter_id=job.recruiter_id,
-        )
+        with db.begin_nested():
+            evaluation_service = EvaluationService()
+            evaluation_service.evaluate_application(
+                db,
+                application_id=application.id,
+                recruiter_id=job.recruiter_id,
+            )
     except Exception as eval_exc:
-        logger.warning("Application auto-evaluation encountered warning: %s", eval_exc)
+        logger.error("Application auto-evaluation failed for application %s: %s", application.id, eval_exc)
+        failed_run = EvaluationRun(
+            application_id=application.id,
+            status=EvaluationStatus.FAILED,
+            scoring_version="deterministic-v2-taxonomy",
+            weights_used={
+                "skills": job.skills_weight,
+                "experience": job.experience_weight,
+                "education": job.education_weight,
+                "semantic": job.semantic_weight,
+            },
+            completed_at=datetime.now(UTC),
+        )
+        db.add(failed_run)
+        record_audit_event(
+            db,
+            action="application_evaluation_failed",
+            resource_type="application",
+            actor_user_id=current_user.id,
+            resource_id=application.id,
+            request_id=getattr(request.state, "request_id", None),
+            metadata={"error": str(eval_exc)},
+        )
 
     record_audit_event(
         db,
