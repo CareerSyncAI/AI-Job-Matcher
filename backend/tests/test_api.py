@@ -120,6 +120,8 @@ def test_resume_idor_protection(client):
     assert res.status_code == 200
     ats_res = client.get(f"/api/v1/resumes/{c1_resume_id}/ats", headers=c1_headers)
     assert ats_res.status_code == 200
+    assert "detected_skills" in ats_res.json()
+    assert isinstance(ats_res.json()["detected_skills"], list)
 
     # Candidate 2 cannot view Candidate 1's resume or ATS data (403 Forbidden)
     res_c2 = client.get(f"/api/v1/resumes/{c1_resume_id}", headers=c2_headers)

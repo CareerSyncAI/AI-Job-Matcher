@@ -351,6 +351,22 @@ def analyze_stored_resume_ats(
     verify_resume_access(resume, current_user, db)
 
     text = resume.extracted_text or ""
+    if not text.strip() and resume.storage_key:
+        try:
+            from app.services.text_extraction import extract_text_from_file
+            from app.core.config import get_settings
+            settings = get_settings()
+            root = settings.upload_directory.expanduser().resolve()
+            file_path = (root / resume.storage_key).resolve()
+            if file_path.exists():
+                extracted = extract_text_from_file(file_path, resume.mime_type)
+                if extracted and extracted.strip():
+                    text = extracted
+                    resume.extracted_text = extracted
+                    db.commit()
+        except Exception:
+            pass
+
     res = ats_analyzer.analyze(text)
     return ATSAnalysisSchema(
         overall_ats_score=res.overall_ats_score,
@@ -361,6 +377,7 @@ def analyze_stored_resume_ats(
         formatting_score=res.formatting_score,
         skills_score=res.skills_score,
         detected_sections=res.detected_sections,
+        detected_skills=res.detected_skills,
         missing_critical_sections=res.missing_critical_sections,
         contact_details=res.contact_details,
         action_verbs_found=res.action_verbs_found,
@@ -395,6 +412,7 @@ def analyze_text_ats(
         formatting_score=res.formatting_score,
         skills_score=res.skills_score,
         detected_sections=res.detected_sections,
+        detected_skills=res.detected_skills,
         missing_critical_sections=res.missing_critical_sections,
         contact_details=res.contact_details,
         action_verbs_found=res.action_verbs_found,

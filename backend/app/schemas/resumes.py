@@ -35,6 +35,7 @@ class ATSAnalysisSchema(APIModel):
     formatting_score: float
     skills_score: float
     detected_sections: dict[str, bool]
+    detected_skills: list[str] = Field(default_factory=list)
     missing_critical_sections: list[str]
     contact_details: dict[str, Any]
     action_verbs_found: list[str]

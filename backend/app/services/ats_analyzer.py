@@ -37,6 +37,7 @@ class ATSAnalysisResult:
     formatting_score: float   # 0.0 to 100.0
     skills_score: float       # 0.0 to 100.0
     detected_sections: dict[str, bool]
+    detected_skills: list[str]
     missing_critical_sections: list[str]
     contact_details: dict[str, Any]
     action_verbs_found: list[str]
@@ -265,8 +266,9 @@ class ATSAnalyzer:
 
         # ── 5. Skills Presentation & Clarity (Weight: 15%) ──
         from app.services.taxonomy import taxonomy
-        detected_skills = taxonomy.extract_skills_from_text(text)
-        skill_count = len(detected_skills)
+        detected_skills_raw = taxonomy.extract_skills_from_text(text)
+        extracted_skills = sorted(list({s["canonical_name"] for s in detected_skills_raw}))
+        skill_count = len(extracted_skills)
 
         skills_score = min(100.0, (skill_count / 8.0) * 100.0)
 
@@ -311,6 +313,7 @@ class ATSAnalyzer:
             formatting_score=round(formatting_score, 1),
             skills_score=round(skills_score, 1),
             detected_sections=detected_sections,
+            detected_skills=extracted_skills,
             missing_critical_sections=missing_critical,
             contact_details=contact_details,
             action_verbs_found=verbs_found[:12],
@@ -330,6 +333,7 @@ class ATSAnalyzer:
             formatting_score=0.0,
             skills_score=0.0,
             detected_sections={},
+            detected_skills=[],
             missing_critical_sections=["experience", "skills", "education"],
             contact_details={},
             action_verbs_found=[],

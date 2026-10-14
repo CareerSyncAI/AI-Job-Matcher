@@ -105,7 +105,7 @@ export default function JobsPage() {
         !query ||
         job.title.toLowerCase().includes(query) ||
         job.department?.toLowerCase().includes(query) ||
-        job.skills.some((s) => s.name.toLowerCase().includes(query)) ||
+        (job.skills || []).some((s) => s?.name?.toLowerCase().includes(query)) ||
         job.description.toLowerCase().includes(query);
 
       const matchArrangement =
@@ -114,9 +114,9 @@ export default function JobsPage() {
 
       const matchCategory =
         selectedCategory === "all" ||
-        (selectedCategory === "frontend" && (job.title.toLowerCase().includes("frontend") || job.skills.some(s => s.name.toLowerCase().includes("react")))) ||
-        (selectedCategory === "ai" && (job.title.toLowerCase().includes("ai") || job.skills.some(s => s.name.toLowerCase().includes("python") || s.name.toLowerCase().includes("pytorch")))) ||
-        (selectedCategory === "devops" && (job.title.toLowerCase().includes("devops") || job.skills.some(s => s.name.toLowerCase().includes("kubernetes") || s.name.toLowerCase().includes("docker")))) ||
+        (selectedCategory === "frontend" && (job.title.toLowerCase().includes("frontend") || (job.skills || []).some(s => s?.name?.toLowerCase().includes("react")))) ||
+        (selectedCategory === "ai" && (job.title.toLowerCase().includes("ai") || (job.skills || []).some(s => s?.name?.toLowerCase().includes("python") || s?.name?.toLowerCase().includes("pytorch")))) ||
+        (selectedCategory === "devops" && (job.title.toLowerCase().includes("devops") || (job.skills || []).some(s => s?.name?.toLowerCase().includes("kubernetes") || s?.name?.toLowerCase().includes("docker")))) ||
         (selectedCategory === "remote" && job.work_arrangement?.toLowerCase().includes("remote"));
 
       return matchSearch && matchArrangement && matchCategory;
@@ -508,7 +508,7 @@ export default function JobsPage() {
                       <span className={`text-xs font-semibold mr-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         Skills:
                       </span>
-                      {job.skills.map((s, idx) => (
+                      {(job.skills || []).map((s, idx) => (
                         <button
                           key={idx}
                           type="button"
