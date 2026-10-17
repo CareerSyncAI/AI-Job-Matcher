@@ -24,6 +24,10 @@ def pg_engine():
         engine = create_engine(db_url, pool_pre_ping=True)
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
+        if engine.dialect.name != "postgresql":
+            if require_pg:
+                pytest.fail(f"Active dialect is '{engine.dialect.name}', expected 'postgresql'")
+            pytest.skip(f"Connected to dialect '{engine.dialect.name}', not PostgreSQL.")
         return engine
     except Exception as exc:
         if require_pg:
@@ -51,7 +55,8 @@ EXPECTED_TABLES = {
 
 
 def test_postgres_connection_and_pgvector_extension(pg_engine):
-    """Verify that PostgreSQL is running and the pgvector extension is installed and active."""
+    """Verify that PostgreSQL is running, dialect is postgresql, and pgvector extension is active."""
+    assert pg_engine.dialect.name == "postgresql", f"Expected dialect 'postgresql', got '{pg_engine.dialect.name}'"
     with pg_engine.connect() as conn:
         result = conn.execute(
             text("SELECT extname, extversion FROM pg_extension WHERE extname = 'vector'")
@@ -61,7 +66,8 @@ def test_postgres_connection_and_pgvector_extension(pg_engine):
 
 
 def test_postgres_alembic_schema_verification(pg_engine):
-    """Verify that all 15 relational tables and critical indexes exist in PostgreSQL."""
+    """Verify that all 15 relational tables, critical indexes, and foreign keys exist in PostgreSQL."""
+    assert pg_engine.dialect.name == "postgresql"
     inspector = inspect(pg_engine)
     existing_tables = set(inspector.get_table_names())
     missing_tables = EXPECTED_TABLES - existing_tables
@@ -73,6 +79,15 @@ def test_postgres_alembic_schema_verification(pg_engine):
 
     job_indexes = {idx["name"] for idx in inspector.get_indexes("jobs")}
     assert "ix_jobs_recruiter_id" in job_indexes, "Missing ix_jobs_recruiter_id index on jobs table"
+
+    # Verify critical foreign key constraints
+    job_fks = inspector.get_foreign_keys("jobs")
+    job_fk_targets = {fk["referred_table"] for fk in job_fks}
+    assert "recruiter_profiles" in job_fk_targets, "jobs table missing foreign key to recruiter_profiles"
+
+    embedding_fks = inspector.get_foreign_keys("resume_embeddings")
+    embedding_fk_targets = {fk["referred_table"] for fk in embedding_fks}
+    assert "resumes" in embedding_fk_targets, "resume_embeddings table missing foreign key to resumes"
 
 
 def test_postgres_vector_column_and_dimension_discrepancy(pg_engine):
@@ -189,3 +204,19 @@ def test_postgres_downgrade_and_reupgrade_cycle(pg_engine):
     recreated_tables = set(inspector_reloaded.get_table_names())
     missing_tables = EXPECTED_TABLES - recreated_tables
     assert not missing_tables, f"Tables missing after re-upgrade head: {missing_tables}"
+
+    # Verify recreated schema retains indexes and vector types
+    recreated_user_indexes = {idx["name"] for idx in inspector_reloaded.get_indexes("users")}
+    assert "ix_users_email" in recreated_user_indexes
+
+    with pg_engine.connect() as conn:
+        dim = conn.execute(
+            text(
+                """
+                SELECT atttypmod
+                FROM pg_attribute
+                WHERE attrelid = 'resume_embeddings'::regclass AND attname = 'vector'
+                """
+            )
+        ).scalar()
+        assert dim == 1024, f"Expected vector dimension 1024 after re-upgrade, got {dim}"
