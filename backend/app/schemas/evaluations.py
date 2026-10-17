@@ -60,6 +60,7 @@ class EvaluationRunSchema(APIModel):
     status: EvaluationStatus
     scoring_version: str
     weights_used: dict[str, int]
+    configuration_hash: str | None = None
     completed_at: datetime | None = None
     match_result: MatchResultSchema | None = None
 
@@ -96,3 +97,6 @@ class CandidateCardDTO(APIModel):
     status: str = "screened"  # "screened" | "shortlisted" | "interviewing" | "rejected"
     evidence: list[CandidateEvidenceItem] = Field(default_factory=list)
     recruiterNotes: str | None = None
+    evaluation_status: str = "not_evaluated"  # "current" | "stale" | "pending" | "failed" | "not_evaluated"
+    is_fresh: bool = False
+    evaluated_at: datetime | None = None

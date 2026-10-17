@@ -1,5 +1,5 @@
-from __future__ import annotations
-
+import hashlib
+import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
@@ -39,6 +39,91 @@ from app.services.semantic_matcher import AIServiceDiagnosticMatcher, BaseSemant
 from app.services.taxonomy import taxonomy
 
 logger = logging.getLogger(__name__)
+
+
+def compute_evaluation_fingerprint(
+    *,
+    job: Job,
+    candidate: CandidateProfile,
+    resume: Resume | None,
+    weights: Weights,
+    scoring_version: str = "deterministic-v2-taxonomy",
+    semantic_matcher_name: str = "SublinearTFCosineMatcher",
+) -> str:
+    """
+    Computes a deterministic SHA-256 fingerprint representing every input that influences scoring:
+    1. Scoring engine version, semantic matcher type, and taxonomy version
+    2. Scoring weights (skills, experience, education, semantic)
+    3. Job requirements:
+       - Sorted normalized skills with required & min_years
+       - Minimum experience years
+       - Education requirement
+       - Normalized job title & description (influencing semantic corpus)
+    4. Candidate scoring inputs:
+       - SHA-256 hash of normalized extracted resume text (scoring input)
+       - Total experience years
+       - Education degree & explicit credentials
+    Excludes non-scoring job metadata (e.g., location, department, status, work_arrangement).
+    """
+    weights.validate()
+
+    # 1. Normalized job skills
+    normalized_job_skills: list[dict[str, Any]] = []
+    for skill in sorted(job.skills or [], key=lambda s: s.name.strip().casefold()):
+        skill_canon = taxonomy.normalize(skill.name) or skill.name
+        normalized_job_skills.append({
+            "name": skill_canon.strip().casefold(),
+            "required": bool(skill.required),
+            "min_years": float(skill.min_years) if skill.min_years is not None else None,
+        })
+
+    # 2. Normalized job corpus (influences semantic matcher)
+    job_title_norm = (job.title or "").strip()
+    job_desc_norm = (job.description or "").strip()
+    job_text_payload = f"{job_title_norm}\n{job_desc_norm}"
+    job_corpus_hash = hashlib.sha256(job_text_payload.encode("utf-8")).hexdigest()
+
+    # 3. Normalized extracted resume text hash (actual scoring text input)
+    extracted_text = (resume.extracted_text or "") if resume else ""
+    # Normalize line endings and whitespace to prevent formatting-only drift
+    normalized_extracted = "\n".join(line.rstrip() for line in extracted_text.splitlines() if line.strip())
+    resume_text_hash = hashlib.sha256(normalized_extracted.encode("utf-8")).hexdigest()
+
+    # 4. Candidate attributes consumed by evaluation
+    candidate_declared_skills: list[str] = []
+    candidate_degree: str | None = None
+    if candidate.education and isinstance(candidate.education, dict):
+        candidate_degree = candidate.education.get("degree")
+        for s in candidate.education.get("skills", []):
+            if isinstance(s, str):
+                canon = taxonomy.normalize(s) or s
+                candidate_declared_skills.append(canon.strip().casefold())
+    candidate_declared_skills = sorted(set(candidate_declared_skills))
+
+    payload = {
+        "scoring_version": scoring_version,
+        "semantic_matcher": semantic_matcher_name,
+        "taxonomy_version": "v1-canonical",
+        "weights": {
+            "skills": int(weights.skills),
+            "experience": int(weights.experience),
+            "education": int(weights.education),
+            "semantic": int(weights.semantic),
+        },
+        "job_skills": normalized_job_skills,
+        "experience_min_years": float(job.experience_min_years or 0.0),
+        "education_required": (job.education_required or "Any").strip().casefold(),
+        "job_corpus_hash": job_corpus_hash,
+        "resume_text_hash": resume_text_hash,
+        "candidate": {
+            "total_experience_years": float(candidate.total_experience_years) if candidate.total_experience_years is not None else None,
+            "degree": candidate_degree.strip().casefold() if candidate_degree else None,
+            "declared_skills": candidate_declared_skills,
+        },
+    }
+
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 class BaseEvaluationEngine(ABC):
@@ -446,6 +531,7 @@ class EvaluationService:
         *,
         application_id: UUID,
         recruiter_id: UUID,
+        commit: bool = True,
     ) -> EvaluationRun:
         application = (
             db.query(Application)
@@ -481,6 +567,15 @@ class EvaluationService:
             weights=weights,
         )
 
+        config_hash = compute_evaluation_fingerprint(
+            job=job,
+            candidate=candidate,
+            resume=resume,
+            weights=weights,
+            scoring_version="deterministic-v2-taxonomy",
+            semantic_matcher_name=self.engine.semantic_matcher.__class__.__name__ if hasattr(self.engine, "semantic_matcher") else "SublinearTFCosineMatcher",
+        )
+
         # Create immutable EvaluationRun snapshot
         run = EvaluationRun(
             application_id=application.id,
@@ -492,6 +587,7 @@ class EvaluationService:
                 "education": job.education_weight,
                 "semantic": job.semantic_weight,
             },
+            configuration_hash=config_hash,
             completed_at=datetime.now(UTC),
         )
         db.add(run)
@@ -544,8 +640,12 @@ class EvaluationService:
         if application.status == ApplicationStatus.NEW:
             application.status = ApplicationStatus.UNDER_REVIEW
 
-        db.commit()
-        db.refresh(run)
+        if commit:
+            db.commit()
+            db.refresh(run)
+        else:
+            db.flush()
+            db.refresh(run)
         return run
 
     @staticmethod
@@ -557,6 +657,9 @@ class EvaluationService:
     ) -> CandidateCardDTO:
         job = application.job
         candidate = application.candidate
+        resume = application.resume
+
+        # Fetch latest run regardless of status to determine lifecycle state
         latest_run = (
             db.query(EvaluationRun)
             .options(
@@ -564,11 +667,99 @@ class EvaluationService:
                 selectinload(EvaluationRun.match_result).selectinload(MatchResult.evidence_claims),
             )
             .filter(EvaluationRun.application_id == application.id)
-            .order_by(EvaluationRun.created_at.desc())
+            .order_by(
+                EvaluationRun.created_at.desc(),
+                EvaluationRun.completed_at.desc(),
+                EvaluationRun.id.desc(),
+            )
             .first()
         )
 
-        match_result = latest_run.match_result if latest_run else None
+        # Compute current expected configuration fingerprint for job + candidate + resume
+        current_config_hash: str | None = None
+        if job and candidate:
+            try:
+                weights = Weights(
+                    skills=float(job.skills_weight),
+                    experience=float(job.experience_weight),
+                    education=float(job.education_weight),
+                    semantic=float(job.semantic_weight),
+                )
+                current_config_hash = compute_evaluation_fingerprint(
+                    job=job,
+                    candidate=candidate,
+                    resume=resume,
+                    weights=weights,
+                )
+            except Exception:
+                current_config_hash = None
+
+        # Determine evaluation status and freshness explicitly
+        eval_status = "not_evaluated"
+        is_fresh = False
+        display_run: EvaluationRun | None = None
+
+        if latest_run is None:
+            eval_status = "not_evaluated"
+            is_fresh = False
+            display_run = None
+        elif latest_run.status in (EvaluationStatus.QUEUED, EvaluationStatus.RUNNING):
+            eval_status = "pending"
+            is_fresh = False
+            # Find previous completed run for historical reference
+            display_run = (
+                db.query(EvaluationRun)
+                .options(
+                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evaluated_skills),
+                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evidence_claims),
+                )
+                .filter(
+                    EvaluationRun.application_id == application.id,
+                    EvaluationRun.status == EvaluationStatus.COMPLETED,
+                )
+                .order_by(
+                    EvaluationRun.created_at.desc(),
+                    EvaluationRun.completed_at.desc(),
+                    EvaluationRun.id.desc(),
+                )
+                .first()
+            )
+        elif latest_run.status == EvaluationStatus.FAILED:
+            eval_status = "failed"
+            is_fresh = False
+            # Find previous completed run for historical reference
+            display_run = (
+                db.query(EvaluationRun)
+                .options(
+                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evaluated_skills),
+                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evidence_claims),
+                )
+                .filter(
+                    EvaluationRun.application_id == application.id,
+                    EvaluationRun.status == EvaluationStatus.COMPLETED,
+                )
+                .order_by(
+                    EvaluationRun.created_at.desc(),
+                    EvaluationRun.completed_at.desc(),
+                    EvaluationRun.id.desc(),
+                )
+                .first()
+            )
+        elif latest_run.status == EvaluationStatus.COMPLETED:
+            display_run = latest_run
+            # Current only when configuration_hash is verifiable and matches current config
+            if (
+                latest_run.configuration_hash is not None
+                and current_config_hash is not None
+                and latest_run.configuration_hash == current_config_hash
+            ):
+                eval_status = "current"
+                is_fresh = True
+            else:
+                eval_status = "stale"
+                is_fresh = False
+
+        match_result = display_run.match_result if (display_run and display_run.match_result) else None
 
         # Fetch recruiter notes
         notes = (
@@ -637,4 +828,7 @@ class EvaluationService:
             status=ui_status,
             evidence=evidence_items,
             recruiterNotes=notes.body if notes else None,
+            evaluation_status=eval_status,
+            is_fresh=is_fresh,
+            evaluated_at=display_run.completed_at if display_run else None,
         )

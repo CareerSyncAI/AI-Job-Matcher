@@ -118,7 +118,9 @@ def apply_to_job(
                 db,
                 application_id=application.id,
                 recruiter_id=job.recruiter_id,
+                commit=False,
             )
+        db.commit()
     except Exception as eval_exc:
         logger.error("Application auto-evaluation failed for application %s: %s", application.id, eval_exc)
         failed_run = EvaluationRun(
@@ -228,13 +230,14 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
         if exp_years is not None and (candidate.total_experience_years is None or candidate.total_experience_years == 0):
             candidate.total_experience_years = exp_years
 
+        db.flush()
         # Re-check status in case timeout handler or external cancellation marked it
-        db.refresh(resume)
-        if resume.processing_status == ProcessingStatus.NEEDS_ATTENTION:
+        current_db_status = db.query(Resume.processing_status).filter(Resume.id == resume.id).scalar()
+        if current_db_status == ProcessingStatus.NEEDS_ATTENTION:
             logger.warning(
                 "Profile resume %s was already marked %s; aborting completion commit.",
                 resume.id,
-                resume.processing_status,
+                current_db_status,
             )
             db.rollback()
             return

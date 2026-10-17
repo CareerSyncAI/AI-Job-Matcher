@@ -220,3 +220,9 @@ def test_postgres_downgrade_and_reupgrade_cycle(pg_engine):
             )
         ).scalar()
         assert dim == 1024, f"Expected vector dimension 1024 after re-upgrade, got {dim}"
+
+    # Verify evaluation_runs table has configuration_hash column and index
+    eval_run_columns = {col["name"] for col in inspector_reloaded.get_columns("evaluation_runs")}
+    assert "configuration_hash" in eval_run_columns, "Column 'configuration_hash' missing from evaluation_runs"
+    eval_run_indexes = {idx["name"] for idx in inspector_reloaded.get_indexes("evaluation_runs")}
+    assert "ix_evaluation_runs_configuration_hash" in eval_run_indexes, "Index 'ix_evaluation_runs_configuration_hash' missing"

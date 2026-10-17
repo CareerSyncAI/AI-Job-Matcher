@@ -84,3 +84,21 @@ class JobResponse(APIModel):
     created_at: datetime
     applicant_count: int = 0
 
+
+class ApplicationReevaluationItem(APIModel):
+    application_id: UUID
+    candidate_id: UUID
+    status: str  # "evaluated" | "skipped" | "failed" | "already_fresh"
+    score: float | None = None
+    reason: str | None = None
+
+
+class BatchReevaluationResponse(APIModel):
+    job_id: UUID
+    total_applications: int
+    evaluated_count: int
+    skipped_count: int
+    failed_count: int
+    already_fresh_count: int
+    results: list[ApplicationReevaluationItem]
+

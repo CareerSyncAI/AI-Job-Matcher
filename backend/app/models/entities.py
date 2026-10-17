@@ -212,6 +212,7 @@ class EvaluationRun(TimestampMixin, Base):
     embedding_model_version: Mapped[str | None] = mapped_column(String(128))
     scoring_version: Mapped[str] = mapped_column(String(128))
     weights_used: Mapped[dict[str, int]] = mapped_column(JSON)
+    configuration_hash: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     application: Mapped[Application] = relationship(back_populates="evaluation_runs")
