@@ -168,6 +168,14 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
             logger.error("Resume %s or Candidate %s missing for profile processing", resume_id, candidate_id)
             return
 
+        if resume.processing_status == ProcessingStatus.NEEDS_ATTENTION:
+            logger.warning(
+                "Profile resume %s is already marked %s; aborting inline processing.",
+                resume_id,
+                resume.processing_status,
+            )
+            return
+
         resume.processing_status = ProcessingStatus.PROCESSING
         db.commit()
 
@@ -175,7 +183,7 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
         file_path = (root / resume.storage_key).resolve()
 
         if not file_path.exists():
-            logger.error("Profile resume file missing on disk: %s", file_path)
+            logger.error("Profile resume file missing on disk for resume %s (storage_key: %s)", resume.id, resume.storage_key)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
             db.commit()
@@ -220,6 +228,17 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
         if exp_years is not None and (candidate.total_experience_years is None or candidate.total_experience_years == 0):
             candidate.total_experience_years = exp_years
 
+        # Re-check status in case timeout handler or external cancellation marked it
+        db.refresh(resume)
+        if resume.processing_status == ProcessingStatus.NEEDS_ATTENTION:
+            logger.warning(
+                "Profile resume %s was already marked %s; aborting completion commit.",
+                resume.id,
+                resume.processing_status,
+            )
+            db.rollback()
+            return
+
         resume.processing_status = ProcessingStatus.COMPLETED
         resume.needs_attention_reason = None
         db.commit()
@@ -228,7 +247,7 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
         logger.exception("Profile resume inline processing error for %s: %s", resume_id, exc)
         try:
             resume = db.get(Resume, resume_id)
-            if resume:
+            if resume and resume.processing_status != ProcessingStatus.NEEDS_ATTENTION:
                 resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
                 resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
                 db.commit()
@@ -248,18 +267,24 @@ async def upload_profile_resume(
     """Ingest an applicant-owned resume before it is attached to any application."""
     settings = get_settings()
     candidate = _candidate_for_user(db, current_user)
-    resume = await ResumeService.ingest(db, candidate_id=candidate.id, upload=file)
-    record_audit_event(
-        db,
-        action="candidate_resume_uploaded",
-        resource_type="resume",
-        actor_user_id=current_user.id,
-        resource_id=resume.id,
-        request_id=getattr(request.state, "request_id", None),
-    )
+    try:
+        resume = await ResumeService.ingest(db, candidate_id=candidate.id, upload=file)
+        record_audit_event(
+            db,
+            action="candidate_resume_uploaded",
+            resource_type="resume",
+            actor_user_id=current_user.id,
+            resource_id=resume.id,
+            request_id=getattr(request.state, "request_id", None),
+        )
 
-    db.commit()
-    db.refresh(resume)
+        db.commit()
+        db.refresh(resume)
+    except Exception:
+        db.rollback()
+        if "resume" in locals() and resume and getattr(resume, "storage_key", None):
+            ResumeService.delete_storage_key(resume.storage_key, db=db)
+        raise
 
     if settings.enable_worker:
         ResumeService.enqueue_worker(resume.id)

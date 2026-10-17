@@ -51,6 +51,10 @@ class ResumeService:
             db.rollback()
             ResumeService.delete_storage_key(stored.storage_key)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Duplicate resume upload.") from error
+        except Exception:
+            db.rollback()
+            ResumeService.delete_storage_key(stored.storage_key)
+            raise
 
         return resume
 
@@ -73,10 +77,22 @@ class ResumeService:
         return await ResumeService.ingest(db, job_id=job_id, upload=upload)
 
     @staticmethod
-    def delete_storage_key(storage_key: str) -> None:
-        from app.core.config import get_settings
+    def delete_storage_key(storage_key: str, db: Session | None = None) -> bool:
+        """Safely delete an uncommitted or orphaned stored file.
 
-        root = get_settings().upload_directory.expanduser().resolve()
-        candidate = (root / storage_key).resolve()
-        if candidate.parent == root and candidate.exists():
-            candidate.unlink()
+        Guarantees that a file currently referenced by a committed database record is not deleted.
+        """
+        if not storage_key:
+            return False
+
+        if db is not None:
+            try:
+                referenced = db.query(Resume).filter(Resume.storage_key == storage_key).first()
+                if referenced is not None:
+                    return False
+            except Exception:
+                return False
+
+        from app.services.storage import delete_file
+
+        return delete_file(storage_key)

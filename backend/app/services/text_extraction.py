@@ -73,11 +73,16 @@ def validate_docx_archive(
         total_uncompressed = 0
         has_document_xml = False
         has_content_types = False
+        seen_filenames: set[str] = set()
 
         for info in infolist:
-            # Check for path traversal or absolute paths in ZIP member names
             filename = info.filename.replace("\\", "/")
-            if filename.startswith("/") or ".." in filename.split("/"):
+            if filename in seen_filenames:
+                raise DOCXSecurityError(f"Duplicate entry in DOCX archive: {filename}")
+            seen_filenames.add(filename)
+
+            # Check for path traversal, drive prefixes, or absolute paths in ZIP member names
+            if filename.startswith("/") or ":" in filename or ".." in filename.split("/"):
                 raise DOCXSecurityError(f"Suspicious path in DOCX archive member: {filename}")
 
             if filename == "word/document.xml":
@@ -99,7 +104,11 @@ def validate_docx_archive(
                 )
 
             # Check compression ratio for entries with significant size (avoid false positives on tiny files)
-            if info.compress_size > 0 and info.file_size > 100 * 1024:
+            if info.file_size > 100 * 1024:
+                if info.compress_size == 0:
+                    raise DOCXSecurityError(
+                        f"DOCX archive member {filename} has invalid zero compressed size for non-empty entry."
+                    )
                 ratio = info.file_size / info.compress_size
                 if ratio > max_ratio:
                     raise DOCXSecurityError(
@@ -107,7 +116,7 @@ def validate_docx_archive(
                         f"exceeds safety threshold of {max_ratio}:1 (potential zip bomb)."
                     )
 
-        if not (has_document_xml or has_content_types):
+        if not has_document_xml:
             raise DOCXSecurityError("DOCX archive is missing required document structure (no word/document.xml).")
 
 

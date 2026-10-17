@@ -123,3 +123,68 @@ def test_ai_parse_resume_endpoint_zip_bomb(client):
     assert resp.status_code == 422
     data = resp.json()
     assert data["error"]["code"] == "INVALID_DOCUMENT_ARCHIVE"
+
+
+def test_ai_docx_duplicate_entry_rejected():
+    """DOCXParser rejects archives containing duplicate entries."""
+    parser = DOCXParser()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("word/document.xml", "<doc>A</doc>")
+        zf.writestr("word/document.xml", "<doc>B</doc>")
+
+    with pytest.raises(DOCXSecurityError, match="Duplicate entry in DOCX archive"):
+        parser.parse_stream(buf)
+
+
+def test_ai_docx_windows_drive_letter_rejected():
+    """DOCXParser rejects archives containing Windows drive path prefixes."""
+    parser = DOCXParser()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("word/document.xml", "<doc/>")
+        zf.writestr("C:evil.xml", "<evil/>")
+
+    with pytest.raises(DOCXSecurityError, match="Suspicious path"):
+        parser.parse_stream(buf)
+
+
+def test_ai_docx_missing_document_xml_rejected():
+    """DOCXParser rejects archives missing word/document.xml even if [Content_Types].xml is present."""
+    parser = DOCXParser()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("[Content_Types].xml", "<types/>")
+
+    with pytest.raises(DOCXSecurityError, match="missing required document structure"):
+        parser.parse_stream(buf)
+
+
+def test_ai_docx_malformed_xml_structure_rejected():
+    """DOCXParser converts unparseable XML in docx into DOCXSecurityError."""
+    parser = DOCXParser()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("word/document.xml", "<<<bad_xml>>>")
+
+    with pytest.raises(DOCXSecurityError, match="Malformed DOCX XML"):
+        parser.parse_stream(buf)
+
+
+def test_ai_pdf_parser_env_var_override(monkeypatch):
+    """PDFParser respects MAX_PDF_PAGES environment variable override."""
+    monkeypatch.setenv("MAX_PDF_PAGES", "7")
+    parser = PDFParser()
+    assert parser.max_pages == 7
+
+    pdf_8_bytes = _make_pdf(8)
+    with pytest.raises(PDFPageLimitExceeded) as exc_info:
+        parser.parse_stream(io.BytesIO(pdf_8_bytes))
+    assert exc_info.value.max_pages == 7
+
+
+def test_ai_docx_parser_env_var_override(monkeypatch):
+    """DOCXParser respects DOCX_MAX_ZIP_ENTRIES environment variable override."""
+    monkeypatch.setenv("DOCX_MAX_ZIP_ENTRIES", "10")
+    parser = DOCXParser()
+    assert parser.max_zip_entries == 10

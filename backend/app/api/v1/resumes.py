@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_recruiter_profile
 from app.core.config import get_settings
+from app.core.logging import mask_email
 from app.db.session import SessionLocal, get_db
 from app.models.entities import Application, CandidateProfile, Job, RecruiterProfile, Resume, User
 from app.models.enums import ApplicationStatus, AttentionReason, ProcessingStatus, UserRole
@@ -61,7 +62,7 @@ def _find_or_create_candidate(
             if existing.user_id is not None:
                 logger.warning(
                     "Resume email %s belongs to a registered user account (%s); creating dedicated unlinked candidate profile.",
-                    email,
+                    mask_email(email),
                     existing.user_id,
                 )
                 email_for_new_candidate = None  # Don't violate unique constraint
@@ -125,20 +126,26 @@ async def upload_resume(
     job = JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
 
     # Step 1: Validate, deduplicate, and store the file
-    resume = await ResumeService.ingest_for_job(db, job_id=job_id, upload=file)
+    try:
+        resume = await ResumeService.ingest_for_job(db, job_id=job_id, upload=file)
 
-    record_audit_event(
-        db,
-        action="resume_uploaded",
-        resource_type="resume",
-        actor_user_id=recruiter.user_id,
-        resource_id=resume.id,
-        request_id=getattr(request.state, "request_id", None),
-        metadata={"job_id": str(job_id), "sha256": resume.sha256},
-    )
+        record_audit_event(
+            db,
+            action="resume_uploaded",
+            resource_type="resume",
+            actor_user_id=recruiter.user_id,
+            resource_id=resume.id,
+            request_id=getattr(request.state, "request_id", None),
+            metadata={"job_id": str(job_id), "sha256": resume.sha256},
+        )
 
-    db.commit()
-    db.refresh(resume)
+        db.commit()
+        db.refresh(resume)
+    except Exception:
+        db.rollback()
+        if "resume" in locals() and resume and getattr(resume, "storage_key", None):
+            ResumeService.delete_storage_key(resume.storage_key, db=db)
+        raise
 
     # Step 2: Dispatch processing after successful transaction commit
     if settings.enable_worker:
@@ -187,6 +194,14 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
             logger.error("Resume %s not found for inline processing", resume_id)
             return
 
+        if resume.processing_status == ProcessingStatus.NEEDS_ATTENTION:
+            logger.warning(
+                "Resume %s is already marked %s; aborting inline processing.",
+                resume_id,
+                resume.processing_status,
+            )
+            return
+
         resume.processing_status = ProcessingStatus.PROCESSING
         db.commit()
 
@@ -194,7 +209,7 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
         file_path = (root / resume.storage_key).resolve()
 
         if not file_path.exists():
-            logger.error("Resume file missing on disk: %s", file_path)
+            logger.error("Resume file missing on disk for resume %s (storage_key: %s)", resume.id, resume.storage_key)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
             db.commit()
@@ -270,6 +285,16 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
                 application_id=application.id,
                 recruiter_id=job.recruiter_id,
             )
+            # Re-check status in case timeout handler or external cancellation marked it
+            db.refresh(resume)
+            if resume.processing_status == ProcessingStatus.NEEDS_ATTENTION:
+                logger.warning(
+                    "Resume %s was already marked %s; aborting completion commit.",
+                    resume.id,
+                    resume.processing_status,
+                )
+                db.rollback()
+                return
             resume.processing_status = ProcessingStatus.COMPLETED
             resume.needs_attention_reason = None
         except Exception as eval_exc:
@@ -283,7 +308,7 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
         logger.exception("Inline resume processing error for %s: %s", resume_id, exc)
         try:
             resume = db.get(Resume, resume_id)
-            if resume:
+            if resume and resume.processing_status != ProcessingStatus.NEEDS_ATTENTION:
                 resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
                 resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
                 db.commit()

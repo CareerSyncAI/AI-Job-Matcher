@@ -53,7 +53,7 @@ def process_resume(self, resume_id: str, db=None) -> None:
         file_path = (root / resume.storage_key).resolve()
 
         if not file_path.exists():
-            logger.error("Resume file %s missing on disk.", file_path)
+            logger.error("Resume file missing on disk for resume %s (storage_key: %s)", resume.id, resume.storage_key)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
             db.commit()
@@ -83,7 +83,7 @@ def process_resume(self, resume_id: str, db=None) -> None:
                 resume.extracted_text = parsed_text
                 resume.parser_method = data.get("parser_version", "ai-parser-v1")
             else:
-                logger.warning("AI parse service returned HTTP %s: %s", resp.status_code, resp.text)
+                logger.warning("AI parse service returned HTTP %s for resume %s", resp.status_code, resume.id)
                 resume.needs_attention_reason = AttentionReason.PARSE_FAILED
 
         except Exception as exc:

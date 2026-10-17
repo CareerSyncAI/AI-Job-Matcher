@@ -364,3 +364,84 @@ def test_normal_resume_within_limits_succeeds(client, db_session):
     assert resume.processing_status == ProcessingStatus.COMPLETED
     assert resume.needs_attention_reason is None
     assert "Alex Rivera" in resume.extracted_text
+
+
+def test_docx_duplicate_entry_rejected():
+    """Archive with duplicate entries is rejected to prevent parser confusion."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("word/document.xml", "<doc>First</doc>")
+        zf.writestr("word/document.xml", "<doc>Second</doc>")
+
+    with pytest.raises(DOCXSecurityError, match="Duplicate entry in DOCX archive"):
+        validate_docx_archive(buf.getvalue())
+
+
+def test_docx_windows_drive_letter_path_rejected():
+    """Archive member with Windows drive prefix is rejected as suspicious path."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("word/document.xml", "<doc/>")
+        zf.writestr("C:evil.xml", "<evil/>")
+
+    with pytest.raises(DOCXSecurityError, match="Suspicious path"):
+        validate_docx_archive(buf.getvalue())
+
+
+def test_docx_missing_document_xml_rejected_even_with_content_types():
+    """Archive with [Content_Types].xml but missing word/document.xml is rejected."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("[Content_Types].xml", "<types/>")
+
+    with pytest.raises(DOCXSecurityError, match="missing required document structure"):
+        validate_docx_archive(buf.getvalue())
+
+
+def test_late_thread_cannot_overwrite_timed_out_status(client, db_session):
+    """A thread finishing after a request timed out cannot overwrite NEEDS_ATTENTION to COMPLETED."""
+    from app.api.v1.resumes import _process_resume_inline
+
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "rec.race@example.com", "password": "Password123456!", "role": "recruiter", "organization_name": "RaceOrg"},
+    )
+    rec_tok = client.post("/api/v1/auth/login", json={"email": "rec.race@example.com", "password": "Password123456!"}).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+
+    job_res = client.post(
+        "/api/v1/jobs",
+        headers=rec_h,
+        json={"title": "Race Test Job", "description": "Race Test", "status": "open"},
+    )
+    job_id = UUID(job_res.json()["id"])
+
+    # Create a resume and mark it as timed-out (NEEDS_ATTENTION)
+    import hashlib
+    valid_docx = _create_synthetic_docx("Fast Candidate")
+    settings = get_settings()
+    root = settings.upload_directory.expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    storage_key = f"race_test_{job_id}.docx"
+    (root / storage_key).write_bytes(valid_docx)
+
+    resume = Resume(
+        original_filename="fast.docx",
+        storage_key=storage_key,
+        mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        byte_size=len(valid_docx),
+        sha256=hashlib.sha256(valid_docx).hexdigest(),
+        processing_status=ProcessingStatus.NEEDS_ATTENTION,
+        needs_attention_reason=AttentionReason.PARSE_FAILED,
+    )
+    db_session.add(resume)
+    db_session.commit()
+    db_session.refresh(resume)
+
+    # Now simulate a late invocation of _process_resume_inline running on that same resume
+    _process_resume_inline(resume.id, job_id)
+
+    # The resume must STILL remain NEEDS_ATTENTION, not overwritten to COMPLETED
+    db_session.refresh(resume)
+    assert resume.processing_status == ProcessingStatus.NEEDS_ATTENTION
+    assert resume.needs_attention_reason == AttentionReason.PARSE_FAILED

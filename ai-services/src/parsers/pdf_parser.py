@@ -6,6 +6,7 @@ with dual-engine fallback (pdfplumber -> pypdf) for maximum resilience.
 
 from __future__ import annotations
 import io
+import os
 import re
 from typing import Dict, List, Tuple
 
@@ -34,8 +35,11 @@ class PDFPageLimitExceeded(ValueError):
 class PDFParser:
     """Extracts text and layout elements from PDF binary streams."""
 
-    def __init__(self, max_pages: int = 15):
-        self.max_pages = max_pages
+    def __init__(self, max_pages: int | None = None):
+        if max_pages is not None:
+            self.max_pages = max_pages
+        else:
+            self.max_pages = int(os.getenv("MAX_PDF_PAGES", os.getenv("CAREERSYNC_MAX_PDF_PAGES", "15")))
         if HAS_PDFPLUMBER:
             self.engine = "pdfplumber"
         elif HAS_PYPDF:

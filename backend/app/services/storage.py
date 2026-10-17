@@ -82,3 +82,22 @@ def store_upload(payload: bytes, extension: str, upload_id: UUID | None = None) 
         byte_size=len(payload),
         sha256=hashlib.sha256(payload).hexdigest(),
     )
+
+
+def delete_file(storage_key: str) -> bool:
+    """Safely remove an unreferenced or orphaned file from the configured storage directory.
+
+    Guards against path traversal and does not raise an exception if the file does not exist.
+    """
+    if not storage_key or "/" in storage_key or "\\" in storage_key or ".." in storage_key:
+        return False
+    settings = get_settings()
+    storage_root = settings.upload_directory.expanduser().resolve()
+    destination = (storage_root / storage_key).resolve()
+    if destination.parent == storage_root and destination.exists():
+        try:
+            destination.unlink()
+            return True
+        except OSError:
+            return False
+    return False

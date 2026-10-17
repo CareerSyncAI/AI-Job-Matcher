@@ -5,6 +5,7 @@ Extracts text from paragraphs, tables, and bullet lists in Word DOCX documents.
 
 from __future__ import annotations
 import io
+import os
 import re
 import zipfile
 from typing import Dict, List
@@ -26,15 +27,31 @@ class DOCXParser:
 
     def __init__(
         self,
-        max_zip_entries: int = 500,
-        max_uncompressed_bytes: int = 30 * 1024 * 1024,
-        max_entry_bytes: int = 15 * 1024 * 1024,
-        max_compression_ratio: float = 50.0,
+        max_zip_entries: int | None = None,
+        max_uncompressed_bytes: int | None = None,
+        max_entry_bytes: int | None = None,
+        max_compression_ratio: float | None = None,
     ):
-        self.max_zip_entries = max_zip_entries
-        self.max_uncompressed_bytes = max_uncompressed_bytes
-        self.max_entry_bytes = max_entry_bytes
-        self.max_compression_ratio = max_compression_ratio
+        self.max_zip_entries = (
+            max_zip_entries
+            if max_zip_entries is not None
+            else int(os.getenv("DOCX_MAX_ZIP_ENTRIES", os.getenv("CAREERSYNC_DOCX_MAX_ZIP_ENTRIES", "500")))
+        )
+        self.max_uncompressed_bytes = (
+            max_uncompressed_bytes
+            if max_uncompressed_bytes is not None
+            else int(os.getenv("DOCX_MAX_UNCOMPRESSED_BYTES", os.getenv("CAREERSYNC_DOCX_MAX_UNCOMPRESSED_BYTES", str(30 * 1024 * 1024))))
+        )
+        self.max_entry_bytes = (
+            max_entry_bytes
+            if max_entry_bytes is not None
+            else int(os.getenv("DOCX_MAX_ENTRY_BYTES", os.getenv("CAREERSYNC_DOCX_MAX_ENTRY_BYTES", str(15 * 1024 * 1024))))
+        )
+        self.max_compression_ratio = (
+            max_compression_ratio
+            if max_compression_ratio is not None
+            else float(os.getenv("DOCX_MAX_COMPRESSION_RATIO", os.getenv("CAREERSYNC_DOCX_MAX_COMPRESSION_RATIO", "50.0")))
+        )
 
     def validate_archive(self, stream: io.BytesIO) -> None:
         """Inspects ZIP container bounds before passing to python-docx.
@@ -58,11 +75,16 @@ class DOCXParser:
             total_uncompressed = 0
             has_document_xml = False
             has_content_types = False
+            seen_filenames: set[str] = set()
 
             for info in infolist:
-                # Check for path traversal or absolute paths in ZIP member names
                 filename = info.filename.replace("\\", "/")
-                if filename.startswith("/") or ".." in filename.split("/"):
+                if filename in seen_filenames:
+                    raise DOCXSecurityError(f"Duplicate entry in DOCX archive: {filename}")
+                seen_filenames.add(filename)
+
+                # Check for path traversal, drive prefixes, or absolute paths in ZIP member names
+                if filename.startswith("/") or ":" in filename or ".." in filename.split("/"):
                     raise DOCXSecurityError(f"Suspicious path in DOCX archive member: {filename}")
 
                 if filename == "word/document.xml":
@@ -84,7 +106,11 @@ class DOCXParser:
                     )
 
                 # Check compression ratio for entries with significant size (avoid false positives on tiny files)
-                if info.compress_size > 0 and info.file_size > 100 * 1024:
+                if info.file_size > 100 * 1024:
+                    if info.compress_size == 0:
+                        raise DOCXSecurityError(
+                            f"DOCX archive member {filename} has invalid zero compressed size for non-empty entry."
+                        )
                     ratio = info.file_size / info.compress_size
                     if ratio > self.max_compression_ratio:
                         raise DOCXSecurityError(
@@ -92,7 +118,7 @@ class DOCXParser:
                             f"exceeds safety threshold of {self.max_compression_ratio}:1 (potential zip bomb)."
                         )
 
-            if not (has_document_xml or has_content_types):
+            if not has_document_xml:
                 raise DOCXSecurityError("DOCX archive is missing required document structure (no word/document.xml).")
 
     def parse_stream(self, stream: io.BytesIO) -> Dict[str, any]:
@@ -103,8 +129,14 @@ class DOCXParser:
         # 0. Validate archive boundaries before passing to python-docx
         self.validate_archive(stream)
 
-        stream.seek(0)
-        doc = docx.Document(stream)
+        try:
+            stream.seek(0)
+            doc = docx.Document(stream)
+        except DOCXSecurityError:
+            raise
+        except Exception as exc:
+            raise DOCXSecurityError(f"Malformed DOCX XML or package structure: {exc}") from exc
+
         text_blocks: List[str] = []
         warnings: List[str] = []
 
