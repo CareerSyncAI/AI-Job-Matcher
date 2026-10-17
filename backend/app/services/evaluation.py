@@ -41,6 +41,27 @@ from app.services.taxonomy import taxonomy
 logger = logging.getLogger(__name__)
 
 
+def get_scoring_matcher_id(matcher_or_engine_or_name: Any) -> str:
+    """
+    Returns the stable identifier of the semantic matcher that actually produces ranking scores.
+    For diagnostic matchers (e.g. AIServiceDiagnosticMatcher), returns the underlying fallback
+    matcher that actually generates the score, since diagnostic embeddings do not influence ranking.
+    """
+    if matcher_or_engine_or_name is None:
+        return "SublinearTFCosineMatcher"
+    if isinstance(matcher_or_engine_or_name, str):
+        if matcher_or_engine_or_name in ("AIServiceDiagnosticMatcher", "diagnostic", "embedding"):
+            return "SublinearTFCosineMatcher"
+        return matcher_or_engine_or_name
+    if hasattr(matcher_or_engine_or_name, "scoring_matcher_id"):
+        return matcher_or_engine_or_name.scoring_matcher_id
+    if hasattr(matcher_or_engine_or_name, "semantic_matcher"):
+        return get_scoring_matcher_id(matcher_or_engine_or_name.semantic_matcher)
+    if hasattr(matcher_or_engine_or_name, "fallback_matcher"):
+        return get_scoring_matcher_id(matcher_or_engine_or_name.fallback_matcher)
+    return getattr(matcher_or_engine_or_name, "__class__", type(matcher_or_engine_or_name)).__name__
+
+
 def compute_evaluation_fingerprint(
     *,
     job: Job,
@@ -48,11 +69,11 @@ def compute_evaluation_fingerprint(
     resume: Resume | None,
     weights: Weights,
     scoring_version: str = "deterministic-v2-taxonomy",
-    semantic_matcher_name: str = "SublinearTFCosineMatcher",
+    semantic_matcher: BaseSemanticMatcher | str | None = None,
 ) -> str:
     """
     Computes a deterministic SHA-256 fingerprint representing every input that influences scoring:
-    1. Scoring engine version, semantic matcher type, and taxonomy version
+    1. Scoring engine version, actual scoring semantic matcher type, and taxonomy version
     2. Scoring weights (skills, experience, education, semantic)
     3. Job requirements:
        - Sorted normalized skills with required & min_years
@@ -60,12 +81,15 @@ def compute_evaluation_fingerprint(
        - Education requirement
        - Normalized job title & description (influencing semantic corpus)
     4. Candidate scoring inputs:
+       - Candidate name and headline (consumed by candidate semantic corpus)
        - SHA-256 hash of normalized extracted resume text (scoring input)
        - Total experience years
-       - Education degree & explicit credentials
+       - Education degree & explicit credentials (safe against None or malformed skills)
     Excludes non-scoring job metadata (e.g., location, department, status, work_arrangement).
     """
     weights.validate()
+
+    actual_matcher_id = get_scoring_matcher_id(semantic_matcher)
 
     # 1. Normalized job skills
     normalized_job_skills: list[dict[str, Any]] = []
@@ -94,15 +118,17 @@ def compute_evaluation_fingerprint(
     candidate_degree: str | None = None
     if candidate.education and isinstance(candidate.education, dict):
         candidate_degree = candidate.education.get("degree")
-        for s in candidate.education.get("skills", []):
-            if isinstance(s, str):
-                canon = taxonomy.normalize(s) or s
-                candidate_declared_skills.append(canon.strip().casefold())
+        raw_skills = candidate.education.get("skills")
+        if isinstance(raw_skills, (list, tuple, set)):
+            for s in raw_skills:
+                if isinstance(s, str):
+                    canon = taxonomy.normalize(s) or s
+                    candidate_declared_skills.append(canon.strip().casefold())
     candidate_declared_skills = sorted(set(candidate_declared_skills))
 
     payload = {
         "scoring_version": scoring_version,
-        "semantic_matcher": semantic_matcher_name,
+        "semantic_matcher": actual_matcher_id,
         "taxonomy_version": "v1-canonical",
         "weights": {
             "skills": int(weights.skills),
@@ -116,6 +142,8 @@ def compute_evaluation_fingerprint(
         "job_corpus_hash": job_corpus_hash,
         "resume_text_hash": resume_text_hash,
         "candidate": {
+            "name": (candidate.name or "").strip().casefold() or None,
+            "headline": (candidate.headline or "").strip().casefold() or None,
             "total_experience_years": float(candidate.total_experience_years) if candidate.total_experience_years is not None else None,
             "degree": candidate_degree.strip().casefold() if candidate_degree else None,
             "declared_skills": candidate_declared_skills,
@@ -176,10 +204,12 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
         # Also pull explicit skills declared in candidate profile
         candidate_declared_skills: set[str] = set()
         if candidate.education and isinstance(candidate.education, dict):
-            for s in candidate.education.get("skills", []):
-                if isinstance(s, str):
-                    canon = taxonomy.normalize(s) or s
-                    candidate_declared_skills.add(canon.casefold())
+            raw_skills = candidate.education.get("skills")
+            if isinstance(raw_skills, (list, tuple, set)):
+                for s in raw_skills:
+                    if isinstance(s, str):
+                        canon = taxonomy.normalize(s) or s
+                        candidate_declared_skills.add(canon.casefold())
 
         # Combine all candidate competencies
         all_candidate_skills = set(detected_skills_map.keys()).union(candidate_declared_skills)
@@ -573,10 +603,10 @@ class EvaluationService:
             resume=resume,
             weights=weights,
             scoring_version="deterministic-v2-taxonomy",
-            semantic_matcher_name=self.engine.semantic_matcher.__class__.__name__ if hasattr(self.engine, "semantic_matcher") else "SublinearTFCosineMatcher",
+            semantic_matcher=self.engine.semantic_matcher if hasattr(self.engine, "semantic_matcher") else None,
         )
 
-        # Create immutable EvaluationRun snapshot
+        now_dt = datetime.now(UTC)
         run = EvaluationRun(
             application_id=application.id,
             status=EvaluationStatus.COMPLETED,
@@ -588,7 +618,8 @@ class EvaluationService:
                 "semantic": job.semantic_weight,
             },
             configuration_hash=config_hash,
-            completed_at=datetime.now(UTC),
+            created_at=now_dt,
+            completed_at=now_dt,
         )
         db.add(run)
         db.flush()
@@ -654,6 +685,7 @@ class EvaluationService:
         *,
         application: Application,
         recruiter_id: UUID,
+        semantic_matcher: BaseSemanticMatcher | str | None = None,
     ) -> CandidateCardDTO:
         job = application.job
         candidate = application.candidate
@@ -677,6 +709,7 @@ class EvaluationService:
 
         # Compute current expected configuration fingerprint for job + candidate + resume
         current_config_hash: str | None = None
+        fingerprint_calc_error = False
         if job and candidate:
             try:
                 weights = Weights(
@@ -690,9 +723,18 @@ class EvaluationService:
                     candidate=candidate,
                     resume=resume,
                     weights=weights,
+                    semantic_matcher=semantic_matcher,
                 )
-            except Exception:
+            except Exception as exc:
+                logger.warning(
+                    "Fingerprint calculation failed for application %s (job %s, candidate %s): %s",
+                    application.id,
+                    job.id,
+                    candidate.id,
+                    exc,
+                )
                 current_config_hash = None
+                fingerprint_calc_error = True
 
         # Determine evaluation status and freshness explicitly
         eval_status = "not_evaluated"
@@ -755,6 +797,9 @@ class EvaluationService:
             ):
                 eval_status = "current"
                 is_fresh = True
+            elif fingerprint_calc_error:
+                eval_status = "unknown"
+                is_fresh = False
             else:
                 eval_status = "stale"
                 is_fresh = False
@@ -796,7 +841,9 @@ class EvaluationService:
 
         candidate_skills = []
         if candidate.education and isinstance(candidate.education, dict):
-            candidate_skills = candidate.education.get("skills", [])
+            raw_cand_skills = candidate.education.get("skills")
+            if isinstance(raw_cand_skills, (list, tuple, set)):
+                candidate_skills = [str(s) for s in raw_cand_skills if s is not None]
 
         status_map = {
             ApplicationStatus.NEW: "screened",

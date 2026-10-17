@@ -123,6 +123,7 @@ def apply_to_job(
         db.commit()
     except Exception as eval_exc:
         logger.error("Application auto-evaluation failed for application %s: %s", application.id, eval_exc)
+        now_dt = datetime.now(UTC)
         failed_run = EvaluationRun(
             application_id=application.id,
             status=EvaluationStatus.FAILED,
@@ -133,7 +134,8 @@ def apply_to_job(
                 "education": job.education_weight,
                 "semantic": job.semantic_weight,
             },
-            completed_at=datetime.now(UTC),
+            created_at=now_dt,
+            completed_at=now_dt,
         )
         db.add(failed_run)
         record_audit_event(

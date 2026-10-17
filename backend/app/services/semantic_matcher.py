@@ -46,6 +46,11 @@ class BaseSemanticMatcher(ABC):
         """Produce numerical similarity and explainable concept overlap."""
         pass
 
+    @property
+    def scoring_matcher_id(self) -> str:
+        """Stable identifier of the semantic matcher that actually produces ranking scores."""
+        return self.__class__.__name__
+
 
 class SublinearTFCosineMatcher(BaseSemanticMatcher):
     """
@@ -80,6 +85,10 @@ class SublinearTFCosineMatcher(BaseSemanticMatcher):
 
     def __init__(self, model_version: str = "sublinear-tf-cosine-v1") -> None:
         self.model_version = model_version
+
+    @property
+    def scoring_matcher_id(self) -> str:
+        return "SublinearTFCosineMatcher"
 
     def match(
         self,
@@ -199,6 +208,13 @@ class AIServiceDiagnosticMatcher(BaseSemanticMatcher):
         self.timeout_seconds = timeout_seconds
         self.fallback_matcher = fallback_matcher or SublinearTFCosineMatcher()
         self.client_factory = client_factory
+
+    @property
+    def scoring_matcher_id(self) -> str:
+        """The diagnostic matcher delegates ranking scores to its fallback matcher."""
+        if hasattr(self.fallback_matcher, "scoring_matcher_id"):
+            return self.fallback_matcher.scoring_matcher_id
+        return self.fallback_matcher.__class__.__name__
 
     def match(
         self,
