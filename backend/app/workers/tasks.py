@@ -7,12 +7,24 @@ from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.models.entities import CandidateProfile, Resume
 from app.models.enums import AttentionReason, ProcessingStatus
+try:
+    from celery.exceptions import SoftTimeLimitExceeded
+except ImportError:
+    class SoftTimeLimitExceeded(Exception):
+        pass
+
 from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="careersync.resume.process", bind=True, max_retries=2)
+@celery_app.task(
+    name="careersync.resume.process",
+    bind=True,
+    max_retries=2,
+    time_limit=45,
+    soft_time_limit=30,
+)
 def process_resume(self, resume_id: str, db=None) -> None:
     """Consumes AI service parsing & entity extraction according to docs/ai-service-contract.md v1.0.0.
 
@@ -174,6 +186,17 @@ def process_resume(self, resume_id: str, db=None) -> None:
         db.commit()
 
 
+    except SoftTimeLimitExceeded:
+        logger.warning("Task soft time limit exceeded while processing resume %s", resume_id)
+        db.rollback()
+        try:
+            resume = db.get(Resume, resume_uuid)
+            if resume:
+                resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+                resume.needs_attention_reason = AttentionReason.PARSE_FAILED
+                db.commit()
+        except Exception:
+            pass
     except Exception as err:
         logger.exception("Unexpected error in resume processing worker: %s", err)
         db.rollback()

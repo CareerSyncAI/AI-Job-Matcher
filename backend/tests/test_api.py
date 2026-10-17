@@ -294,10 +294,18 @@ def test_e2e_real_resume_worker_and_ai_integration(client, db_session, monkeypat
     cand_headers = {"Authorization": f"Bearer {cand_token}"}
 
     # 2. Upload real-format docx resume
-    from pathlib import Path
-    sample_file = Path(__file__).parents[2] / "career-sync-storage" / "sample_real_resume.docx"
-    with open(sample_file, "rb") as f:
-        doc_bytes = f.read()
+    doc_bytes = _create_docx_resume_bytes(
+        "Alex Mercer\n"
+        "Senior Software Engineer\n\n"
+        "Summary:\n"
+        "Senior Software Engineer with 8 years of distributed systems experience in high-scale environments.\n\n"
+        "Skills:\n"
+        "Python, React, TypeScript, Docker, PostgreSQL, AWS\n\n"
+        "Experience:\n"
+        "Lead Architect at FinTech Inc (2020 - Present)\n\n"
+        "Education:\n"
+        "BS in Computer Science, MIT 2018"
+    )
 
     files = {
         "file": (
@@ -399,10 +407,18 @@ def test_ai_off_graceful_degradation(client, db_session, monkeypatch):
     ).json()["access_token"]
     cand_headers = {"Authorization": f"Bearer {cand_token}"}
 
-    from pathlib import Path
-    sample_file = Path(__file__).parents[2] / "career-sync-storage" / "sample_real_resume.docx"
-    with open(sample_file, "rb") as f:
-        doc_bytes = f.read()
+    doc_bytes = _create_docx_resume_bytes(
+        "Alex Mercer\n"
+        "Senior Software Engineer\n\n"
+        "Summary:\n"
+        "Senior Software Engineer with 8 years of distributed systems experience in high-scale environments.\n\n"
+        "Skills:\n"
+        "Python, React, TypeScript, Docker, PostgreSQL, AWS\n\n"
+        "Experience:\n"
+        "Lead Architect at FinTech Inc (2020 - Present)\n\n"
+        "Education:\n"
+        "BS in Computer Science, MIT 2018"
+    )
 
     files = {
         "file": (

@@ -37,7 +37,7 @@ from app.services.jobs import JobService
 from app.services.resumes import ResumeService
 from app.services.scoring import CoverageTier
 from app.services.taxonomy import taxonomy
-from app.services.text_extraction import extract_text_from_file
+from app.services.text_extraction import DocumentSecurityError, extract_text_from_file
 
 logger = logging.getLogger(__name__)
 
@@ -181,7 +181,16 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
             db.commit()
             return
 
-        extracted_text = extract_text_from_file(file_path, resume.mime_type)
+        try:
+            extracted_text = extract_text_from_file(file_path, resume.mime_type, raise_security_exceptions=True)
+        except DocumentSecurityError as sec_err:
+            logger.warning("Profile resume %s rejected by document security policy: %s", resume.id, sec_err)
+            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            resume.needs_attention_reason = AttentionReason.PARSE_FAILED
+            resume.extracted_text = ""
+            db.commit()
+            return
+
         if not extracted_text or not extracted_text.strip():
             logger.warning("No text extracted from profile resume %s", resume.id)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
@@ -255,7 +264,23 @@ async def upload_profile_resume(
     if settings.enable_worker:
         ResumeService.enqueue_worker(resume.id)
     else:
-        await asyncio.to_thread(_process_profile_resume_inline, resume.id, candidate.id)
+        timeout_sec = settings.resume_extraction_timeout_seconds
+        try:
+            await asyncio.wait_for(
+                asyncio.to_thread(_process_profile_resume_inline, resume.id, candidate.id),
+                timeout=timeout_sec,
+            )
+        except TimeoutError:
+            logger.warning(
+                "Profile resume processing reached request timeout of %ss for resume %s",
+                timeout_sec,
+                resume.id,
+            )
+            db.refresh(resume)
+            if resume.processing_status != ProcessingStatus.COMPLETED:
+                resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+                resume.needs_attention_reason = AttentionReason.PARSE_FAILED
+                db.commit()
         db.refresh(resume)
 
     return ResumeResponse(

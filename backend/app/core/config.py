@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     ai_service_api_key: str = "careersync-internal-ai-service-key-dev"
     semantic_matcher: str = "baseline"
     ai_semantic_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
+    max_pdf_pages: int = Field(default=15, ge=1, le=100)
+    docx_max_zip_entries: int = Field(default=500, ge=1)
+    docx_max_uncompressed_bytes: int = Field(default=30 * 1024 * 1024, ge=1)
+    docx_max_compression_ratio: float = Field(default=50.0, ge=1.0)
+    docx_max_entry_bytes: int = Field(default=15 * 1024 * 1024, ge=1)
+    resume_extraction_timeout_seconds: float = Field(default=30.0, ge=1.0, le=120.0)
 
     @field_validator("jwt_secret")
     @classmethod

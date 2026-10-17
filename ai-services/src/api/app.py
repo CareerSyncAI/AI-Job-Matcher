@@ -197,6 +197,18 @@ async def parse_resume(
             sections=sections,
             warnings=parse_result.get("warnings", [])
         )
+    except ValueError as e:
+        msg = str(e)
+        code = "PAGE_LIMIT_EXCEEDED" if "pages" in msg.lower() else "INVALID_DOCUMENT_ARCHIVE"
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=StandardErrorResponse(
+                error=ErrorDetail(
+                    code=code,
+                    message=msg
+                )
+            ).model_dump()
+        )
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
