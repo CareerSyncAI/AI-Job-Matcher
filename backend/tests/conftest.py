@@ -9,9 +9,9 @@ backend_dir = str(Path(__file__).resolve().parents[1])
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
-os.environ["CAREERSYNC_JWT_SECRET"] = "a" * 32
-os.environ["CAREERSYNC_ENVIRONMENT"] = "testing"
-os.environ["CAREERSYNC_DATABASE_URL"] = "sqlite://"
+os.environ.setdefault("CAREERSYNC_JWT_SECRET", "a" * 32)
+os.environ.setdefault("CAREERSYNC_ENVIRONMENT", "testing")
+os.environ.setdefault("CAREERSYNC_DATABASE_URL", "sqlite://")
 
 from collections.abc import Generator
 

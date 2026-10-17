@@ -49,11 +49,11 @@ class ResumeService:
             db.flush()
         except IntegrityError as error:
             db.rollback()
-            ResumeService.delete_storage_key(stored.storage_key)
+            ResumeService.delete_storage_key(stored.storage_key, db=db)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Duplicate resume upload.") from error
         except Exception:
             db.rollback()
-            ResumeService.delete_storage_key(stored.storage_key)
+            ResumeService.delete_storage_key(stored.storage_key, db=db)
             raise
 
         return resume
@@ -81,6 +81,9 @@ class ResumeService:
         """Safely delete an uncommitted or orphaned stored file.
 
         Guarantees that a file currently referenced by a committed database record is not deleted.
+        If a database session is provided, it verifies against the database; if the session is in
+        an unrolled-back error state, it rolls back and verifies safely. If verification cannot
+        succeed due to a database exception, deletion is refused.
         """
         if not storage_key:
             return False
@@ -91,7 +94,13 @@ class ResumeService:
                 if referenced is not None:
                     return False
             except Exception:
-                return False
+                try:
+                    db.rollback()
+                    referenced = db.query(Resume).filter(Resume.storage_key == storage_key).first()
+                    if referenced is not None:
+                        return False
+                except Exception:
+                    return False
 
         from app.services.storage import delete_file
 

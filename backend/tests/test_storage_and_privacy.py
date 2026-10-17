@@ -364,3 +364,125 @@ def test_privacy_missing_file_logs_storage_key_not_absolute_path(db_session, cap
         assert root_str not in caplog.text
     finally:
         pass
+
+
+def test_delete_storage_key_handles_unrolled_back_session_error(db_session, tmp_path, monkeypatch):
+    """Verify delete_storage_key recovers from unrolled-back session error and safely checks references."""
+    settings = get_settings()
+    root = settings.upload_directory.expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+
+    # 1. Create a committed resume
+    key = f"committed_test_{uuid4()}.docx"
+    file_path = root / key
+    file_path.write_bytes(b"Committed Content")
+
+    import hashlib
+    resume = Resume(
+        original_filename="committed.docx",
+        storage_key=key,
+        mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        byte_size=17,
+        sha256=hashlib.sha256(b"Committed Content").hexdigest(),
+        processing_status=ProcessingStatus.COMPLETED,
+    )
+    db_session.add(resume)
+    db_session.commit()
+
+    # 2. Simulate a session that raises on first query (e.g., PendingRollbackError) but recovers on rollback
+    call_count = 0
+    orig_query = db_session.query
+
+    def query_flaky(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise RuntimeError("Simulated PendingRollbackError in session")
+        return orig_query(*args, **kwargs)
+
+    monkeypatch.setattr(db_session, "query", query_flaky)
+
+    # Calling delete_storage_key on the committed key must recover and refuse deletion
+    result = ResumeService.delete_storage_key(key, db=db_session)
+    assert result is False
+    assert file_path.exists()
+
+
+def test_delete_storage_key_refuses_deletion_if_db_error_persists(db_session, monkeypatch):
+    """Verify delete_storage_key returns False and never unlinks when DB queries persistently fail."""
+    settings = get_settings()
+    root = settings.upload_directory.expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+
+    key = f"unverified_{uuid4()}.docx"
+    file_path = root / key
+    file_path.write_bytes(b"Unverified Content")
+
+    # Persistently fail DB query
+    def broken_query(*args, **kwargs):
+        raise RuntimeError("Database connection broken")
+
+    monkeypatch.setattr(db_session, "query", broken_query)
+
+    # Deletion MUST be refused because reference state cannot be verified
+    result = ResumeService.delete_storage_key(key, db=db_session)
+    assert result is False
+    assert file_path.exists()
+
+
+def test_concurrent_uploads_distinct_keys_isolation(client, db_session, monkeypatch):
+    """Verify two operations with distinct storage keys do not interfere: failure cleans only its own file."""
+    # Register recruiter
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "rec.concurrent@example.com", "password": "Password123456!", "role": "recruiter", "organization_name": "ConcOrg"},
+    )
+    rec_tok = client.post("/api/v1/auth/login", json={"email": "rec.concurrent@example.com", "password": "Password123456!"}).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+
+    job_res = client.post(
+        "/api/v1/jobs",
+        headers=rec_h,
+        json={"title": "Concurrent Test Job", "description": "Test", "status": "open"},
+    )
+    job_id = job_res.json()["id"]
+
+    settings = get_settings()
+    root = settings.upload_directory.expanduser().resolve()
+
+    # Upload 1: Successful upload
+    docx_success = _create_minimal_docx("Successful Candidate 1")
+    res1 = client.post(
+        f"/api/v1/jobs/{job_id}/resumes",
+        headers=rec_h,
+        files={"file": ("candidate1.docx", docx_success, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    )
+    assert res1.status_code == 202
+    res1_id = res1.json()["id"]
+    resume1 = db_session.query(Resume).filter(Resume.id == UUID(res1_id)).one()
+    file1_path = root / resume1.storage_key
+    assert file1_path.exists()
+
+    # Upload 2: Fails during commit
+    orig_commit = db_session.commit
+
+    def faulty_commit():
+        raise RuntimeError("Upload 2 commit failure")
+
+    monkeypatch.setattr(db_session, "commit", faulty_commit)
+    docx_fail = _create_minimal_docx("Failed Candidate 2")
+
+    with pytest.raises(RuntimeError, match="Upload 2 commit failure"):
+        client.post(
+            f"/api/v1/jobs/{job_id}/resumes",
+            headers=rec_h,
+            files={"file": ("candidate2.docx", docx_fail, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        )
+
+    # Upload 1's file must remain completely intact and referenced
+    assert file1_path.exists()
+    assert file1_path.read_bytes() == docx_success
+
+    # Upload 2's uncommitted file must have been cleaned up
+    remaining_files = [p for p in root.glob("*.docx") if p.read_bytes() == docx_fail]
+    assert len(remaining_files) == 0
