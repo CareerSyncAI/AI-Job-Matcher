@@ -418,7 +418,7 @@ Backend API (Python FastAPI / Pydantic v2)
              └── Semantic Engine: SublinearTFCosineMatcher [Authoritative] / all-MiniLM-L6-v2 [Diagnostic] (BGE-M3 deferred)
 ```
 
-**Compute Constraints:** Development hardware is RTX 3050 & RTX 2050 laptop GPUs. Small, highly-optimized models (`BGE-M3`, `GLiNER`) are selected to balance high-accuracy neural extraction with VRAM constraints.
+**Compute Constraints:** Development hardware is RTX 3050 & RTX 2050 laptop GPUs. The current production and test pipeline relies on lightweight deterministic rule-based extractors, taxonomy matchers, and Sublinear TF cosine matching (with sentence-transformers `all-MiniLM-L6-v2` available for diagnostic evaluation) to operate efficiently within local hardware constraints. Neural extraction and embedding models (`GLiNER`, `BGE-M3`) remain deferred candidate architectures.
 
 ---
 
@@ -449,7 +449,7 @@ The backend computes explicitly *why* a candidate landed at their rank (e.g., `+
 ### Confirmed Semantic Rules ✅ CONFIRMED
 - **Experience Calculation:** Calculate total professional experience from the union of employment intervals; overlapping employment is counted once. Internships do not count toward default professional experience. Part-time employment counts by elapsed calendar duration, not multiplied by full-time equivalence. Current employment is calculated through the evaluation date. Skill-specific minimum-years requirements must use attributable evidence; if reliable skill-specific tenure cannot be established, do not invent it.
 - **Education Matching:** Degree hierarchy is PhD >= Master >= Bachelor. A Master's or PhD satisfies a Bachelor's minimum. A Bachelor's does not satisfy a Master's requirement. Field matching uses deterministic recognized/related-field mappings; unmapped equivalence must not be invented.
-- **Transferable Skills:** Transferable status requires an explicit configured skill taxonomy/mapping. BGE-M3 semantic similarity may assist contextual matching but cannot by itself declare a skill Transferable.
+- **Transferable Skills:** Transferable status requires an explicit configured skill taxonomy/mapping. Semantic similarity may assist contextual matching but cannot by itself declare a skill Transferable (`BGE-M3` remains deferred).
 - **Ranking Math & Tie-breaking:** 
   - Weights must sum to exactly 100%; zero is allowed; negative weights are not. 
   - Ranking first uses deterministic Requirement Coverage tiers for *required* requirements (e.g., Tier 1: No computable required gaps, Tier 2: One or more required gaps, Tier 3: Insufficient evidence). 
