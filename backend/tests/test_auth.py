@@ -118,3 +118,22 @@ def test_change_password_unauthenticated(client):
         json={"current_password": "OldPassword123!", "new_password": "NewPassword123!"},
     )
     assert change_res.status_code == 401
+
+
+def test_login_rate_limiting_lockout(client):
+    """Verify repeated failed login attempts trigger HTTP 429 rate limit."""
+    email = "bruteforce@example.com"
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "Password123456!", "role": "candidate"},
+    )
+    # Fail 5 times with bad password
+    for _ in range(5):
+        res = client.post("/api/v1/auth/login", json={"email": email, "password": "WrongPassword!"})
+        assert res.status_code == 401
+
+    # 6th attempt should be blocked with 429 Too Many Requests even with the correct password
+    blocked_res = client.post("/api/v1/auth/login", json={"email": email, "password": "Password123456!"})
+    assert blocked_res.status_code == 429
+    assert "too many failed login attempts" in str(blocked_res.json()).lower()
+
