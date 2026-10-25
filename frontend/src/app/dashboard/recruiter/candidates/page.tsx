@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useTheme } from "@/lib/theme";
@@ -60,6 +60,9 @@ export default function RecruiterCandidatesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<string>("All");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateCardDTO | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Fetch recruiter's jobs on mount
   useEffect(() => {
@@ -159,6 +162,59 @@ export default function RecruiterCandidatesPage() {
     }
   };
 
+  const handleUploadResume = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedJobId) return;
+
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext !== "pdf" && ext !== "docx") {
+      setUploadFeedback({
+        type: "error",
+        message: "Only PDF and DOCX resume formats are supported.",
+      });
+      return;
+    }
+
+    try {
+      setUploadingResume(true);
+      setUploadFeedback(null);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await api.post(`/jobs/${selectedJobId}/resumes`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setUploadFeedback({
+        type: "success",
+        message: `Successfully uploaded and evaluated "${file.name}".`,
+      });
+
+      // Refresh candidate list for current job
+      const res = await api.get(`/jobs/${selectedJobId}/candidates`);
+      setCandidates(Array.isArray(res.data) ? res.data : []);
+
+      // Also refresh jobs summary to update applicant count
+      const jobsRes = await api.get("/jobs");
+      if (Array.isArray(jobsRes.data)) {
+        setJobs(jobsRes.data);
+      }
+    } catch (err: unknown) {
+      console.error("Failed to upload resume to job:", err);
+      const errResponse = (err as { response?: { data?: { detail?: string } } })?.response;
+      const detail = errResponse?.data?.detail || "Failed to upload and evaluate resume. Please try again.";
+      setUploadFeedback({
+        type: "error",
+        message: detail,
+      });
+    } finally {
+      setUploadingResume(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const shortlistedCount = candidates.filter((c) => c.status === "shortlisted").length;
 
   return (
@@ -202,7 +258,7 @@ export default function RecruiterCandidatesPage() {
           isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
         }`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <IconBriefcase size={18} className={isDark ? "text-emerald-400" : "text-emerald-700"} />
           <span className={`text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-700"}`}>Target Requisition:</span>
           {jobs.length === 0 ? (
@@ -213,6 +269,7 @@ export default function RecruiterCandidatesPage() {
               onChange={(e) => {
                 setSelectedJobId(e.target.value);
                 setCandidates([]);
+                setUploadFeedback(null);
               }}
               aria-label="Target Requisition"
               className={`text-xs font-semibold rounded-xl px-3 py-2 border focus:outline-none focus:border-emerald-500 transition cursor-pointer ${
@@ -226,6 +283,17 @@ export default function RecruiterCandidatesPage() {
               ))}
             </select>
           )}
+
+          {selectedJobId && (
+            <button
+              type="button"
+              disabled={uploadingResume}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {uploadingResume ? "Uploading & Evaluating..." : "+ Upload Resume"}
+            </button>
+          )}
         </div>
 
         <Link
@@ -237,6 +305,37 @@ export default function RecruiterCandidatesPage() {
           Manage All Requisitions →
         </Link>
       </div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleUploadResume}
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        className="hidden"
+      />
+
+      {uploadFeedback && (
+        <div
+          className={`p-4 rounded-xl text-xs font-medium border flex items-center justify-between gap-3 ${
+            uploadFeedback.type === "success"
+              ? isDark
+                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                : "bg-emerald-50 border-emerald-200 text-emerald-700"
+              : isDark
+              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+              : "bg-rose-50 border-rose-200 text-rose-700"
+          }`}
+        >
+          <span>{uploadFeedback.message}</span>
+          <button
+            type="button"
+            onClick={() => setUploadFeedback(null)}
+            className="text-current opacity-70 hover:opacity-100 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Search and Skill Filters */}
       <div
@@ -300,12 +399,14 @@ export default function RecruiterCandidatesPage() {
           <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
             Upload applicant resumes directly to this job to generate deterministic evidence-backed evaluations.
           </p>
-          <Link
-            href="/dashboard/recruiter/jobs"
-            className="inline-block mt-4 px-4 py-2 bg-[#059669] text-white text-xs font-semibold rounded-xl"
+          <button
+            type="button"
+            disabled={!selectedJobId || uploadingResume}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-block mt-4 px-4 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl transition disabled:opacity-50 cursor-pointer"
           >
-            Upload Resumes to Job
-          </Link>
+            {uploadingResume ? "Evaluating Resume..." : "Upload Resume to Requisition"}
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

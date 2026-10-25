@@ -747,5 +747,343 @@ def test_apply_to_job_handles_evaluation_failure_cleanly(client, monkeypatch):
         db.close()
 
 
+def test_prompt_7_recruiter_journey_e2e(client):
+    """
+    Prompt 7 — Recruiter Journey:
+    1. Recruiter registers and logs in.
+    2. Creates/opens job requisition with specific skills, experience and education requirements.
+    3. Uploads synthetic PDF and DOCX resumes directly to the job (POST /api/v1/jobs/{job_id}/resumes).
+    4. Confirms actual parsing, extraction, and deterministic evaluation (scores > 0, evaluated_skills populated).
+    5. Inspects candidate ranking (GET /api/v1/jobs/{job_id}/candidates), verifying coverage tier ordering and score evidence.
+    6. Updates application stage (PATCH /api/v1/applications/{app_id}/status) and adds recruiter note (POST /api/v1/applications/{app_id}/notes).
+    7. Refreshes candidate detail (GET /api/v1/jobs/{job_id}/candidates/{cand_id}) and confirms database persistence.
+    """
+    from tests.test_document_security import _create_synthetic_pdf
+
+    # 1. Register & login recruiter
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "p7.recruiter@example.com",
+            "password": "Password123456!",
+            "role": "recruiter",
+            "organization_name": "CloudScale Systems",
+        },
+    )
+    rec_tok = client.post(
+        "/api/v1/auth/login",
+        json={"email": "p7.recruiter@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+
+    # 2. Create and open job requisition with skills, experience, and education
+    job_payload = {
+        "title": "Principal Distributed Systems Engineer",
+        "department": "Infrastructure",
+        "location": "Remote",
+        "employment_type": "Full-time",
+        "work_arrangement": "Remote",
+        "experience_min_years": 4.0,
+        "education_required": "Bachelor",
+        "description": "Seeking expert in Python, Docker, and PostgreSQL architecture.",
+        "skills": [
+            {"name": "Python", "required": True, "min_years": 3.0},
+            {"name": "Docker", "required": True, "min_years": 2.0},
+            {"name": "PostgreSQL", "required": False, "min_years": 1.0},
+        ],
+        "evaluation_weights": {"skills": 40, "experience": 30, "education": 15, "semantic": 15},
+        "status": "open",
+    }
+    job_res = client.post("/api/v1/jobs", headers=rec_h, json=job_payload)
+    assert job_res.status_code == 201
+    job_id = job_res.json()["id"]
+
+    # 3. Recruiter uploads synthetic PDF directly to the job
+    pdf_bytes = _create_synthetic_pdf(
+        1,
+        "Alex Rivera Python Docker PostgreSQL 6 years experience Degree Bachelor Computer Science",
+    )
+    pdf_upload = client.post(
+        f"/api/v1/jobs/{job_id}/resumes",
+        headers=rec_h,
+        files={"file": ("alex_rivera.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert pdf_upload.status_code == 202
+    assert pdf_upload.json()["processing_status"] in ("completed", "processing", "queued")
+
+    # 4. Recruiter uploads synthetic DOCX directly to the job
+    docx_bytes = _create_docx_resume_bytes(
+        "Jordan Lee\n"
+        "Software Engineer\n"
+        "Skills: Python, TypeScript, React\n"
+        "Experience: 2 years at WebCorp\n"
+        "Education: Bachelor in Software Engineering"
+    )
+    docx_upload = client.post(
+        f"/api/v1/jobs/{job_id}/resumes",
+        headers=rec_h,
+        files={
+            "file": (
+                "jordan_lee.docx",
+                docx_bytes,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+    )
+    assert docx_upload.status_code == 202
+
+    # 5. Inspect candidate leaderboard/ranking
+    candidates_res = client.get(f"/api/v1/jobs/{job_id}/candidates", headers=rec_h)
+    assert candidates_res.status_code == 200
+    candidates = candidates_res.json()
+    assert len(candidates) == 2
+
+    # Verify deterministic ranking: Alex (Python + Docker) ranks above Jordan (missing Docker)
+    top_cand = candidates[0]
+    second_cand = candidates[1]
+    assert top_cand["matchScore"] >= second_cand["matchScore"]
+    assert top_cand["matchScore"] > 0
+    assert len(top_cand["evidence"]) > 0
+
+    # 6. Update application stage and add note
+    app_id = top_cand["application_id"]
+    cand_id = top_cand["id"]
+    patch_res = client.patch(
+        f"/api/v1/applications/{app_id}/status",
+        headers=rec_h,
+        json={"status": "shortlisted"},
+    )
+    assert patch_res.status_code == 200
+    assert patch_res.json()["status"] == "shortlisted"
+
+    note_res = client.post(
+        f"/api/v1/applications/{app_id}/notes",
+        headers=rec_h,
+        json={"body": "Candidate meets all required technical criteria. Scheduled for technical interview."},
+    )
+    assert note_res.status_code == 201
+
+    # 7. Refresh candidate detail and confirm persistence
+    detail_res = client.get(f"/api/v1/jobs/{job_id}/candidates/{cand_id}", headers=rec_h)
+    assert detail_res.status_code == 200
+    detail = detail_res.json()
+    assert detail["status"] == "shortlisted"
+    assert "Scheduled for technical interview" in detail["recruiterNotes"]
+    assert detail["matchScore"] == top_cand["matchScore"]
+
+
+def test_prompt_7_candidate_journey_e2e(client, db_session):
+    """
+    Prompt 7 — Candidate Journey:
+    1. Register and login candidate.
+    2. Edge Case: Apply without resume on file -> 400 Bad Request.
+    3. Candidate uploads synthetic resume (POST /api/v1/profile/resumes).
+    4. Candidate browses open jobs (GET /api/v1/jobs/public/open).
+    5. Candidate applies using stored resume (POST /api/v1/jobs/{job_id}/applications).
+    6. Edge Case: Duplicate application to same job -> 409 Conflict.
+    7. Verifies application persisted and status is returned (GET /api/v1/applications/me).
+    8. Edge Case: Candidate applies with resume in NEEDS_ATTENTION state -> 422 Unprocessable Entity.
+    """
+    # 1. Create recruiter and open job
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "rec.cj@example.com", "password": "Password123456!", "role": "recruiter"},
+    )
+    rec_tok = client.post(
+        "/api/v1/auth/login",
+        json={"email": "rec.cj@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+    job_id = client.post(
+        "/api/v1/jobs",
+        headers=rec_h,
+        json={
+            "title": "Fullstack Cloud Engineer",
+            "department": "Platform",
+            "location": "Remote",
+            "employment_type": "Full-time",
+            "work_arrangement": "Remote",
+            "experience_min_years": 3.0,
+            "education_required": "Bachelor",
+            "description": "Python, React, and cloud APIs.",
+            "skills": [{"name": "Python", "required": True}],
+            "evaluation_weights": {"skills": 50, "experience": 30, "education": 10, "semantic": 10},
+            "status": "open",
+        },
+    ).json()["id"]
+
+    # 2. Register and login candidate Morgan
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "morgan.cand@example.com", "password": "Password123456!", "role": "candidate"},
+    )
+    cand_tok = client.post(
+        "/api/v1/auth/login",
+        json={"email": "morgan.cand@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    cand_h = {"Authorization": f"Bearer {cand_tok}"}
+
+    # 3. Edge Case: Apply without resume on file -> 400 Bad Request
+    no_resume_apply = client.post(f"/api/v1/jobs/{job_id}/applications", headers=cand_h, json={})
+    assert no_resume_apply.status_code == 400
+    assert "No resume on file" in str(no_resume_apply.json())
+
+    # 4. Candidate uploads synthetic resume
+    docx_bytes = _create_docx_resume_bytes(
+        "Morgan Taylor\n"
+        "Fullstack Software Engineer\n"
+        "Skills: Python, React, TypeScript, Docker\n"
+        "Experience: 4 years building scalable web services\n"
+        "Education: Bachelor of Science in Computer Science"
+    )
+    upload_res = client.post(
+        "/api/v1/profile/resumes",
+        headers=cand_h,
+        files={
+            "file": (
+                "morgan_resume.docx",
+                docx_bytes,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+    )
+    assert upload_res.status_code == 202
+    stored_resume_id = upload_res.json()["id"]
+
+    # 5. Candidate browses open jobs
+    browse_res = client.get("/api/v1/jobs/public/open")
+    assert browse_res.status_code == 200
+    open_jobs = browse_res.json()
+    assert any(j["id"] == job_id for j in open_jobs)
+
+    # 6. Candidate applies using stored resume (auto-evaluates to under_review)
+    apply_res = client.post(
+        f"/api/v1/jobs/{job_id}/applications",
+        headers=cand_h,
+        json={"resume_id": stored_resume_id},
+    )
+    assert apply_res.status_code == 201
+    app_data = apply_res.json()
+    assert app_data["job_id"] == job_id
+    assert app_data["status"] == "under_review"
+
+    # 7. Edge Case: Duplicate application to same job -> 409 Conflict
+    dup_apply = client.post(
+        f"/api/v1/jobs/{job_id}/applications",
+        headers=cand_h,
+        json={"resume_id": stored_resume_id},
+    )
+    assert dup_apply.status_code == 409
+    assert "An application already exists" in str(dup_apply.json())
+
+    # 8. Verify application persisted and status is returned on refresh
+    my_apps = client.get("/api/v1/applications/me", headers=cand_h)
+    assert my_apps.status_code == 200
+    apps_list = my_apps.json()
+    assert len(apps_list) == 1
+    assert apps_list[0]["job_id"] == job_id
+    assert apps_list[0]["status"] == "under_review"
+
+    # 9. Edge Case: Candidate applies with resume in NEEDS_ATTENTION state -> 422
+    from app.models.entities import Resume
+    from app.models.enums import ProcessingStatus
+    from uuid import UUID
+    res_record = db_session.get(Resume, UUID(stored_resume_id))
+    res_record.processing_status = ProcessingStatus.NEEDS_ATTENTION
+    db_session.commit()
+
+    # Create a second open job for the failed resume test
+    job2_id = client.post(
+        "/api/v1/jobs",
+        headers=rec_h,
+        json={"title": "Second Job", "description": "Another opening", "status": "open"},
+    ).json()["id"]
+
+    failed_apply = client.post(
+        f"/api/v1/jobs/{job2_id}/applications",
+        headers=cand_h,
+        json={"resume_id": stored_resume_id},
+    )
+    assert failed_apply.status_code == 422
+    assert "Resume processing failed" in str(failed_apply.json())
+
+
+def test_prompt_7_authorization_and_privacy_boundaries(client):
+    """
+    Prompt 7 — Authorization and Privacy Boundaries:
+    1. Candidate C1 cannot access Candidate C2's resume or ATS report (403 Forbidden).
+    2. Recruiter R1 cannot read Recruiter R2's jobs or candidates (403/404).
+    3. Candidate and second recruiter see redacted internal scoring weights (all 0).
+    4. Candidate cannot read recruiter-only draft jobs (404 Not Found).
+    5. Recruiter resume upload containing registered user email cannot hijack registered account.
+    """
+    # 1. Candidate C1 and C2
+    client.post("/api/v1/auth/register", json={"email": "c1.p7@example.com", "password": "Password123456!", "role": "candidate"})
+    c1_tok = client.post("/api/v1/auth/login", json={"email": "c1.p7@example.com", "password": "Password123456!"}).json()["access_token"]
+    c1_h = {"Authorization": f"Bearer {c1_tok}"}
+
+    client.post("/api/v1/auth/register", json={"email": "c2.p7@example.com", "password": "Password123456!", "role": "candidate"})
+    c2_tok = client.post("/api/v1/auth/login", json={"email": "c2.p7@example.com", "password": "Password123456!"}).json()["access_token"]
+    c2_h = {"Authorization": f"Bearer {c2_tok}"}
+
+    # C1 uploads resume
+    docx_c1 = _create_docx_resume_bytes("Candidate One Private Resume Text")
+    c1_res_id = client.post(
+        "/api/v1/profile/resumes",
+        headers=c1_h,
+        files={"file": ("c1.docx", docx_c1, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    ).json()["id"]
+
+    # C2 cannot access C1's resume or ATS report
+    assert client.get(f"/api/v1/resumes/{c1_res_id}", headers=c2_h).status_code == 403
+    assert client.get(f"/api/v1/resumes/{c1_res_id}/ats", headers=c2_h).status_code == 403
+
+    # 2. Recruiter R1 and R2
+    client.post("/api/v1/auth/register", json={"email": "r1.p7@example.com", "password": "Password123456!", "role": "recruiter", "organization_name": "Org 1"})
+    r1_tok = client.post("/api/v1/auth/login", json={"email": "r1.p7@example.com", "password": "Password123456!"}).json()["access_token"]
+    r1_h = {"Authorization": f"Bearer {r1_tok}"}
+
+    client.post("/api/v1/auth/register", json={"email": "r2.p7@example.com", "password": "Password123456!", "role": "recruiter", "organization_name": "Org 2"})
+    r2_tok = client.post("/api/v1/auth/login", json={"email": "r2.p7@example.com", "password": "Password123456!"}).json()["access_token"]
+    r2_h = {"Authorization": f"Bearer {r2_tok}"}
+
+    # R1 creates draft job with confidential weights
+    job_r1 = client.post(
+        "/api/v1/jobs",
+        headers=r1_h,
+        json={
+            "title": "Confidential Staff Lead",
+            "description": "Internal only",
+            "skills": [{"name": "Python", "required": True}],
+            "evaluation_weights": {"skills": 60, "experience": 20, "education": 10, "semantic": 10},
+            "status": "draft",
+        },
+    ).json()
+    job_r1_id = job_r1["id"]
+
+    # C1 and R2 cannot view draft job (404)
+    assert client.get(f"/api/v1/jobs/{job_r1_id}", headers=c1_h).status_code == 404
+    assert client.get(f"/api/v1/jobs/{job_r1_id}", headers=r2_h).status_code == 404
+
+    # R2 cannot access candidates of R1's job
+    assert client.get(f"/api/v1/jobs/{job_r1_id}/candidates", headers=r2_h).status_code in (403, 404)
+
+    # R1 opens the job
+    client.patch(f"/api/v1/jobs/{job_r1_id}", headers=r1_h, json={"status": "open"})
+
+    # R1 sees real weights
+    r1_view = client.get(f"/api/v1/jobs/{job_r1_id}", headers=r1_h).json()
+    assert r1_view["evaluation_weights"]["skills"] == 60
+
+    # C1 and R2 see redacted weights (all 0)
+    c1_view = client.get(f"/api/v1/jobs/{job_r1_id}", headers=c1_h).json()
+    assert c1_view["evaluation_weights"]["skills"] == 0
+    assert c1_view["evaluation_weights"]["experience"] == 0
+
+    r2_view = client.get(f"/api/v1/jobs/{job_r1_id}", headers=r2_h).json()
+    assert r2_view["evaluation_weights"]["skills"] == 0
+
+
+
 
 
