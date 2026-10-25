@@ -9,7 +9,6 @@ import {
   IconBriefcase,
   IconX,
   IconUsers,
-  IconCheckCircle,
 } from "@/components/Icons";
 
 interface CandidateEvidenceItem {
@@ -70,6 +69,8 @@ export default function RecruiterPipelinePage() {
         setJobs(list);
         if (list.length > 0) {
           setSelectedJobId(list[0].id);
+        } else {
+          setCandidates([]);
         }
       } catch (err) {
         console.error("Failed to load recruiter jobs:", err);
@@ -83,24 +84,34 @@ export default function RecruiterPipelinePage() {
   // Fetch candidates for selected job
   useEffect(() => {
     if (!selectedJobId) {
-      setCandidates([]);
       return;
     }
 
+    let isMounted = true;
     const fetchCandidates = async () => {
       try {
         setLoading(true);
         const res = await api.get(`/jobs/${selectedJobId}/candidates`);
-        const list: PipelineCandidate[] = Array.isArray(res.data) ? res.data : [];
-        setCandidates(list);
+        if (isMounted) {
+          const list: PipelineCandidate[] = Array.isArray(res.data) ? res.data : [];
+          setCandidates(list);
+        }
       } catch (err) {
         console.error("Failed to load pipeline candidates:", err);
-        setCandidates([]);
+        if (isMounted) {
+          setCandidates([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchCandidates();
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedJobId]);
 
   const moveStage = async (cand: PipelineCandidate, newStage: PipelineCandidate["status"]) => {
@@ -182,7 +193,10 @@ export default function RecruiterPipelinePage() {
               <IconBriefcase size={16} className="text-emerald-500" />
               <select
                 value={selectedJobId}
-                onChange={(e) => setSelectedJobId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedJobId(e.target.value);
+                  setCandidates([]);
+                }}
                 className={`text-xs font-semibold rounded-xl bg-transparent border-none focus:outline-none cursor-pointer py-1 ${
                   isDark ? "text-slate-200" : "text-slate-800"
                 }`}
