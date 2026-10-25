@@ -42,7 +42,7 @@ When sources disagree, resolve in this order:
 - **Name:** CareerSync AI
 - **Type:** 5th Semester SGP (Software/System Group Project)
 - **Domain:** AI-based resume screening and candidate ranking
-- **Repository:** `AI-Job-Matcher`, active branch `develop`
+- **Repository:** `AI-Job-Matcher`, active branch `main`
 
 **One-sentence definition:**
 > CareerSync AI is an AI-assisted recruitment platform that analyzes resumes against job requirements, ranks candidates, provides evidence-based explanations for rankings, and helps recruiters efficiently compare and review candidates while keeping the final hiring decision with the human recruiter.
@@ -286,7 +286,7 @@ export interface Resume {
   fileType: string;
   processingStatus: "queued" | "uploading" | "processing" | "completed" | "needs_attention";
   needsAttentionReason?: "file_corrupted" | "parse_failed" | "partial_extraction" | "scanned_document" | "duplicate_file" | "analysis_failed" | "analysis_partial";
-  parserMethod: "docling" | "fallback";
+  parserMethod: "pdfplumber" | "pypdf" | "docx" | "fallback"; // Note: Docling is deferred/proposed
   extractedText: string;
   uploadedAt: string;
 }
@@ -304,8 +304,8 @@ export interface ScoreBreakdown {
   experience: number;       // 0 - 100
   education: number;        // 0 - 100
   semantic: number;         // 0 - 100
-  rapidFuzzScore: number;   // Fuzzy skill overlap %
-  semanticScore: number;    // BGE-M3 cosine similarity %
+  rapidFuzzScore: number;   // Fuzzy skill overlap % (computed via stdlib difflib.SequenceMatcher; RapidFuzz package deferred)
+  semanticScore: number;    // Sublinear TF-Cosine similarity % (all-MiniLM-L6-v2 diagnostic; BGE-M3 deferred)
   tenureDeltaYears: number; // e.g. +2.0y or -1.0y
   signalQuality: "clean_match" | "conflicting_signal" | "requirement_gap" | "requirement_alert";
 }
@@ -409,13 +409,13 @@ Frontend (Next.js 15 App Router / React 19 / Tailwind CSS v4 / Zustand)
        ▼
 Backend API (Python FastAPI / Pydantic v2)
        │
-       ├── DB: PostgreSQL (SQLAlchemy 2.0 ORM + Alembic Migrations)
+       ├── DB: PostgreSQL 16 (SQLAlchemy 2.0 ORM + Alembic Migrations; pgvector deferred)
        │
-       └── AI/NLP Pipeline (Python 3.11 Microservice / Celery Workers)
-             ├── Parser Engine: Docling (Layout-preserving Markdown extraction)
-             ├── Extractor: GLiNER (Zero-shot neural entity & skill extraction)
-             ├── Fuzzy Matcher: RapidFuzz (fuzzy token matching ratio)
-             └── Semantic Embedding Engine: BGE-M3 (Hybrid dense+sparse embeddings)
+       └── AI/NLP Pipeline (FastAPI Microservice on port 8001 / Optional Celery Workers)
+             ├── Parser Engine: pdfplumber + pypdf / python-docx (Docling deferred)
+             ├── Extractor: Taxonomy & Rule-based regex extractors (GLiNER deferred)
+             ├── Fuzzy Overlap: difflib.SequenceMatcher stdlib (RapidFuzz package deferred)
+             └── Semantic Engine: SublinearTFCosineMatcher [Authoritative] / all-MiniLM-L6-v2 [Diagnostic] (BGE-M3 deferred)
 ```
 
 **Compute Constraints:** Development hardware is RTX 3050 & RTX 2050 laptop GPUs. Small, highly-optimized models (`BGE-M3`, `GLiNER`) are selected to balance high-accuracy neural extraction with VRAM constraints.
@@ -464,9 +464,9 @@ To ensure trustworthiness, distinguish AI inference from deterministic computati
 
 | Function               | Implementation Method               | Output Type |
 | ---------------------- | ----------------------------------- | ----------- |
-| PDF Extraction         | AI / ML (Docling)                   | EXTRACTED   |
-| Skill Extraction       | AI / Neural (GLiNER)                | EXTRACTED   |
-| Requirement Matching   | Hybrid (RapidFuzz + BGE-M3)         | INFERRED    |
+| PDF Extraction         | Deterministic Layout (`pdfplumber` / `pypdf`; Docling deferred) | EXTRACTED   |
+| Skill Extraction       | Taxonomy & Rule-based Token Matching (GLiNER deferred)          | EXTRACTED   |
+| Requirement Matching   | Sublinear TF-Cosine + `difflib` Overlap (BGE-M3 deferred)       | INFERRED    |
 | Experience Calculation | Deterministic Math                  | COMPUTED    |
 | Education Evaluation   | Deterministic Rules                 | COMPUTED    |
 | Weighted Score         | Deterministic Math                  | COMPUTED    |
@@ -500,10 +500,10 @@ To ensure trustworthiness, distinguish AI inference from deterministic computati
 
 ## 16. Technical Stack Summary
 
-* **Frontend**: Next.js 15.5.x (App Router), React 19.x, TypeScript, Tailwind CSS v4, Lucide React icons, `next-themes`, Zustand (`app-store.ts`), Framer Motion. *(Strict Rule: Do not automatically upgrade to Next.js 16.x or newer without an explicit team decision.)*
-* **Backend API**: Python FastAPI (Pydantic v2).
-* **Database**: PostgreSQL (SQLAlchemy 2.0 ORM, Alembic migrations, `pgvector`).
-* **AI/ML Libraries**: `Docling`, `GLiNER`, `BGE-M3`, `RapidFuzz`.
+* **Frontend**: Next.js 16.x (App Router), React 19.x, TypeScript, Tailwind CSS v4, Lucide React icons, Framer Motion.
+* **Backend API**: Python FastAPI (Pydantic v2, SQLAlchemy 2.0).
+* **Database**: PostgreSQL 16 (Alembic migrations, `pgvector` extension; vector writes/RAG deferred).
+* **Active Extraction & Similarity Libraries**: `pdfplumber`, `pypdf`, `python-docx`, Python stdlib `difflib`, `SublinearTFCosineMatcher`, `sentence-transformers/all-MiniLM-L6-v2` (diagnostic). *(Note: Docling, GLiNER, BGE-M3, and the external RapidFuzz package are deferred/proposed).*
 
 ---
 

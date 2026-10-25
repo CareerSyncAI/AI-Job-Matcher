@@ -52,11 +52,15 @@ CareerSync AI is an AI-assisted recruitment intelligence platform designed for t
 
 ---
 
-## 🚀 Active Roadmap & Upcoming Slices
+## 🚀 Active Roadmap & Deferred Slices
 
-1. **Controlled Backend Integration**:
-   - Update backend client to consume Contract v1.1.0 response fields while preserving existing semantic weighting without breaking regressions.
-2. **Benchmark Scaling**:
-   - Expand the ground-truth benchmark suite to include 50+ diverse resume variations across non-tech domains (e.g. healthcare, legal, finance).
-3. **Advanced Parser Integrations**:
-   - Staging specialized vision/OCR layout parsers (Docling/Surya) behind the Celery/Redis async worker boundary.
+1. **Deterministic Core & Truthful UI (MVP Focus)**:
+   - Eliminate fabricated sample data leaks in Resume Studio; provide explicit unavailable and error UI states.
+   - Resolve CI baseline failures (AI test client environment awareness & Alembic PostgreSQL revision length).
+2. **Controlled AI Contract Alignment**:
+   - Maintain Contract v1.1.0 boundary while keeping deterministic recruiter ranking authoritative.
+   - Preserve `sentence-transformers/all-MiniLM-L6-v2` as a diagnostic decision-support signal.
+3. **Deferred / Proposed Post-MVP Architecture**:
+   - Advanced OCR/vision parsers (Docling/Surya) and neural NER (GLiNER) remain deferred.
+   - Dense vector persistence to `pgvector` and RAG pipelines remain deferred.
+   - Mandatory worker runtime (Celery/Redis) remains optional; synchronous inline processing is default.

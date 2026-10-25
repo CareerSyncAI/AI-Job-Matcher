@@ -6,7 +6,7 @@
 [![Next.js 16](https://img.shields.io/badge/next.js-16.0-black.svg)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
-[![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg)](https://github.com/CareerSyncAI/AI-Job-Matcher/actions)
+[![CI](https://github.com/CareerSyncAI/AI-Job-Matcher/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CareerSyncAI/AI-Job-Matcher/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **An explainable, deterministic recruitment intelligence platform pairing rule-grounded candidate evaluation with pluggable neural semantic search.**
@@ -47,8 +47,8 @@ flowchart TD
     end
 
     subgraph DataLayer ["Data & Persistence"]
-        PG[("PostgreSQL 16\n+ pgvector")]
-        Redis[("Redis 7\n(Session & Celery Queue)")]
+        PG[("PostgreSQL 16\n(Relational Schema; pgvector deferred)")]
+        Redis[("Redis 7 (Optional)\n(Session & Celery Queue; inline default)")]
     end
 
     subgraph AIService ["AI Microservice (Port 8001)"]
@@ -205,11 +205,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 The repository enforces automated testing across all service layers:
 
 ```bash
-# 1. Run Backend Pytest Suite (48 tests)
+# 1. Run Backend Pytest Suite (94 passing unit/integration tests + 5 Postgres tests)
 cd backend
 pytest -v
 
-# 2. Run AI Services Pytest Suite (39 tests)
+# 2. Run AI Services Pytest Suite (51 unit & contract tests)
 cd ai-services
 pytest -v
 
