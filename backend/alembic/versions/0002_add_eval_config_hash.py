@@ -1,12 +1,12 @@
 """add configuration_hash to evaluation_runs
 
-Revision ID: 0002_add_evaluation_configuration_hash
+Revision ID: 0002_add_eval_config_hash
 Revises: 0001_initial_schema
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0002_add_evaluation_configuration_hash"
+revision = "0002_add_eval_config_hash"
 down_revision = "0001_initial_schema"
 branch_labels = None
 depends_on = None

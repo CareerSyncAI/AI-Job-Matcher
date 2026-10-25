@@ -3,16 +3,9 @@ from __future__ import annotations
 import io
 import zipfile
 import pytest
-from fastapi.testclient import TestClient
 
-from src.api.app import app, DEFAULT_DEV_KEY
 from src.parsers.pdf_parser import PDFParser, PDFPageLimitExceeded
 from src.parsers.docx_parser import DOCXParser, DOCXSecurityError
-
-
-@pytest.fixture
-def client():
-    return TestClient(app, headers={"X-AI-Service-Key": DEFAULT_DEV_KEY})
 
 
 def _make_pdf(pages: int, text: str = "") -> bytes:

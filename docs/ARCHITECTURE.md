@@ -5,21 +5,25 @@ Status: active architecture baseline, August 2026.
 ## Runtime shape
 
 ```text
-Next.js frontend → FastAPI modular monolith → PostgreSQL + pgvector
-                                      ├── Redis/Celery resume-processing queue
-                                      └── AI/NLP service boundary
+Next.js 16 frontend → FastAPI modular monolith → PostgreSQL 16 (Relational schema; pgvector deferred)
+                                        ├── Redis/Celery queue (Optional; synchronous inline default)
+                                        └── AI/NLP service boundary (FastAPI port 8001, Contract v1.1.0)
 ```
 
 The backend is the security and domain authority. Frontend routing or middleware
 is not an authorization boundary. The AI boundary may parse and infer signals,
-but it never decides access, recruiter ownership, or final ranking policy.
+but it never decides access, recruiter ownership, or final ranking policy. Recruiter
+ranking is driven 100% deterministically by `DeterministicEvaluationEngine` using
+canonical extractions and `SublinearTFCosineMatcher`. Diagnostic dense embeddings
+(`all-MiniLM-L6-v2`) do not control candidate ranking. Fuzzy score `rapidfuzz_score`
+is computed using standard library `difflib.SequenceMatcher`.
 
 ## Repository mapping
 
-- `frontend/`: active Next.js 16 application with Hybrid Glassmorphism.
-- `backend/`: FastAPI API, SQLAlchemy models, Alembic migrations, security, and domain services.
+- `frontend/`: active Next.js 16 application with Hybrid Glassmorphism (React 19, TypeScript, Tailwind CSS v4).
+- `backend/`: FastAPI API, SQLAlchemy models, Alembic migrations, security, and deterministic scoring services.
 - `database/`: reserved for database fixtures/seeds; schema migrations live with the backend.
-- `ai-services/`: reserved AI worker/service implementation; currently an explicit integration boundary.
+- `ai-services/`: FastAPI AI microservice on port 8001 under Contract v1.1.0 (`pdfplumber` / `pypdf`, `python-docx`, rule-based section/skill/experience/education extractors, and diagnostic `all-MiniLM-L6-v2` dense matcher).
 
 ## Domain flow
 
