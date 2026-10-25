@@ -10,7 +10,6 @@ import {
   IconMapPin,
   IconX,
   IconBriefcase,
-  IconCheckCircle,
 } from "@/components/Icons";
 
 interface CandidateEvidenceItem {
@@ -72,6 +71,8 @@ export default function RecruiterCandidatesPage() {
         setJobs(jobsList);
         if (jobsList.length > 0) {
           setSelectedJobId(jobsList[0].id);
+        } else {
+          setCandidates([]);
         }
       } catch (err) {
         console.error("Failed to load recruiter jobs:", err);
@@ -85,23 +86,33 @@ export default function RecruiterCandidatesPage() {
   // Fetch candidate applications whenever selectedJobId changes
   useEffect(() => {
     if (!selectedJobId) {
-      setCandidates([]);
       return;
     }
 
+    let isMounted = true;
     const fetchCandidates = async () => {
       try {
         setLoading(true);
         const res = await api.get(`/jobs/${selectedJobId}/candidates`);
-        setCandidates(Array.isArray(res.data) ? res.data : []);
+        if (isMounted) {
+          setCandidates(Array.isArray(res.data) ? res.data : []);
+        }
       } catch (err) {
         console.error("Failed to load job candidates:", err);
-        setCandidates([]);
+        if (isMounted) {
+          setCandidates([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchCandidates();
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedJobId]);
 
   // Derive unique skills across all loaded candidates
@@ -199,7 +210,10 @@ export default function RecruiterCandidatesPage() {
           ) : (
             <select
               value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
+              onChange={(e) => {
+                setSelectedJobId(e.target.value);
+                setCandidates([]);
+              }}
               aria-label="Target Requisition"
               className={`text-xs font-semibold rounded-xl px-3 py-2 border focus:outline-none focus:border-emerald-500 transition cursor-pointer ${
                 isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-900"
