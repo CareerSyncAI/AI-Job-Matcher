@@ -6,11 +6,6 @@ from fastapi.testclient import TestClient
 from src.api.app import app, check_production_security, DEFAULT_DEV_KEY
 
 
-@pytest.fixture
-def client():
-    return TestClient(app, headers={"X-AI-Service-Key": DEFAULT_DEV_KEY})
-
-
 @pytest.mark.parametrize(
     "endpoint,method,payload",
     [
