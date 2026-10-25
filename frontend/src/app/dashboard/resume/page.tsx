@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import api from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 import {
@@ -107,13 +107,19 @@ export default function ResumePage() {
   const [uploadedResumeId, setUploadedResumeId] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Resume List Loading & Error State:
+  // - isLoadingResume: Active request to /profile/resumes
+  // - resumeListError: Network, server, or auth error fetching resume list
+  //   (Strict invariant: Network error must NEVER be rendered as "No Active Resume on File")
+  const [isLoadingResume, setIsLoadingResume] = useState(true);
+  const [resumeListError, setResumeListError] = useState<string | null>(null);
+
   // Truthful ATS Analysis States:
   // - "idle": No resume uploaded or not yet requested
   // - "loading": Active request in flight
   // - "completed": Complete ATS evaluation received
   // - "partial": Analysis received with partial or unavailable fields
   // - "failed": Analysis request or parsing error
-  const [isLoadingResume, setIsLoadingResume] = useState(true);
   const [atsStatus, setAtsStatus] = useState<"idle" | "loading" | "completed" | "partial" | "failed">("idle");
   const [atsError, setAtsError] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedResumeData | null>(null);
@@ -121,12 +127,11 @@ export default function ResumePage() {
   // Isolated demo preview toggle — explicitly separated from real user state
   const [isDemoPreview, setIsDemoPreview] = useState(false);
 
-  const runAtsAnalysis = async (resumeId: string, isMounted = true) => {
+  const runAtsAnalysis = useCallback(async (resumeId: string) => {
     setAtsStatus("loading");
     setAtsError(null);
     try {
       const atsRes = await api.get(`/resumes/${resumeId}/ats`);
-      if (!isMounted) return;
 
       if (atsRes.data && typeof atsRes.data === "object") {
         const data = atsRes.data as Record<string, unknown>;
@@ -178,18 +183,64 @@ export default function ResumePage() {
         setParsedData(null);
       }
     } catch (err: unknown) {
-      if (!isMounted) return;
       const errDetail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setAtsStatus("failed");
       setAtsError(errDetail || "Failed to retrieve ATS analysis for this resume.");
       setParsedData(null);
+    }
+  }, []);
+
+  const handleRetryFetch = async () => {
+    setIsLoadingResume(true);
+    setResumeListError(null);
+    try {
+      const res = await api.get("/profile/resumes");
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const latest = res.data[0];
+        setUploadedResumeId(latest.id);
+        setResumeListError(null);
+
+        if (latest.processing_status === "NEEDS_ATTENTION") {
+          setAtsStatus("failed");
+          setAtsError(
+            `Resume processing requires attention (${latest.needs_attention_reason || "unreadable or corrupted document"}). Please re-upload a clean file.`
+          );
+          setParsedData(null);
+        } else {
+          await runAtsAnalysis(latest.id);
+        }
+      } else if (Array.isArray(res.data)) {
+        setUploadedResumeId(null);
+        setResumeListError(null);
+        setAtsStatus("idle");
+        setParsedData(null);
+      } else {
+        setUploadedResumeId(null);
+        setResumeListError("Unexpected response format received while fetching candidate resumes.");
+        setAtsStatus("idle");
+        setParsedData(null);
+      }
+    } catch (err: unknown) {
+      console.warn("Could not load candidate resumes:", err);
+      setUploadedResumeId(null);
+      setAtsStatus("idle");
+      setParsedData(null);
+
+      const errDetail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        ((err as Error)?.message
+          ? `Connection error: ${(err as Error).message}`
+          : "Unable to load candidate resumes due to a network or server issue. Please verify your connection or session.");
+      setResumeListError(errDetail);
+    } finally {
+      setIsLoadingResume(false);
     }
   };
 
   // Load existing uploaded resume on mount
   useEffect(() => {
     let isMounted = true;
-    const fetchExistingResumes = async () => {
+    const loadInitialResumes = async () => {
       try {
         const res = await api.get("/profile/resumes");
         if (!isMounted) return;
@@ -197,6 +248,7 @@ export default function ResumePage() {
         if (Array.isArray(res.data) && res.data.length > 0) {
           const latest = res.data[0];
           setUploadedResumeId(latest.id);
+          setResumeListError(null);
 
           if (latest.processing_status === "NEEDS_ATTENTION") {
             setAtsStatus("failed");
@@ -205,20 +257,32 @@ export default function ResumePage() {
             );
             setParsedData(null);
           } else {
-            await runAtsAnalysis(latest.id, isMounted);
+            await runAtsAnalysis(latest.id);
           }
+        } else if (Array.isArray(res.data)) {
+          setUploadedResumeId(null);
+          setResumeListError(null);
+          setAtsStatus("idle");
+          setParsedData(null);
         } else {
           setUploadedResumeId(null);
+          setResumeListError("Unexpected response format received while fetching candidate resumes.");
           setAtsStatus("idle");
           setParsedData(null);
         }
-      } catch (err) {
-        if (isMounted) {
-          console.warn("Could not load candidate resumes:", err);
-          setUploadedResumeId(null);
-          setAtsStatus("idle");
-          setParsedData(null);
-        }
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        console.warn("Could not load candidate resumes:", err);
+        setUploadedResumeId(null);
+        setAtsStatus("idle");
+        setParsedData(null);
+
+        const errDetail =
+          (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+          ((err as Error)?.message
+            ? `Connection error: ${(err as Error).message}`
+            : "Unable to load candidate resumes due to a network or server issue. Please verify your connection or session.");
+        setResumeListError(errDetail);
       } finally {
         if (isMounted) {
           setIsLoadingResume(false);
@@ -226,12 +290,12 @@ export default function ResumePage() {
       }
     };
 
-    fetchExistingResumes();
+    loadInitialResumes();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [runAtsAnalysis]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -257,6 +321,7 @@ export default function ResumePage() {
     setUploadProgress(15);
     setStatusMsg(null);
     setIsDemoPreview(false);
+    setResumeListError(null); // Clear any previous resume-list error
 
     const formData = new FormData();
     formData.append("file", file);
@@ -275,6 +340,7 @@ export default function ResumePage() {
 
       const newResumeId = res.data?.id || null;
       setUploadedResumeId(newResumeId);
+      setResumeListError(null);
 
       setStatusMsg({
         type: "success",
@@ -330,6 +396,10 @@ export default function ResumePage() {
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold self-start sm:self-center border ${
               isDemoPreview
                 ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                : isLoadingResume
+                ? "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                : resumeListError
+                ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
                 : uploadedResumeId
                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                 : "bg-slate-500/10 text-slate-400 border-slate-500/20"
@@ -337,6 +407,10 @@ export default function ResumePage() {
           >
             {isDemoPreview
               ? "Demo Preview (Isolated Fixture)"
+              : isLoadingResume
+              ? "Loading Status..."
+              : resumeListError
+              ? "Connection / Server Error"
               : uploadedResumeId
               ? "✓ Active Resume on File"
               : "No Resume Uploaded"}
@@ -479,6 +553,31 @@ export default function ResumePage() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <span className="text-sm font-semibold">Checking for candidate resume on file...</span>
+          </div>
+        </div>
+      ) : resumeListError && !isDemoPreview ? (
+        <div
+          className={`p-8 sm:p-12 rounded-2xl border text-center space-y-4 ${
+            isDark ? "bg-rose-950/20 border-rose-800/60 text-rose-200" : "bg-rose-50 border-rose-200 text-rose-900"
+          }`}
+        >
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center mx-auto mb-2">
+            <IconAlertTriangle size={28} />
+          </div>
+          <div>
+            <h3 className="text-base sm:text-lg font-bold">Unable to Load Candidate Resumes</h3>
+            <p className="text-xs sm:text-sm max-w-md mx-auto mt-1 leading-relaxed opacity-90">
+              {resumeListError}
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleRetryFetch}
+              className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition shadow-sm cursor-pointer"
+            >
+              Retry Loading Resumes
+            </button>
           </div>
         </div>
       ) : !uploadedResumeId && !isDemoPreview ? (
