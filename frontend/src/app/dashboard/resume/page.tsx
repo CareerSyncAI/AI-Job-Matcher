@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import api from "@/lib/api";
 import { useTheme } from "@/lib/theme";
+import { useAuth } from "@/lib/auth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import {
   IconDocument,
   IconCheckCircle,
@@ -99,6 +101,7 @@ function extractSkillsFromResponse(data: Record<string, unknown> | null | undefi
 
 export default function ResumePage() {
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // File Upload State
@@ -241,6 +244,9 @@ export default function ResumePage() {
   useEffect(() => {
     let isMounted = true;
     const loadInitialResumes = async () => {
+      if (user && user.role !== "candidate" && user.role !== "admin") {
+        return;
+      }
       try {
         const res = await api.get("/profile/resumes");
         if (!isMounted) return;
@@ -295,7 +301,7 @@ export default function ResumePage() {
     return () => {
       isMounted = false;
     };
-  }, [runAtsAnalysis]);
+  }, [runAtsAnalysis, user]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -368,7 +374,8 @@ export default function ResumePage() {
   const activeData: ParsedResumeData | null = isDemoPreview ? DEMO_FIXTURE_RESUME : parsedData;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto font-sans">
+    <ProtectedRoute allowedRoles={["candidate", "admin"]}>
+      <div className="space-y-6 max-w-6xl mx-auto font-sans">
       {/* Header Banner */}
       <div
         className={`p-6 sm:p-8 rounded-2xl border transition-all relative overflow-hidden ${
@@ -959,5 +966,6 @@ export default function ResumePage() {
         </button>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

@@ -175,6 +175,22 @@ export default function RecruiterCandidatesPage() {
       return;
     }
 
+    if (file.size === 0) {
+      setUploadFeedback({
+        type: "error",
+        message: "The selected file is empty.",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadFeedback({
+        type: "error",
+        message: "Resume file size exceeds maximum limit of 10MB.",
+      });
+      return;
+    }
+
     try {
       setUploadingResume(true);
       setUploadFeedback(null);

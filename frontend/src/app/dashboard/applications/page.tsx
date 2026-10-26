@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useTheme } from "@/lib/theme";
+import { useAuth } from "@/lib/auth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import {
   IconTarget,
   IconBriefcase,
@@ -26,6 +28,7 @@ interface ApplicationItem {
 
 export default function CandidateApplicationsPage() {
   const { isDark } = useTheme();
+  const { user } = useAuth();
 
   const [applications, setApplications] = useState<ApplicationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +36,10 @@ export default function CandidateApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    if (user && user.role !== "candidate" && user.role !== "admin") {
+      return;
+    }
+
     const fetchApps = async () => {
       try {
         setLoading(true);
@@ -70,7 +77,7 @@ export default function CandidateApplicationsPage() {
     };
 
     fetchApps();
-  }, []);
+  }, [user]);
 
   const getStatusBadge = (status: string) => {
     const s = status?.toLowerCase();
@@ -114,7 +121,8 @@ export default function CandidateApplicationsPage() {
   });
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
+    <ProtectedRoute allowedRoles={["candidate", "admin"]}>
+      <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
       {/* Header Banner */}
       <div
         className={`p-6 sm:p-8 rounded-2xl border transition-all relative overflow-hidden ${
@@ -321,5 +329,6 @@ export default function CandidateApplicationsPage() {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
