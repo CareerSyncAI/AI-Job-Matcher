@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CareerSyncAIEvaluationPair",
+  "description": "Validation schema for candidate-job evaluation pairs in the Stage 2/3 Benchmark Corpus.",
+  "type": "object",
+  "required": [
+    "pair_id",
+    "job_id",
+    "candidate_id",
+    "split",
+    "relevance_rating",
+    "relevance_label",
+    "provenance",
+    "evidence_annotations",
+    "annotator_metadata"
+  ],
+  "properties": {
+    "pair_id": {
+      "type": "string",
+      "pattern": "^PAIR-[A-Z0-9-]+$"
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^JOB-[A-Z0-9-]+$"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^CAND-[A-Z0-9-]+$"
+    },
+    "split": {
+      "type": "string",
+      "enum": ["development", "held_out"]
+    },
+    "relevance_rating": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "relevance_label": {
+      "type": "string",
+      "enum": ["insufficient_information", "weak_match", "partial_match", "strong_match"]
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source_type", "license", "is_synthetic", "is_human_reviewed", "pii_cleansed"],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": ["sgp_pilot_curated", "curated_synthetic_pilot", "role_radar_human_gold", "role_radar_reviewed", "permissioned_synthetic", "academic_benchmark"]
+        },
+        "license": {
+          "type": "string"
+        },
+        "is_synthetic": {
+          "type": "boolean"
+        },
+        "is_human_reviewed": {
+          "type": "boolean"
+        },
+        "pii_cleansed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "job_requisition": {
+      "type": "object",
+      "required": ["title", "required_skills", "preferred_skills", "description"],
+      "properties": {
+        "title": { "type": "string" },
+        "required_skills": { "type": "array", "items": { "type": "string" } },
+        "preferred_skills": { "type": "array", "items": { "type": "string" } },
+        "experience_min_years": { "type": "number" },
+        "education_required": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "candidate_profile": {
+      "type": "object",
+      "required": ["headline", "skills", "experience_summary"],
+      "properties": {
+        "headline": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "experience_summary": { "type": "string" },
+        "sections": { "type": "object" },
+        "total_experience_years": { "type": "number" }
+      }
+    },
+    "evidence_annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["requirement", "status", "is_confirmed_gap"],
+        "properties": {
+          "requirement": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["supported", "not_detected", "insufficient_information"]
+          },
+          "evidence_quote": {
+            "type": ["string", "null"]
+          },
+          "is_confirmed_gap": {
+            "type": "boolean"
+          },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "annotator_metadata": {
+      "type": "object",
+      "required": ["primary_annotator_id", "adjudication_status"],
+      "properties": {
+        "primary_annotator_id": { "type": "string" },
+        "secondary_annotator_id": { "type": ["string", "null"] },
+        "adjudication_status": {
+          "type": "string",
+          "enum": ["unreviewed", "single_reviewed", "dual_reviewed_consensus", "adjudicated_dispute", "programmatic_blueprint_curated"]
+        },
+        "cohen_kappa_contribution": { "type": ["number", "null"] },
+        "review_date": { "type": "string" }
+      }
+    }
+  }
+}

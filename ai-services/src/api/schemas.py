@@ -115,6 +115,7 @@ class CandidateProfilePayload(BaseModel):
     headline: str | None = ""
     skills: list[str] = Field(default_factory=list)
     experience_summary: str | None = ""
+    sections: dict[str, str] | None = Field(default_factory=dict)
 
 
 class JobRequisitionPayload(BaseModel):
@@ -145,7 +146,7 @@ class SemanticMatchResponse(BaseModel):
     candidate_id: str | None = None
     job_id: str | None = None
     semantic_similarity_score: float  # Normalized 0.0 - 100.0 (backward compatibility)
-    raw_similarity: float | None = None  # Raw unscaled cosine similarity [0.0 - 1.0]
+    raw_similarity: float | None = None  # Clamped cosine similarity [0.0 - 1.0]
     similarity_index: float | None = None  # Normalized presentation index [0.0 - 100.0]
     alignment_grade: str
     method: str = "tf_cosine_baseline"
@@ -153,6 +154,10 @@ class SemanticMatchResponse(BaseModel):
     fallback_reason: str | None = None
     matched_key_concepts: list[str] = Field(default_factory=list)
     missing_or_gap_concepts: list[str] = Field(default_factory=list)
+    evidence_status: dict[str, list[str]] = Field(
+        default_factory=lambda: {"supported": [], "not_detected": [], "insufficient_information": []}
+    )
+    evidence_breakdown: list[dict[str, Any]] = Field(default_factory=list)
     model_info: ModelInfoPayload = Field(default_factory=ModelInfoPayload)
     diagnostics: dict[str, Any] = Field(default_factory=dict)
 

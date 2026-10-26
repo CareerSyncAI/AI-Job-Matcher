@@ -24,6 +24,10 @@ class SemanticMatchOutput:
     model_info: dict[str, Any]           # Model ID, revision, dimensions, device
     diagnostics: dict[str, Any] = field(default_factory=dict)
     fallback_reason: str | None = None
+    evidence_status: dict[str, list[str]] = field(
+        default_factory=lambda: {"supported": [], "not_detected": [], "insufficient_information": []}
+    )
+    evidence_breakdown: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert output to standard dictionary matching API schemas."""
@@ -37,6 +41,8 @@ class SemanticMatchOutput:
             "fallback_reason": self.fallback_reason,
             "matched_key_concepts": self.matched_key_concepts,
             "missing_or_gap_concepts": self.missing_or_gap_concepts,
+            "evidence_status": self.evidence_status,
+            "evidence_breakdown": self.evidence_breakdown,
             "model_info": self.model_info,
             "diagnostics": self.diagnostics,
         }

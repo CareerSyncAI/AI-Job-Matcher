@@ -1,0 +1,96 @@
+{
+  "$schema": "../schemas/evaluation_pair.schema.json",
+  "metadata": {
+    "template_version": "1.0.0",
+    "project": "CareerSync AI — Stage 2 Evaluation Pilot",
+    "rubric_reference": "docs/EVALUATION_RUBRIC.md",
+    "instructions": [
+      "1. Review the candidate_profile against the job_requisition without consulting any model score.",
+      "2. Assign an ordinal relevance_rating between 0 and 3 (0=Insufficient Information, 1=Weak Match, 2=Partial Match, 3=Strong Match).",
+      "3. For each required/preferred skill, label status as 'supported', 'not_detected', or 'insufficient_information'.",
+      "4. If 'supported', copy a short, verbatim quote from the candidate text into 'evidence_quote'.",
+      "5. Never mark 'is_confirmed_gap: true' unless the candidate explicitly declares lacking the skill; absence of mention is 'is_confirmed_gap: false'.",
+      "6. Submit the completed JSON block for dual adjudication."
+    ]
+  },
+  "exemplar_template": {
+    "pair_id": "PAIR-TEMPLATE-001",
+    "job_id": "JOB-TEMPLATE-DEV-01",
+    "candidate_id": "CAND-TEMPLATE-001",
+    "split": "development",
+    "relevance_rating": 3,
+    "relevance_label": "strong_match",
+    "provenance": {
+      "source_type": "sgp_pilot_curated",
+      "license": "CC-BY-4.0",
+      "is_synthetic": true,
+      "is_human_reviewed": true,
+      "pii_cleansed": true
+    },
+    "job_requisition": {
+      "title": "Senior Distributed Backend Engineer",
+      "required_skills": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+      "preferred_skills": ["Kubernetes", "Kafka"],
+      "experience_min_years": 5.0,
+      "education_required": "Bachelor's Degree in Computer Science or related",
+      "description": "Looking for a Senior Backend Engineer to architect high-throughput distributed microservices in Python using FastAPI and PostgreSQL."
+    },
+    "candidate_profile": {
+      "headline": "Senior Software Engineer (Python / Distributed Systems)",
+      "skills": ["Python", "FastAPI", "PostgreSQL", "Docker", "Redis", "Kafka"],
+      "total_experience_years": 6.5,
+      "experience_summary": "6+ years designing and maintaining high-availability backend microservices. Spearheaded migration from Flask to FastAPI, decreasing P99 latency by 45%. Expert in PostgreSQL indexing and Docker container orchestration."
+    },
+    "evidence_annotations": [
+      {
+        "requirement": "Python",
+        "status": "supported",
+        "evidence_quote": "6+ years designing and maintaining high-availability backend microservices.",
+        "is_confirmed_gap": false,
+        "rationale": "Explicit multi-year production experience."
+      },
+      {
+        "requirement": "FastAPI",
+        "status": "supported",
+        "evidence_quote": "Spearheaded migration from Flask to FastAPI, decreasing P99 latency by 45%.",
+        "is_confirmed_gap": false,
+        "rationale": "Direct production refactoring achievement."
+      },
+      {
+        "requirement": "PostgreSQL",
+        "status": "supported",
+        "evidence_quote": "Expert in PostgreSQL indexing and Docker container orchestration.",
+        "is_confirmed_gap": false,
+        "rationale": "Explicit database optimization capability."
+      },
+      {
+        "requirement": "Docker",
+        "status": "supported",
+        "evidence_quote": "Expert in PostgreSQL indexing and Docker container orchestration.",
+        "is_confirmed_gap": false,
+        "rationale": "Direct containerization mention."
+      },
+      {
+        "requirement": "Kubernetes",
+        "status": "not_detected",
+        "evidence_quote": null,
+        "is_confirmed_gap": false,
+        "rationale": "Not mentioned in resume. Absence is not confirmed disqualification."
+      },
+      {
+        "requirement": "Kafka",
+        "status": "supported",
+        "evidence_quote": "Declared in key skills list.",
+        "is_confirmed_gap": false,
+        "rationale": "Listed in candidate skills inventory."
+      }
+    ],
+    "annotator_metadata": {
+      "primary_annotator_id": "ANNOTATOR-LEAD",
+      "secondary_annotator_id": "ANNOTATOR-REVIEWER-2",
+      "adjudication_status": "dual_reviewed_consensus",
+      "cohen_kappa_contribution": 1.0,
+      "review_date": "2026-10-26"
+    }
+  }
+}

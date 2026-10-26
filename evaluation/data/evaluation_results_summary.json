@@ -1,0 +1,152 @@
+{
+  "baseline": {
+    "display_name": "TF-Cosine Baseline (Sublinear)",
+    "development": {
+      "ndcg@5": {
+        "mean": 0.891,
+        "std": 0.0791,
+        "ci_95": [
+          0.8302,
+          0.9566
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.8955,
+        "std": 0.0758,
+        "ci_95": [
+          0.8392,
+          0.9536
+        ]
+      },
+      "mrr": {
+        "mean": 0.6111,
+        "std": 0.2833,
+        "ci_95": [
+          0.3889,
+          0.8333
+        ]
+      },
+      "precision@5": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci_95": [
+          1.0,
+          1.0
+        ]
+      },
+      "jobs_evaluated": 6
+    },
+    "held_out": {
+      "ndcg@5": {
+        "mean": 0.9666,
+        "std": 0.0376,
+        "ci_95": [
+          0.9377,
+          0.9886
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.968,
+        "std": 0.036,
+        "ci_95": [
+          0.9404,
+          0.9856
+        ]
+      },
+      "mrr": {
+        "mean": 0.9444,
+        "std": 0.1571,
+        "ci_95": [
+          0.8333,
+          1.0
+        ]
+      },
+      "precision@5": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci_95": [
+          1.0,
+          1.0
+        ]
+      },
+      "jobs_evaluated": 9
+    },
+    "dev_latency_ms": 0.25,
+    "held_latency_ms": 0.3
+  },
+  "minilm": {
+    "display_name": "MiniLM-L6-v2 (Embedding)",
+    "development": {
+      "ndcg@5": {
+        "mean": 0.9943,
+        "std": 0.0127,
+        "ci_95": [
+          0.983,
+          1.0
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.9946,
+        "std": 0.0122,
+        "ci_95": [
+          0.9837,
+          1.0
+        ]
+      },
+      "mrr": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci_95": [
+          1.0,
+          1.0
+        ]
+      },
+      "precision@5": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci_95": [
+          1.0,
+          1.0
+        ]
+      },
+      "jobs_evaluated": 6
+    },
+    "held_out": {
+      "ndcg@5": {
+        "mean": 0.9633,
+        "std": 0.0572,
+        "ci_95": [
+          0.9225,
+          0.9942
+        ]
+      },
+      "ndcg@10": {
+        "mean": 0.9644,
+        "std": 0.0548,
+        "ci_95": [
+          0.9238,
+          0.9994
+        ]
+      },
+      "mrr": {
+        "mean": 0.8889,
+        "std": 0.2079,
+        "ci_95": [
+          0.7222,
+          1.0
+        ]
+      },
+      "precision@5": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci_95": [
+          1.0,
+          1.0
+        ]
+      },
+      "jobs_evaluated": 9
+    },
+    "dev_latency_ms": 32.39,
+    "held_latency_ms": 30.99
+  }
+}

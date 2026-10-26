@@ -316,6 +316,8 @@ async def semantic_match(payload: SemanticMatchRequest):
         fallback_reason=match_result.get("fallback_reason"),
         matched_key_concepts=match_result["matched_key_concepts"],
         missing_or_gap_concepts=match_result["missing_or_gap_concepts"],
+        evidence_status=match_result.get("evidence_status", {"supported": [], "not_detected": [], "insufficient_information": []}),
+        evidence_breakdown=match_result.get("evidence_breakdown", []),
         model_info=match_result["model_info"],
         diagnostics=match_result.get("diagnostics", {})
     )
