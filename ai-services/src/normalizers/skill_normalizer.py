@@ -4,8 +4,10 @@ Transforms raw, noisy, or varied skill strings into authoritative canonical repr
 """
 
 from __future__ import annotations
+
 import re
-from typing import Dict, List, Optional
+from typing import Any
+
 from src.normalizers.taxonomy import ALIAS_LOOKUP, CANONICAL_SKILLS
 
 
@@ -16,7 +18,7 @@ class SkillNormalizer:
         self.lookup = ALIAS_LOOKUP
         self.canonical = CANONICAL_SKILLS
 
-    def normalize_single(self, raw_skill: str) -> Dict[str, any]:
+    def normalize_single(self, raw_skill: str) -> dict[str, Any]:
         """Normalize a single raw skill string."""
         cleaned = raw_skill.strip()
         cleaned_lower = cleaned.lower()
@@ -52,7 +54,7 @@ class SkillNormalizer:
                 "confidence": 0.50
             }
 
-    def normalize_list(self, raw_skills: List[str]) -> List[Dict[str, any]]:
+    def normalize_list(self, raw_skills: list[str]) -> list[dict[str, Any]]:
         """Normalize a list of raw skill strings, deduplicating canonical forms."""
         seen_canonical = set()
         results = []

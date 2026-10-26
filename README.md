@@ -108,9 +108,10 @@ The AI microservice includes a curated 30-pair comparative evaluation benchmark 
 | :--- | :---: | :---: | :--- |
 | **Held-Out Pairwise Consistency** | 85.71% | **94.81%** | 15-pair held-out split (evaluating relative ordering) |
 | **Overall Pairwise Consistency** | 86.69% | **94.16%** | 30-pair combined benchmark |
-| **Relevant vs. Borderline Margin**| +0.211 | **+0.328** | Separation between relevant and borderline matches |
-| **Negative Control Discrimination**| 15.0 / 100 | 18.0 / 100 | Mean score on irrelevant domain pairs (scored below all relevant pairs) |
-| **Sample Size** | 30 pairs | 30 pairs | Exploratory benchmark (15 dev, 15 held-out) |
+| **Held-Out Spearman Rho** | **0.8946** | 0.8892 | Rank correlation against ordinal tiers |
+| **Overall Spearman Rho** | 0.8508 | **0.8793** | Combined 30 pairs |
+| **Warm Inference Latency (Mean)** | **0.06 ms** | 24.51 ms | CPU inference latency |
+| **Negative Control Score** | 4.28 / 100 | 24.20 / 100 | Mean score on adversarial negative pairs |
 
 ---
 
@@ -119,33 +120,34 @@ The AI microservice includes a curated 30-pair comparative evaluation benchmark 
 ```text
 AI-Job-Matcher/
 ├── .github/
-│   └── workflows/ci.yml           # CI workflow (Backend, AI Services, Frontend)
-├── ai-services/                   # FastAPI AI microservice
-│   ├── fixtures/evaluation/       # Curated 30-pair evaluation benchmark
-│   ├── src/                       # Extraction, similarity engines, and API schemas
-│   ├── tests/                     # 39 passing Pytest unit & regression tests
-│   ├── evaluate_similarity_models.py # Comparative evaluation harness
-│   └── smoke_test_embedding.py   # CPU inference validation script
-├── backend/                       # FastAPI backend monolith
-│   ├── alembic/                   # PostgreSQL schema migrations (single head)
-│   ├── app/                       # Auth, domain routes, deterministic scoring
-│   ├── tests/                     # 48 passing Pytest integration tests
-│   └── pyproject.toml             # Backend dependencies and Poetry configuration
-├── frontend/                      # Next.js 16 web application
-│   ├── app/                       # App Router (Recruiter & Candidate portals)
-│   ├── components/                # UI components, Kanban pipeline, scorecards
-│   └── package.json               # Frontend dependencies and build scripts
-├── docs/                          # Comprehensive technical documentation
-│   ├── audits/                    # Independent audits and security reports
-│   ├── presentations/             # Presentation decks and defense slides
-│   ├── ARCHITECTURE.md            # System runtime and security boundaries
-│   ├── ai-service-contract.md     # Contract v1.1.0 specification
-│   ├── DATABASE.md                # PostgreSQL schema & pgvector reference
-│   ├── DESIGN_SYSTEM.md           # Glassmorphism design tokens & styles
-│   └── PROJECT_STATUS.md          # Live status & roadmap tracking
-├── careersync-ppt/                # Node.js programmatic slide deck generator
-├── run_careersync.bat             # 1-Click Windows development launcher
-└── docker-compose.yml             # PostgreSQL & Redis container orchestration
+│   └── workflows/ci.yml           # Automated CI pipeline (lint, test, build, postgres)
+├── ai-services/                   # FastAPI AI microservice (Port 8001, Contract v1.1.0)
+│   ├── fixtures/evaluation/       # Curated 30-pair comparative evaluation benchmark
+│   ├── src/                       # Text parsers, entity extractors, similarity engines
+│   ├── tests/                     # 51 passing Pytest tests (security, contracts, parsers)
+│   └── evaluate_similarity_models.py # Comparative benchmark runner
+├── backend/                       # FastAPI backend monolith (Port 8000)
+│   ├── alembic/                   # PostgreSQL schema migrations (single linear head)
+│   ├── app/                       # Auth, domain routes, deterministic evaluation engine
+│   ├── tests/                     # 98 passing Pytest tests (87% coverage across app)
+│   └── pyproject.toml             # Python configuration (Ruff, Pytest, Coverage)
+├── frontend/                      # Next.js 16 web application (Port 3000)
+│   ├── src/app/                   # App Router (Recruiter dashboard, Candidate portal)
+│   ├── src/components/            # Design system, scorecards, pipeline Kanban
+│   └── package.json               # Next.js 16, React 19, Tailwind CSS v4
+├── docs/                          # Authoritative technical documentation
+│   ├── ARCHITECTURE.md            # Topology, domain flows, and security boundaries
+│   ├── API.md                     # FastAPI v1 endpoints and schema specifications
+│   ├── DATABASE.md                # PostgreSQL relational schema (15 tables) and migrations
+│   ├── ai-service-contract.md     # Authoritative Contract v1.1.0 specification
+│   ├── DATASETS_AND_TAXONOMY.md   # Dataset manifest, licensing, and ESCO taxonomy
+│   ├── DESIGN_SYSTEM.md           # Hybrid Glassmorphism tokens and UI guidelines
+│   ├── PROJECT_STATUS.md          # Completed milestones and active roadmap
+│   ├── decisions/                 # Architectural Decision Records (ADR-001)
+│   ├── audits/                    # Security register, viva evidence, and audit reports
+│   └── archive/                   # Point-in-time historical audits, handoffs, and prompts
+├── run_careersync.bat             # Concurrent multi-service local Windows launcher
+└── README.md                      # Project overview and quick start guide
 ```
 
 ---

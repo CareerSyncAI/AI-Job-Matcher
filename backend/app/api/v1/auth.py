@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import time
+from collections import defaultdict
+
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -62,9 +65,6 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     db.refresh(user)
     return user
 
-
-import time
-from collections import defaultdict
 
 _LOGIN_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
 _MAX_FAILED_ATTEMPTS = 5

@@ -72,7 +72,6 @@ def validate_docx_archive(
 
         total_uncompressed = 0
         has_document_xml = False
-        has_content_types = False
         seen_filenames: set[str] = set()
 
         for info in infolist:
@@ -87,8 +86,6 @@ def validate_docx_archive(
 
             if filename == "word/document.xml":
                 has_document_xml = True
-            elif filename == "[Content_Types].xml":
-                has_content_types = True
 
             # Check individual uncompressed entry size
             if info.file_size > max_entry:

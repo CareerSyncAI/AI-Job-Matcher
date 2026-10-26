@@ -10,7 +10,6 @@ Verifies:
 
 import sys
 import time
-from typing import Dict, Any
 
 from src.similarity.embedding_matcher import SentenceEmbeddingMatcher
 

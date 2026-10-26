@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import io
-import time
 import zipfile
 from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
+
 from app.core.config import get_settings
 from app.core.logging import mask_email
-from app.models.entities import CandidateProfile, Job, Resume, User
-from app.models.enums import AttentionReason, ProcessingStatus, UserRole
+from app.models.entities import Resume
+from app.models.enums import ProcessingStatus
 from app.services.resumes import ResumeService
 from app.services.storage import delete_file
 
@@ -105,7 +105,6 @@ def test_failed_database_operation_removes_newly_created_file(client, db_session
     before_files = set(root.glob("*"))
 
     # Force db.commit to raise an exception during upload_resume
-    orig_commit = db_session.commit
 
     def faulty_commit():
         raise RuntimeError("Simulated database failure during upload commit")
@@ -333,6 +332,7 @@ def test_privacy_candidate_email_masked_in_logs(client, db_session, caplog):
 def test_privacy_missing_file_logs_storage_key_not_absolute_path(db_session, caplog):
     """Verify missing file error logs use storage_key and resume_id, not full local filesystem path."""
     import logging
+
     from app.api.v1.resumes import _process_resume_inline
 
     settings = get_settings()
@@ -464,7 +464,6 @@ def test_concurrent_uploads_distinct_keys_isolation(client, db_session, monkeypa
     assert file1_path.exists()
 
     # Upload 2: Fails during commit
-    orig_commit = db_session.commit
 
     def faulty_commit():
         raise RuntimeError("Upload 2 commit failure")

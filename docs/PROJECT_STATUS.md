@@ -1,66 +1,56 @@
-# CareerSync AI — Project Status & Roadmap
+# CareerSync AI — Project Status & Verified Roadmap
 
-This document provides a consolidated, live overview of project requirements, active architecture, completed milestones, and development roadmap.
-
----
-
-## 📌 Project Overview & Objectives
-
-CareerSync AI is an AI-assisted recruitment intelligence platform designed for the 5th Semester System Development Project (SGP):
-- **For Hiring Teams**: Deterministic multi-factor candidate scoring, explainable verbatim evidence anchoring, and tiered candidate ranking.
-- **For Candidates**: Target role compatibility exploration, transparent skill gap identification, and ATS quality resume inspection.
+**Status:** Authoritative Project Status  
+**Academic Milestone:** 5th Semester System Development Project (SGP), CHARUSAT University  
+**Last Verified:** October 26, 2026  
+**Test Baseline:** 98 passed, 5 skipped (Backend) | 51 passed (AI Services) | 14 routes statically compiled (Frontend)  
 
 ---
 
-## 🎯 Completed Milestones
+## 1. Project Overview
 
-### Core Matching Engine & Truthfulness (Phase 0)
-- [x] **Word-Boundary & Contextual Ambiguity Protection**: Solved substring matching collisions (e.g., JavaScript does not falsely match Java; Google does not match Go; research does not match R).
-- [x] **Verbatim Evidence Anchoring**: Stored exact character start/end offsets and source document spans instead of fabricated template snippets.
-- [x] **Uncertainty-First Multi-Tier Ranking**: Implemented `CoverageTier` ordering where unconfirmed missing mentions (`not_detected`) are Tier 2, and confirmed disqualifications (`gap`) are Tier 3.
-- [x] **Real Metric Calculation**: Replaced fake copies with true token sequence matchers; integrated preferred skills scoring and genuine experience intervals.
-- [x] **Loud Parse Failures**: Empty resume extractions and corrupted uploads fail explicitly as `NEEDS_ATTENTION` rather than proceeding to false evaluations.
-
-### Pluggable Similarity Engines & Contract v1.1.0 (Phase 1 & 2)
-- [x] **Pluggable Similarity Facade**: Implemented `BaseSimilarityEngine` ABC with dynamic dispatching between baseline and embedding engines via `SEMANTIC_MATCHER`.
-- [x] **Deterministic Sublinear TF-Cosine Baseline**: Production default matcher using $1 + \ln(\text{tf})$ and cosine normalization; zero heavy ML dependencies and zero cold-start delay.
-- [x] **Pretrained Dense Vector Embedding Matcher**: Implemented `SentenceEmbeddingMatcher` powered by `sentence-transformers/all-MiniLM-L6-v2` with pinned immutable commit `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`.
-- [x] **Section-Aware Bounded Chunking**: Resumes chunked across logical sections (summary, experience, skills, education) with 500-char limits to prevent attention truncation, aggregated via mean pooling.
-- [x] **Thread-Safe Lazy Loading & CPU Inference**: Engine cached in memory once per process using `threading.Lock`; verified warm inference latency under 50ms on CPU.
-- [x] **Explicit Degraded Fallback**: Missing model files or inference errors automatically fallback to deterministic baseline with `status="degraded"` and an explicit `fallback_reason`.
-- [x] **API Contract v1.1.0 Standard**: Updated `/api/v1/similarity` schemas to return `raw_similarity`, `similarity_index`, `method`, `status`, `fallback_reason`, `model_info`, and `diagnostics`.
-- [x] **Exploratory 30-Pair Comparative Benchmark**: Evaluated 15 dev and 15 held-out test pairs across 8 role families for isolated semantic similarity ordering:
-  - **Held-out Pairwise Ordinal Consistency**: 94.81% (Embedding) vs. 85.71% (Baseline).
-  - **Overall Pairwise Ordinal Consistency**: 94.16% (Embedding) vs. 86.69% (Baseline).
-  - **Negative Control Mean Score**: 18.0 / 100 (Embedding) vs. 15.0 / 100 (Baseline), scoring consistently below relevant matches.
-  - *Scope Distinction*: This benchmark evaluates pairwise semantic similarity on isolated text pairs; recruiter-facing candidate ranking is computed deterministically in the backend.
-
-### Security & Privacy Protections
-- [x] **Candidate Hijack Prevention**: Recruiter resume uploads containing registered candidate emails are isolated into dedicated unlinked profiles to prevent profile mutation or account hijacking.
-- [x] **Job Read Authorization & Weight Redaction**: `GET /jobs/{id}` hides internal weights for candidates and external recruiters, and returns 404 for unowned DRAFT jobs.
-- [x] **Safe Demo Seeding**: Auto-seed strictly disabled in production environments; development requires explicit configuration.
-- [x] **AI Microservice Security**: Added `X-AI-Service-Key` header authentication, sanitized error returns, and replaced wildcard CORS with explicit allowed origins.
-- [x] **Cross-Platform Compatibility**: Fixed path separation logic for `safe_filename` to run reliably across both Linux and Windows.
-- [x] **Single Migration Head**: Resolved dual-head Alembic migrations into a single linear revision (`0001_initial_schema.py`).
-
-### Frontend Integration (Next.js 16 + React)
-- [x] Connected `dashboard/recruiter/candidates` to live FastAPI endpoints (`GET /jobs`, `GET /jobs/{id}/candidates`, and status updates).
-- [x] Connected `dashboard/recruiter/pipeline` to real Kanban status updates and recruiter audit notes APIs.
-- [x] Connected `dashboard/` to live open jobs, candidate applications, and requisition counts.
-- [x] Connected `dashboard/applications` to live `/applications/me` without mock data fallback.
-- [x] Verified 100% clean Next.js production build (`npm run build`).
+CareerSync AI is an AI-assisted resume screening and candidate ranking intelligence platform:
+- **For Hiring Teams:** Deterministic multi-factor candidate scoring, explainable verbatim evidence anchoring, and tiered candidate ranking without black-box bias.
+- **For Candidates:** Transparent skill compatibility analysis, missing requirement detection, and ATS resume quality feedback.
 
 ---
 
-## 🚀 Active Roadmap & Deferred Slices
+## 2. Completed Milestones (Verified in Code & Tests)
 
-1. **Deterministic Core & Truthful UI (MVP Focus)**:
-   - Eliminate fabricated sample data leaks in Resume Studio; provide explicit unavailable and error UI states.
-   - Resolve CI baseline failures (AI test client environment awareness & Alembic PostgreSQL revision length).
-2. **Controlled AI Contract Alignment**:
-   - Maintain Contract v1.1.0 boundary while keeping deterministic recruiter ranking authoritative.
-   - Preserve `sentence-transformers/all-MiniLM-L6-v2` as a diagnostic decision-support signal.
-3. **Deferred / Proposed Post-MVP Architecture**:
-   - Advanced OCR/vision parsers (Docling/Surya) and neural NER (GLiNER) remain deferred.
-   - Dense vector persistence to `pgvector` and RAG pipelines remain deferred.
-   - Mandatory worker runtime (Celery/Redis) remains optional; synchronous inline processing is default.
+### Milestone A: Core Matching & Truthfulness Engine
+- [x] **Word-Boundary & Contextual Ambiguity Protection:** Regex tokenization prevents false substring collisions (`Java` ≠ `JavaScript`, `Go` ≠ `Google`, `R` ≠ `research`).
+- [x] **Verbatim Evidence Anchoring:** Evidence claims preserve exact start/end character offsets into extracted text. Zero fabricated qualifications.
+- [x] **Multi-Tier Candidate Ranking:** Implemented `CoverageTier` ordering where Tier 1 (`ALL_REQUIRED_MET`) strictly outranks Tier 2 (`ALL_CRITICAL_MET`) and Tier 3 (`CORE_PARTIAL`).
+- [x] **Missing Mentions Distinction:** Missing mentions are recorded as `NOT_DETECTED` rather than confirmed `GAP`.
+- [x] **Experience Interval Deduplication:** Overlapping employment dates are merged; internships are excluded from professional tenure calculations by default.
+
+### Milestone B: Similarity Engine & Contract v1.1.0 Standard
+- [x] **Pluggable Similarity Facade:** `BaseSimilarityEngine` ABC with dynamic backend dispatching via `CAREERSYNC_SEMANTIC_MATCHER`.
+- [x] **Deterministic Sublinear TF-Cosine Matcher:** Production default matcher using $1 + \ln(\text{tf})$ and cosine normalization; zero heavy ML dependencies and 0.06 ms warm inference latency.
+- [x] **Pretrained Dense Vector Embedding Matcher:** Standalone diagnostic matcher powered by `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions, pinned revision `1110a24`).
+- [x] **Explicit Fallback & Diagnostics:** Missing models or service timeouts gracefully fall back to deterministic baseline with `status="fallback"` and explicit `fallback_reason`.
+- [x] **API Contract v1.1.0:** Authoritative schemas returning `raw_similarity`, `similarity_index`, `method`, `status`, `model_info`, and `diagnostics`.
+
+### Milestone C: Security & Data Privacy Protections
+- [x] **Multi-Layer Upload Guards:** Whitelisted extensions (`.pdf`, `.docx`), magic-byte inspection, 10MB ceiling, 15-page PDF limit, and 30MB/50:1 DOCX decompression ceiling.
+- [x] **Tenant Isolation & IDOR Protection:** Candidate profile cannot be hijacked by recruiter uploads; scoring weights are redacted from candidates; job-scoped access verified.
+- [x] **Session Security:** Argon2id password hashing, revocable refresh token sessions in HttpOnly cookies, and rate-limited login endpoints (5 attempts / 5 min).
+- [x] **Log Privacy:** Candidate email addresses masked (`j***e@domain.com`) in server logs.
+
+### Milestone D: Full-Stack Integration & Production Build
+- [x] **Next.js 16 Frontend:** Authenticated dashboard connected to live FastAPI endpoints (recruiter candidates leaderboard, Kanban pipeline, job creation, candidate profile).
+- [x] **Zero TypeScript & ESLint Errors:** Clean compilation across all 14 routes with Turbopack.
+- [x] **Automated CI Quality Gates:** GitHub Actions `.github/workflows/ci.yml` hardened with Ruff linting for Python services and ESLint + TypeScript type checks for frontend.
+
+---
+
+## 3. Active Roadmap & Scope Boundaries
+
+### Active Scope (5th Semester SGP):
+1. **Recruiter Demonstration & Viva Evidence:** Complete and verified; demonstration decks stored in `docs/presentations/` and evidence recorded in `docs/audits/FINAL_DEMO_EVIDENCE.md`.
+2. **Quality & Defect Register:** 100% of confirmed defects resolved and recorded in `docs/audits/SECURITY_AND_QUALITY_REGISTER.md`.
+
+### Deferred Post-MVP Features (Explicitly Documented):
+- **pgvector Vector Persistence & RAG:** Schema migration exists, but vector writes and RAG querying remain deferred per `ADR-001`.
+- **Advanced Document Vision / OCR:** Docling, Surya, and neural NER (GLiNER) remain deferred; rule-based extraction satisfies performance requirements.
+- **Mandatory Celery / Redis Runtime:** Worker queue remains optional; synchronous inline processing is the production default.

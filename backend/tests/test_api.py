@@ -1,4 +1,5 @@
 import io
+
 import docx
 
 
@@ -279,8 +280,8 @@ def test_tier1_evaluation_and_recruitment_workflow(client):
 
 def test_e2e_real_resume_worker_and_ai_integration(client, db_session, monkeypatch):
     """Verifies complete path: Resume upload -> Worker -> AI service -> Enriched Profile -> Deterministic Evaluation."""
+    from app.models.entities import CandidateProfile, Resume
     from app.workers.tasks import process_resume
-    from app.models.entities import Resume, CandidateProfile
 
     # 1. Register candidate
     client.post(
@@ -385,8 +386,8 @@ def test_e2e_real_resume_worker_and_ai_integration(client, db_session, monkeypat
 def test_ai_off_graceful_degradation(client, db_session, monkeypatch):
     """Verifies that when AI service is unavailable, worker handles it gracefully without crashing."""
     from app.core.config import Settings
-    from app.workers.tasks import process_resume
     from app.models.entities import Resume
+    from app.workers.tasks import process_resume
 
     # Point AI service to a dead port
     monkeypatch.setattr(
@@ -444,9 +445,9 @@ def test_ai_off_graceful_degradation(client, db_session, monkeypatch):
 
 def test_substring_collision_resistance():
     """Verify that substring skills (Java in JavaScript, Go in Google, R in research) do NOT produce false matches."""
+    from app.models.entities import CandidateProfile, Job, JobSkill, Resume
+    from app.models.enums import EvaluatedSkillStatus, JobStatus
     from app.services.evaluation import DeterministicEvaluationEngine
-    from app.models.entities import Job, JobSkill, CandidateProfile, Resume
-    from app.models.enums import JobStatus, EvaluatedSkillStatus
     from app.services.scoring import Weights
 
     engine = DeterministicEvaluationEngine()
@@ -537,8 +538,8 @@ def test_job_read_authorization_and_weight_redaction(client):
 
 def test_candidate_profile_anti_hijack(client, db_session):
     """Ensure recruiter resume upload containing registered user email does not hijack or mutate registered profile."""
-    from app.models.entities import CandidateProfile, Resume
     from app.api.v1.resumes import _find_or_create_candidate
+    from app.models.entities import CandidateProfile
 
     # Registered candidate Alice
     alice = CandidateProfile(
@@ -570,10 +571,10 @@ def test_candidate_profile_anti_hijack(client, db_session):
 def test_candidate_profile_update_preserves_skills(client):
     """F1: Ensure partial profile update without skills does not erase existing skills."""
     # Register candidate
-    reg_res = client.post(
+    assert client.post(
         "/api/v1/auth/register",
         json={"email": "f1_candidate@example.com", "password": "Password123456!", "role": "candidate"},
-    )
+    ).status_code == 201
     token = client.post(
         "/api/v1/auth/login",
         json={"email": "f1_candidate@example.com", "password": "Password123456!"},
@@ -734,10 +735,11 @@ def test_apply_to_job_handles_evaluation_failure_cleanly(client, monkeypatch):
     assert dup_res.status_code == 409
 
     # 6. Verify that an EvaluationRun with status FAILED was recorded
+    from uuid import UUID
+
     from app.db.session import SessionLocal
     from app.models.entities import EvaluationRun
     from app.models.enums import EvaluationStatus
-    from uuid import UUID
     db = SessionLocal()
     try:
         run = db.query(EvaluationRun).filter(EvaluationRun.application_id == UUID(app_id)).first()
@@ -985,9 +987,10 @@ def test_prompt_7_candidate_journey_e2e(client, db_session):
     assert apps_list[0]["status"] == "under_review"
 
     # 9. Edge Case: Candidate applies with resume in NEEDS_ATTENTION state -> 422
+    from uuid import UUID
+
     from app.models.entities import Resume
     from app.models.enums import ProcessingStatus
-    from uuid import UUID
     res_record = db_session.get(Resume, UUID(stored_resume_id))
     res_record.processing_status = ProcessingStatus.NEEDS_ATTENTION
     db_session.commit()

@@ -11,27 +11,22 @@ Evaluates:
 """
 
 from __future__ import annotations
-import os
+
 import csv
-import io
 import json
-import time
-from typing import Dict, List, Any
+import os
+from typing import Any
 
-from src.parsers.pdf_parser import PDFParser
-from src.parsers.docx_parser import DOCXParser
-from src.parsers.section_detector import SectionDetector
-from src.extractors.skill_extractor import SkillExtractor
-from src.extractors.experience_extractor import ExperienceExtractor
 from src.extractors.education_extractor import EducationExtractor
-from src.normalizers.skill_normalizer import SkillNormalizer
+from src.extractors.experience_extractor import ExperienceExtractor
+from src.extractors.skill_extractor import SkillExtractor
+from src.parsers.section_detector import SectionDetector
 from src.similarity.semantic_matcher import SemanticMatcher
-
 
 KAGGLE_PATH = os.environ.get("KAGGLE_RESUME_CSV_PATH", r"C:\Users\Hit\Downloads\Resume.csv\Resume.csv")
 
 
-def load_real_resume_sample(n_target: int = 18) -> List[Dict[str, Any]]:
+def load_real_resume_sample(n_target: int = 18) -> list[dict[str, Any]]:
     """Sample diverse real resumes across technical, engineering, and non-technical categories."""
     categories_quota = {
         "INFORMATION-TECHNOLOGY": 6,
@@ -43,14 +38,14 @@ def load_real_resume_sample(n_target: int = 18) -> List[Dict[str, Any]]:
         "SALES": 1
     }
 
-    samples: List[Dict[str, Any]] = []
+    samples: list[dict[str, Any]] = []
     category_counts = {c: 0 for c in categories_quota}
 
     if not os.path.exists(KAGGLE_PATH):
         print(f"[Warning] Resume dataset file not found at {KAGGLE_PATH}. Please set KAGGLE_RESUME_CSV_PATH.")
         return samples
 
-    with open(KAGGLE_PATH, "r", encoding="utf-8", errors="ignore") as f:
+    with open(KAGGLE_PATH, encoding="utf-8", errors="ignore") as f:
         reader = csv.DictReader(f)
         for row in reader:
             cat = row.get("Category", "").strip()
@@ -85,7 +80,6 @@ def run_audit():
     # Initialize AI Engine Components
     sec_detector = SectionDetector()
     skill_extractor = SkillExtractor()
-    skill_normalizer = SkillNormalizer()
     exp_extractor = ExperienceExtractor()
     edu_extractor = EducationExtractor()
     semantic_matcher = SemanticMatcher()
@@ -124,7 +118,7 @@ def run_audit():
     total_tenure_sum = 0.0
 
     print("\n[Phase 1-6] Executing Deep Audit on Each Resume...")
-    for idx, item in enumerate(samples, 1):
+    for _idx, item in enumerate(samples, 1):
         text = item["raw_text"]
         cat = item["category"]
 
@@ -221,7 +215,7 @@ def run_audit():
         pct = round((count / len(samples)) * 100)
         print(f"   - {sec.capitalize():<16}: {count:2d}/{len(samples)} ({pct}%)")
 
-    print(f"\n2. Skills Extraction Overview:")
+    print("\n2. Skills Extraction Overview:")
     print(f"   - Total Technical Skills Extracted: {audit_results['skills']['total_extracted']}")
     print(f"   - Avg Skills per Resume: {round(audit_results['skills']['total_extracted'] / len(samples), 1)}")
     print("   - Skill Distribution by Domain:")
@@ -232,18 +226,18 @@ def run_audit():
     for fp in audit_results["skills"]["false_positives_detected"]:
         print(f"     ! Flagged: {fp['flagged_skill']} in {fp['category']} resume ({fp['resume_id']})")
 
-    print(f"\n3. Experience & Tenure Extraction:")
+    print("\n3. Experience & Tenure Extraction:")
     print(f"   - Total Job Entries Detected: {audit_results['experience']['entries_extracted']}")
     print(f"   - Average Calculated Tenure: {audit_results['experience']['avg_tenure_years']} years")
     print(f"   - Resumes with Unextractable Dates: {audit_results['experience']['zero_tenure_count']}/{len(samples)}")
 
-    print(f"\n4. Education Extraction:")
+    print("\n4. Education Extraction:")
     print(f"   - Total Degrees Extracted: {audit_results['education']['degrees_extracted']}")
     print("   - Degree Level Breakdown:")
     for lvl, count in audit_results["education"]["degree_levels"].items():
         print(f"     * {lvl:<12}: {count}")
 
-    print(f"\n5. Semantic Similarity Score Distribution (Target: Senior Full-Stack/Cloud Lead):")
+    print("\n5. Semantic Similarity Score Distribution (Target: Senior Full-Stack/Cloud Lead):")
     it_scores = [r["score"] for r in audit_results["semantic_similarity"] if r["category"] == "INFORMATION-TECHNOLOGY"]
     non_it_scores = [r["score"] for r in audit_results["semantic_similarity"] if r["category"] != "INFORMATION-TECHNOLOGY"]
     avg_it = round(sum(it_scores) / len(it_scores), 1) if it_scores else 0
@@ -253,7 +247,7 @@ def run_audit():
 
     print("\nDetailed Per-Resume Breakdown:")
     for r in audit_results["per_resume_details"]:
-        print(f"   [{r['category']:<22}] ID: {r['id']:<10} | Skills: {r['skills_count']:2d} {str(r['top_skills'][:4]):<35} | Exp: {r['tenure_years']:4.1f}y | Score: {r['match_score']:4.1f}%")
+        print(f"   [{r['category']:<22}] ID: {r['id']:<10} | Skills: {r['skills_count']:2d} {r['top_skills'][:4]!s:<35} | Exp: {r['tenure_years']:4.1f}y | Score: {r['match_score']:4.1f}%")
 
     print("\n" + "=" * 70)
     print("AUDIT COMPLETE")

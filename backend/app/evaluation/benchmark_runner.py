@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
-from typing import Any
 
 from app.evaluation.benchmark_schema import (
     BenchmarkSummaryReport,
@@ -22,8 +21,8 @@ from app.evaluation.benchmark_schema import (
     ErrorAnalysisLog,
     ExperienceMetrics,
     ExtractionMetrics,
-    RequiredSkillEvidenceMetrics,
     GroundTruthItem,
+    RequiredSkillEvidenceMetrics,
 )
 from app.evaluation.synthetic_dataset import BENCHMARK_DATASET
 from app.models.entities import CandidateProfile, Job, JobSkill, Resume
@@ -31,7 +30,10 @@ from app.models.enums import EvaluatedSkillStatus, JobStatus
 from app.services.education_extractor import extract_education_from_text
 from app.services.evaluation import DeterministicEvaluationEngine
 from app.services.experience_extractor import extract_experience_years_from_text
-from app.services.scoring import Weights, education_satisfies, normalize_degree, required_coverage_tier
+from app.services.scoring import (
+    Weights,
+    normalize_degree,
+)
 from app.services.taxonomy import taxonomy
 
 

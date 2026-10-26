@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.exc import IntegrityError
@@ -61,11 +61,10 @@ class ResumeService:
     @staticmethod
     def enqueue_worker(resume_id: UUID) -> None:
         """Dispatch Celery task strictly after database transaction commit."""
-        from app.core.config import get_settings
         if get_settings().enable_worker:
             from app.workers.tasks import process_resume
             try:
-                process_resume.delay(str(resume_id))
+                process_resume.delay(str(resume_id))  # pyright: ignore[reportFunctionMemberAccess]
             except Exception as exc:
                 import logging
                 logging.getLogger(__name__).error(

@@ -4,22 +4,23 @@ Extracts text from paragraphs, tables, and bullet lists in Word DOCX documents.
 """
 
 from __future__ import annotations
+
 import io
 import os
 import re
 import zipfile
-from typing import Dict, List
+from typing import Any
 
 try:
     import docx
     HAS_DOCX = True
 except ImportError:
+    docx = None  # pyright: ignore[reportConstantRedefinition]
     HAS_DOCX = False
 
 
 class DOCXSecurityError(ValueError):
     """Raised when a DOCX archive violates security or structure constraints."""
-    pass
 
 
 class DOCXParser:
@@ -74,7 +75,6 @@ class DOCXParser:
 
             total_uncompressed = 0
             has_document_xml = False
-            has_content_types = False
             seen_filenames: set[str] = set()
 
             for info in infolist:
@@ -89,8 +89,6 @@ class DOCXParser:
 
                 if filename == "word/document.xml":
                     has_document_xml = True
-                elif filename == "[Content_Types].xml":
-                    has_content_types = True
 
                 # Check individual uncompressed entry size
                 if info.file_size > self.max_entry_bytes:
@@ -121,9 +119,9 @@ class DOCXParser:
             if not has_document_xml:
                 raise DOCXSecurityError("DOCX archive is missing required document structure (no word/document.xml).")
 
-    def parse_stream(self, stream: io.BytesIO) -> Dict[str, any]:
+    def parse_stream(self, stream: io.BytesIO) -> dict[str, Any]:
         """Extract text from paragraphs and embedded tables in a DOCX document."""
-        if not HAS_DOCX:
+        if not HAS_DOCX or docx is None:
             raise ImportError("python-docx is not installed.")
 
         # 0. Validate archive boundaries before passing to python-docx
@@ -137,8 +135,8 @@ class DOCXParser:
         except Exception as exc:
             raise DOCXSecurityError(f"Malformed DOCX XML or package structure: {exc}") from exc
 
-        text_blocks: List[str] = []
-        warnings: List[str] = []
+        text_blocks: list[str] = []
+        warnings: list[str] = []
 
         # 1. Extract paragraphs
         for p in doc.paragraphs:

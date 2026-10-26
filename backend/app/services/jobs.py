@@ -4,7 +4,13 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.entities import Job, JobSkill, RecruiterProfile
-from app.schemas.jobs import JobCreate, JobResponse, JobUpdate, JobWeights, JobWeightsResponse
+from app.schemas.jobs import (
+    JobCreate,
+    JobResponse,
+    JobSkillResponse,
+    JobUpdate,
+    JobWeightsResponse,
+)
 
 
 class JobService:
@@ -82,7 +88,7 @@ class JobService:
             education_required=job.education_required,
             description=job.description,
             status=job.status,
-            skills=job.skills,
+            skills=[JobSkillResponse.model_validate(s) for s in job.skills],
             evaluation_weights=weights,
             created_at=job.created_at,
             applicant_count=applicant_count,

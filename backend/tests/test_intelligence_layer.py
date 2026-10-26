@@ -11,8 +11,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
 from app.evaluation.benchmark_runner import run_ground_truth_evaluation
 from app.services.ats_analyzer import ats_analyzer
 from app.services.semantic_matcher import SublinearTFCosineMatcher
@@ -224,7 +222,11 @@ def test_synthetic_regression_benchmark_runner():
 def test_benchmark_metrics_degrade_on_poor_predictions():
     """Verifies that degraded or incorrect predictions genuinely lower benchmark accuracy."""
     from app.evaluation.benchmark_runner import BenchmarkRunner
-    from app.evaluation.benchmark_schema import GroundTruthCandidate, GroundTruthItem, GroundTruthJob
+    from app.evaluation.benchmark_schema import (
+        GroundTruthCandidate,
+        GroundTruthItem,
+        GroundTruthJob,
+    )
 
     # Dataset with intentional mismatches and missing required credentials
     degraded_item = GroundTruthItem(

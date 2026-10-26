@@ -8,8 +8,8 @@ Covers:
 5. Empty and malformed text robustness
 """
 
-import os
 import pytest
+
 from src.similarity.baseline_matcher import BaselineSemanticMatcher
 from src.similarity.embedding_matcher import SentenceEmbeddingMatcher
 from src.similarity.semantic_matcher import SemanticMatcher

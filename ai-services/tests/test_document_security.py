@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import io
 import zipfile
+
 import pytest
 
-from src.parsers.pdf_parser import PDFParser, PDFPageLimitExceeded
 from src.parsers.docx_parser import DOCXParser, DOCXSecurityError
+from src.parsers.pdf_parser import PDFPageLimitExceeded, PDFParser
 
 
 def _make_pdf(pages: int, text: str = "") -> bytes:

@@ -19,7 +19,13 @@ from app.models.entities import (
     Resume,
     User,
 )
-from app.models.enums import AttentionReason, EvaluationStatus, JobStatus, ProcessingStatus, UserRole
+from app.models.enums import (
+    AttentionReason,
+    EvaluationStatus,
+    JobStatus,
+    ProcessingStatus,
+    UserRole,
+)
 from app.schemas.applications import (
     ApplicationCreate,
     ApplicationResponse,
@@ -272,6 +278,7 @@ async def upload_profile_resume(
     """Ingest an applicant-owned resume before it is attached to any application."""
     settings = get_settings()
     candidate = _candidate_for_user(db, current_user)
+    resume = None
     try:
         resume = await ResumeService.ingest(db, candidate_id=candidate.id, upload=file)
         record_audit_event(
@@ -287,9 +294,11 @@ async def upload_profile_resume(
         db.refresh(resume)
     except Exception:
         db.rollback()
-        if "resume" in locals() and resume and getattr(resume, "storage_key", None):
+        if resume and getattr(resume, "storage_key", None):
             ResumeService.delete_storage_key(resume.storage_key, db=db)
         raise
+
+    assert resume is not None
 
     if settings.enable_worker:
         ResumeService.enqueue_worker(resume.id)

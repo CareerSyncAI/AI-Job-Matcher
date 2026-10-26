@@ -10,7 +10,7 @@ import math
 import re
 import time
 from collections import Counter
-from typing import Any, Dict, List, Set
+from typing import Any
 
 from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
 
@@ -18,7 +18,7 @@ from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
 class BaselineSemanticMatcher(BaseSimilarityEngine):
     """Deterministic token-frequency cosine similarity engine (Baseline)."""
 
-    STOPWORDS: Set[str] = {
+    STOPWORDS: set[str] = {
         "the", "and", "is", "in", "to", "of", "with", "for", "on", "at", "by", "from",
         "an", "be", "this", "that", "are", "was", "as", "or", "have", "has", "had", "will",
         "a", "about", "above", "after", "again", "all", "am", "any", "both", "but", "can",
@@ -34,8 +34,8 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
 
     def match(
         self,
-        candidate_profile: Dict[str, Any],
-        job_requisition: Dict[str, Any]
+        candidate_profile: dict[str, Any],
+        job_requisition: dict[str, Any]
     ) -> SemanticMatchOutput:
         start_time = time.perf_counter()
 
@@ -65,12 +65,12 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
         # 4. Extract explainable concept overlaps (strictly verifiable)
         cand_skills_set = set(s.lower() for s in cand_skills)
 
-        matched_concepts: List[str] = []
+        matched_concepts: list[str] = []
         for s in job_req_skills + job_pref_skills:
             if s.lower() in cand_skills_set or s.lower() in candidate_corpus:
                 matched_concepts.append(s)
 
-        missing_concepts: List[str] = [
+        missing_concepts: list[str] = [
             s for s in (job_req_skills + job_pref_skills)
             if s.lower() not in cand_skills_set and s.lower() not in candidate_corpus
         ]
@@ -143,6 +143,6 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
 
         return dot_product / (math.sqrt(norm_a) * math.sqrt(norm_b))
 
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str) -> list[str]:
         raw_tokens = re.findall(r"\b[a-zA-Z0-9+#.]{2,}\b", text.lower())
         return [t for t in raw_tokens if t not in self.STOPWORDS]

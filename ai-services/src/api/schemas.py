@@ -4,7 +4,9 @@ Strictly conforms to docs/ai-service-contract.md.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -31,21 +33,21 @@ class HealthResponse(BaseModel):
 
 # 2. Parse Resume Schemas
 class ParseResumeResponse(BaseModel):
-    resume_id: Optional[str] = None
+    resume_id: str | None = None
     status: str = "completed"
     source_format: str
     parser_version: str = "1.0.0"
     processing_duration_ms: int
     raw_text_length: int
-    sections: Dict[str, str]
-    warnings: List[str] = Field(default_factory=list)
+    sections: dict[str, str]
+    warnings: list[str] = Field(default_factory=list)
 
 
 # 3. Entity Extraction Schemas
 class ExtractEntitiesRequest(BaseModel):
-    resume_id: Optional[str] = None
-    text: Optional[str] = ""
-    sections: Optional[Dict[str, str]] = Field(default_factory=dict)
+    resume_id: str | None = None
+    text: str | None = ""
+    sections: dict[str, str] | None = Field(default_factory=dict)
 
 
 class SkillEntity(BaseModel):
@@ -59,40 +61,41 @@ class SkillEntity(BaseModel):
 class ExperienceEntity(BaseModel):
     organization: str
     role_title: str
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
+    start_date: str | None = None
+    end_date: str | None = None
     is_current: bool = False
+    is_internship: bool = False
     duration_months: int
-    highlights: List[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list)
 
 
 class EducationEntity(BaseModel):
-    institution: str
-    degree_level: str
-    degree_name: str
-    field_of_study: str
-    graduation_year: Optional[int] = None
+    institution: str | None = None
+    degree_level: str | None = None
+    degree_name: str | None = None
+    field_of_study: str | None = None
+    graduation_year: int | None = None
 
 
 class EntitiesPayload(BaseModel):
-    skills: List[SkillEntity] = Field(default_factory=list)
-    experience: List[ExperienceEntity] = Field(default_factory=list)
+    skills: list[SkillEntity] = Field(default_factory=list)
+    experience: list[ExperienceEntity] = Field(default_factory=list)
     total_experience_months: int = 0
     total_experience_years: float = 0.0
-    education: List[EducationEntity] = Field(default_factory=list)
+    education: list[EducationEntity] = Field(default_factory=list)
 
 
 class ExtractEntitiesResponse(BaseModel):
-    resume_id: Optional[str] = None
+    resume_id: str | None = None
     status: str = "completed"
     parser_version: str = "1.0.0"
     entities: EntitiesPayload
-    extraction_metadata: Dict[str, Any] = Field(default_factory=dict)
+    extraction_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 # 4. Normalize Skills Schemas
 class NormalizeSkillsRequest(BaseModel):
-    skills: List[str]
+    skills: list[str]
 
 
 class NormalizedSkillItem(BaseModel):
@@ -104,54 +107,54 @@ class NormalizedSkillItem(BaseModel):
 
 
 class NormalizeSkillsResponse(BaseModel):
-    normalized: List[NormalizedSkillItem]
+    normalized: list[NormalizedSkillItem]
 
 
 # 5. Semantic Match Schemas
 class CandidateProfilePayload(BaseModel):
-    headline: Optional[str] = ""
-    skills: List[str] = Field(default_factory=list)
-    experience_summary: Optional[str] = ""
+    headline: str | None = ""
+    skills: list[str] = Field(default_factory=list)
+    experience_summary: str | None = ""
 
 
 class JobRequisitionPayload(BaseModel):
-    job_id: Optional[str] = None
+    job_id: str | None = None
     title: str
-    required_skills: List[str] = Field(default_factory=list)
-    preferred_skills: List[str] = Field(default_factory=list)
-    description: Optional[str] = ""
+    required_skills: list[str] = Field(default_factory=list)
+    preferred_skills: list[str] = Field(default_factory=list)
+    description: str | None = ""
 
 
 class SemanticMatchRequest(BaseModel):
-    candidate_id: Optional[str] = None
+    candidate_id: str | None = None
     candidate_profile: CandidateProfilePayload
     job_requisition: JobRequisitionPayload
-    method: Optional[str] = None  # "baseline" or "embedding"
+    method: str | None = None  # "baseline" or "embedding"
 
 
 class ModelInfoPayload(BaseModel):
     engine: str = "semantic-cosine-v1"
-    model_id: Optional[str] = None
-    model_revision: Optional[str] = None
+    model_id: str | None = None
+    model_revision: str | None = None
     vector_dimensions: int = 384
-    device: Optional[str] = "cpu"
+    device: str | None = "cpu"
     offline_compatible: bool = True
 
 
 class SemanticMatchResponse(BaseModel):
-    candidate_id: Optional[str] = None
-    job_id: Optional[str] = None
+    candidate_id: str | None = None
+    job_id: str | None = None
     semantic_similarity_score: float  # Normalized 0.0 - 100.0 (backward compatibility)
-    raw_similarity: Optional[float] = None  # Raw unscaled cosine similarity [0.0 - 1.0]
-    similarity_index: Optional[float] = None  # Normalized presentation index [0.0 - 100.0]
+    raw_similarity: float | None = None  # Raw unscaled cosine similarity [0.0 - 1.0]
+    similarity_index: float | None = None  # Normalized presentation index [0.0 - 100.0]
     alignment_grade: str
     method: str = "tf_cosine_baseline"
     status: str = "ok"
-    fallback_reason: Optional[str] = None
-    matched_key_concepts: List[str] = Field(default_factory=list)
-    missing_or_gap_concepts: List[str] = Field(default_factory=list)
+    fallback_reason: str | None = None
+    matched_key_concepts: list[str] = Field(default_factory=list)
+    missing_or_gap_concepts: list[str] = Field(default_factory=list)
     model_info: ModelInfoPayload = Field(default_factory=ModelInfoPayload)
-    diagnostics: Dict[str, Any] = Field(default_factory=dict)
+    diagnostics: dict[str, Any] = Field(default_factory=dict)
 
 
 # Standard Error Schema

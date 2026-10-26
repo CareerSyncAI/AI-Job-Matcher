@@ -14,8 +14,9 @@ import math
 import re
 from abc import ABC, abstractmethod
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 

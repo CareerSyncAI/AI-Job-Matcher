@@ -231,7 +231,7 @@
 
 ## 6. Evaluation Requirements & Plan Alignment
 
-In accordance with [`docs/INDEPENDENT_EVALUATION_PLAN.md`](file:///c:/Users/Hit/Desktop/SGP%205TH%20Sem/AI-Job-Matcher/docs/INDEPENDENT_EVALUATION_PLAN.md):
+In accordance with [`docs/INDEPENDENT_EVALUATION_PLAN.md`](../INDEPENDENT_EVALUATION_PLAN.md):
 
 1. **Benchmark Size & Representation:**
    - The current 30-pair benchmark (`ai-services/fixtures/evaluation/evaluation_benchmark.json`) is an exploratory sanity check.

@@ -3,8 +3,9 @@
 Revision ID: 0002_add_eval_config_hash
 Revises: 0001_initial_schema
 """
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "0002_add_eval_config_hash"
 down_revision = "0001_initial_schema"

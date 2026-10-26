@@ -1,8 +1,9 @@
 """Unit tests for Experience and Education Extractors."""
 
 import pytest
-from src.extractors.experience_extractor import ExperienceExtractor
+
 from src.extractors.education_extractor import EducationExtractor
+from src.extractors.experience_extractor import ExperienceExtractor
 
 
 @pytest.fixture

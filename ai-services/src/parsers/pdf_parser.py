@@ -5,21 +5,24 @@ with dual-engine fallback (pdfplumber -> pypdf) for maximum resilience.
 """
 
 from __future__ import annotations
+
 import io
 import os
 import re
-from typing import Dict, List, Tuple
+from typing import Any
 
 try:
     import pypdf
     HAS_PYPDF = True
 except ImportError:
+    pypdf = None  # pyright: ignore[reportConstantRedefinition]
     HAS_PYPDF = False
 
 try:
     import pdfplumber
     HAS_PDFPLUMBER = True
 except ImportError:
+    pdfplumber = None  # pyright: ignore[reportConstantRedefinition]
     HAS_PDFPLUMBER = False
 
 
@@ -47,12 +50,12 @@ class PDFParser:
         else:
             self.engine = "none"
 
-    def parse_stream(self, stream: io.BytesIO) -> Dict[str, any]:
+    def parse_stream(self, stream: io.BytesIO) -> dict[str, Any]:
         """Extract clean text, page count, and diagnostic metadata from a PDF stream."""
-        warnings: List[str] = []
-        extracted_pages: List[str] = []
+        warnings: list[str] = []
+        extracted_pages: list[str] = []
 
-        if HAS_PDFPLUMBER:
+        if HAS_PDFPLUMBER and pdfplumber is not None:
             try:
                 stream.seek(0)
                 with pdfplumber.open(stream) as pdf:
@@ -73,12 +76,12 @@ class PDFParser:
             except PDFPageLimitExceeded:
                 raise
             except Exception as plumber_err:
-                warnings.append(f"pdfplumber error ({str(plumber_err)}), attempting pypdf fallback.")
+                warnings.append(f"pdfplumber error ({plumber_err!s}), attempting pypdf fallback.")
                 extracted_pages = []
 
         # Fallback to pypdf if pdfplumber was unavailable or failed
         if not extracted_pages:
-            if not HAS_PYPDF:
+            if not HAS_PYPDF or pypdf is None:
                 raise ValueError("Neither pdfplumber nor pypdf is installed to extract PDF text.")
             try:
                 stream.seek(0)
@@ -86,13 +89,13 @@ class PDFParser:
                 page_count = len(reader.pages)
                 if page_count > self.max_pages:
                     raise PDFPageLimitExceeded(page_count, self.max_pages)
-                for p_num, page in enumerate(reader.pages, start=1):
+                for _p_num, page in enumerate(reader.pages, start=1):
                     p_text = page.extract_text() or ""
                     extracted_pages.append(p_text)
             except PDFPageLimitExceeded:
                 raise
             except Exception as pypdf_err:
-                raise ValueError(f"Failed to extract PDF text with both engines: {str(pypdf_err)}")
+                raise ValueError(f"Failed to extract PDF text with both engines: {pypdf_err!s}") from pypdf_err
 
         # Normalize extracted text
         full_raw_text = "\n\n".join(extracted_pages)

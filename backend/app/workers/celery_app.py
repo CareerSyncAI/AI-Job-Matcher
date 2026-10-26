@@ -19,7 +19,7 @@ except ImportError:
                     if bind:
                         return f(DummyTask(), *a, **kw)
                     return f(*a, **kw)
-                direct_call.delay = direct_call
+                setattr(direct_call, "delay", direct_call)  # noqa: B010
                 return direct_call
             return decorator
     celery_app = DummyCelery()

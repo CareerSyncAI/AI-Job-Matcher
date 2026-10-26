@@ -1,55 +1,64 @@
-# CareerSync AI Architecture
+# CareerSync AI — System Architecture & Topology
 
-Status: active architecture baseline, August 2026.
+**Status:** Authoritative Architectural Baseline  
+**Target Milestone:** 5th Semester System Development Project (SGP)  
 
-## Runtime shape
+---
 
-```text
-Next.js 16 frontend → FastAPI modular monolith → PostgreSQL 16 (Relational schema; pgvector deferred)
-                                        ├── Redis/Celery queue (Optional; synchronous inline default)
-                                        └── AI/NLP service boundary (FastAPI port 8001, Contract v1.1.0)
-```
-
-The backend is the security and domain authority. Frontend routing or middleware
-is not an authorization boundary. The AI boundary may parse and infer signals,
-but it never decides access, recruiter ownership, or final ranking policy. Recruiter
-ranking is driven 100% deterministically by `DeterministicEvaluationEngine` using
-canonical extractions and `SublinearTFCosineMatcher`. Diagnostic dense embeddings
-(`all-MiniLM-L6-v2`) do not control candidate ranking. Fuzzy score `rapidfuzz_score`
-is computed using standard library `difflib.SequenceMatcher`.
-
-## Repository mapping
-
-- `frontend/`: active Next.js 16 application with Hybrid Glassmorphism (React 19, TypeScript, Tailwind CSS v4).
-- `backend/`: FastAPI API, SQLAlchemy models, Alembic migrations, security, and deterministic scoring services.
-- `database/`: reserved for database fixtures/seeds; schema migrations live with the backend.
-- `ai-services/`: FastAPI AI microservice on port 8001 under Contract v1.1.0 (`pdfplumber` / `pypdf`, `python-docx`, rule-based section/skill/experience/education extractors, and diagnostic `all-MiniLM-L6-v2` dense matcher).
-
-## Domain flow
+## 1. System Runtime Shape
 
 ```text
-Job → Requirements → Candidate → Resume → Application → EvaluationRun → immutable MatchResult
+Next.js 16 (Port 3000) ──HTTP REST──► FastAPI Backend (Port 8000) ──SQLAlchemy 2.0──► PostgreSQL 16
+(App Router, React 19)                ├── Security & Ownership Authority              ├── Relational Schema (15 Tables)
+                                       ├── Deterministic Recruiter Ranking             └── pgvector (Vector 1024; Deferred)
+                                       └── Diagnostic Adapter ──────────────────────► AI Microservice (Port 8001)
+                                            (CAREERSYNC_SEMANTIC_MATCHER)              ├── Contract v1.1.0 Standard
+                                                                                       ├── PDF / DOCX Document Parsers
+                                                                                       └── all-MiniLM-L6-v2 (CPU Diagnostic)
 ```
 
-`Application` is the first-class bridge between a candidate and a job.
-`MatchResult` is an immutable snapshot. Requirement, resume, model, parser, or
-saved scoring changes create a new evaluation run; presentation changes and
-temporary what-if previews do not mutate a result.
+### Architectural Principles:
+1. **Monolith as Security & Domain Authority:** The FastAPI backend (`backend/app`) is the sole arbiter of identity, role permissions, tenant isolation, and candidate ranking. Frontend routes and middleware are presentation layers, never authorization boundaries.
+2. **Deterministic Recruiter Ranking Invariant:** Candidate ranking is driven 100% deterministically by `DeterministicEvaluationEngine` (`backend/app/services/evaluation.py`) using `CoverageTier` ordering and `SublinearTFCosineMatcher` ($1 + \ln(\text{tf})$).
+3. **Diagnostic Neural Matcher Separation:** Dense neural embeddings (`sentence-transformers/all-MiniLM-L6-v2`) in `ai-services` serve strictly as an exploratory diagnostic signal under Contract v1.1.0. They do **not** dictate or override candidate ranking in production.
+4. **Architectural Decision Record (ADR):** For the mathematical, distributional, and storage justification of this separation, see:
+   - **[`docs/decisions/ADR-001-embedding-and-ranking-architecture.md`](decisions/ADR-001-embedding-and-ranking-architecture.md)**
 
-## Deterministic policy
+---
 
-Required-requirement coverage tiers precede weighted fit score. Exact ties use
-skills, experience, education, semantic score, and stable opaque candidate ID.
-Experience merges overlapping professional intervals and excludes internships
-by default. Education uses PhD ≥ Master ≥ Bachelor. Transferable skills require
-an explicit taxonomy mapping; semantic similarity alone cannot create that status.
+## 2. Domain Data Flow
 
-## Security boundary
+```text
+Job Requisition ──► Requirements & Weights ──► Candidate Profile ──► Resume Document
+                                                                           │
+                                                                   Upload Validation
+                                                                (10MB, PDF/DOCX, SHA-256)
+                                                                           ▼
+Application (Bridge) ──► EvaluationRun (Fingerprinted) ──► Immutable MatchResult (Snapshot)
+                                                                ├── CoverageTier (1 to 4)
+                                                                ├── Weighted Fit Score (0-100)
+                                                                ├── Verbatim Evidence Claims (Offsets)
+                                                                └── Audit Event Logged
+```
 
-FastAPI independently verifies identity, role, and resource ownership for every
-protected operation. Uploads are restricted to PDF/DOCX, limited to 10 MB,
-signature-checked, hashed with SHA-256, stored under generated keys outside the
-served application directory, and rejected when identical content is already
-associated with the same job.
+### Key Domain Rules:
+- **`Application` as First-Class Bridge:** Connects a candidate to a job. Recruiter uploads create application records under the job tenant without mutating the candidate's personal profile.
+- **`MatchResult` Immutability:** Match results are point-in-time immutable records. Changing job weights, updating a candidate profile, or triggering a batch re-evaluation produces a new `EvaluationRun`; historical evaluations are never overwritten in place.
+- **Verbatim Grounding:** Evidence claims must record exact character offsets into the raw extracted text. Unmentioned skills are classified as `NOT_DETECTED` rather than speculative `GAP`.
 
-The old Express/MongoDB design is historical and is no longer the active target.
+---
+
+## 3. Security, Privacy & Invariant Boundaries
+
+1. **Role-Based Tenant Isolation:**
+   - Recruiters can only access candidates, applications, resumes, and evaluation notes associated with jobs they own.
+   - Candidates can only inspect their own applications and profile resumes. Internal recruiter scoring weights are redacted (returned as 0).
+2. **Document Ingestion Security:**
+   - Streamed uploads are capped at 10 MB.
+   - Content types are checked against magic bytes (`%PDF-`, `PK\x03\x04`).
+   - PDF page limits (maximum 15 pages) and DOCX archive safety (decompression ceiling 30MB, entry count <= 500, ratio <= 50:1) prevent parser denial-of-service.
+   - File storage keys are random UUIDs; direct filesystem paths are never stored in the database.
+3. **Data Privacy & Local Inference:**
+   - Zero candidate data or resume texts are transmitted to external third-party proprietary APIs (OpenAI, Gemini, Anthropic).
+   - Candidate email addresses are masked (`j***e@domain.com`) in server logs.
+   - AI microservice endpoints mandate `X-AI-Service-Key` header authentication.

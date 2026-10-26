@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import os
+
 import pytest
 from fastapi.testclient import TestClient
 
-from src.api.app import app, DEFAULT_DEV_KEY
+from src.api.app import DEFAULT_DEV_KEY, app
 
 
 @pytest.fixture

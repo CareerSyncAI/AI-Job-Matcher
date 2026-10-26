@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import io
-import time
 import zipfile
-from pathlib import Path
 from uuid import UUID
 
 import pytest
-from app.core.config import Settings, get_settings
-from app.models.entities import Application, CandidateProfile, EvaluationRun, Resume
+
+from app.core.config import get_settings
+from app.models.entities import Application, EvaluationRun, Resume
 from app.models.enums import AttentionReason, ProcessingStatus
 from app.services.text_extraction import (
     DOCXSecurityError,
-    DocumentSecurityError,
     PDFPageLimitExceededError,
     _extract_docx,
     _extract_pdf,

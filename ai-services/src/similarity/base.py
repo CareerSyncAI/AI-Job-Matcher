@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -19,13 +19,13 @@ class SemanticMatchOutput:
     alignment_grade: str                 # "High", "Moderate", "Low"
     method: str                          # "sentence_embedding", "tf_cosine_baseline", "fallback"
     status: str                          # "ok", "fallback", "disabled"
-    matched_key_concepts: List[str]      # Evidence-backed concept overlaps
-    missing_or_gap_concepts: List[str]   # Missing required/preferred concepts
-    model_info: Dict[str, Any]           # Model ID, revision, dimensions, device
-    diagnostics: Dict[str, Any] = field(default_factory=dict)
-    fallback_reason: Optional[str] = None
+    matched_key_concepts: list[str]      # Evidence-backed concept overlaps
+    missing_or_gap_concepts: list[str]   # Missing required/preferred concepts
+    model_info: dict[str, Any]           # Model ID, revision, dimensions, device
+    diagnostics: dict[str, Any] = field(default_factory=dict)
+    fallback_reason: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert output to standard dictionary matching API schemas."""
         return {
             "raw_similarity": round(self.raw_similarity, 4),
@@ -48,8 +48,7 @@ class BaseSimilarityEngine(ABC):
     @abstractmethod
     def match(
         self,
-        candidate_profile: Dict[str, Any],
-        job_requisition: Dict[str, Any]
+        candidate_profile: dict[str, Any],
+        job_requisition: dict[str, Any]
     ) -> SemanticMatchOutput:
         """Compute similarity between candidate profile and job requisition."""
-        pass
