@@ -11,7 +11,7 @@
 
 **An explainable, deterministic recruitment intelligence platform pairing rule-grounded candidate evaluation with pluggable neural semantic search.**
 
-[Quick Start](#-quick-start) • [System Architecture](#-system-architecture) • [Pluggable Similarity Engines](#-pluggable-similarity-engines) • [Evaluation Benchmark](#-evaluation-benchmark) • [Documentation](docs/README.md)
+[Quick Start](#-quick-start) • [Architecture](docs/ARCHITECTURE.md) • [API Specs](docs/API.md) • [Database](docs/DATABASE.md) • [ADR-001](docs/decisions/ADR-001-embedding-and-ranking-architecture.md) • [Security Register](docs/audits/SECURITY_AND_QUALITY_REGISTER.md) • [Documentation Hub](docs/README.md)
 
 </div>
 
@@ -37,7 +37,7 @@ Modern recruitment systems frequently suffer from two opposing failure modes: br
 ```mermaid
 flowchart TD
     subgraph Client ["Client Layer"]
-        Web["Next.js 16 Web Dashboard\n(App Router + Tailwind + Framer Motion)"]
+        Web["Next.js 16 Web Dashboard\n(App Router + Tailwind CSS v4)"]
     end
 
     subgraph BackendGateway ["Backend Core (Port 8000)"]
@@ -204,24 +204,31 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🧪 Testing & Verification
 
-The repository enforces automated testing across all service layers:
+The repository enforces automated verification gates across all service layers (tested locally and verified in GitHub Actions CI):
 
 ```bash
-# 1. Run Backend Pytest Suite (94 passing unit/integration tests + 5 Postgres tests)
+# 1. Backend Verification (98 unit/API tests + 5 live PostgreSQL migration tests)
 cd backend
+ruff check .
+npx pyright --pythonpath .venv/Scripts/python.exe app
 pytest -v
 
-# 2. Run AI Services Pytest Suite (51 unit & contract tests)
+# 2. AI Services Verification (51 unit, contract, and document security tests)
 cd ai-services
+ruff check .
+npx pyright --pythonpath .venv/Scripts/python.exe src
 pytest -v
 
-# 3. Run Benchmark Evaluation Harness
+# 3. Comparative Similarity Benchmark Harness (30-pair empirical benchmark)
 cd ai-services
 python evaluate_similarity_models.py
 
-# 4. Run Frontend Production Build Check
+# 4. Frontend Verification (Lint, TypeScript, Knip, Security Audit, & Build)
 cd frontend
-npm run build
+npm run lint          # ESLint check (0 errors)
+npx tsc --noEmit      # TypeScript compiler validation (0 errors)
+npm audit             # Dependency vulnerability scan (0 vulnerabilities)
+npm run build         # Next.js 16 production build (all 14 static routes prerendered)
 ```
 
 ---
