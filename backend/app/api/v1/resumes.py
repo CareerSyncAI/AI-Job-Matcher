@@ -13,7 +13,12 @@ from app.core.logging import mask_email
 from app.db.session import SessionLocal, get_db
 from app.models.entities import Application, CandidateProfile, Job, RecruiterProfile, Resume, User
 from app.models.enums import ApplicationStatus, AttentionReason, ProcessingStatus, UserRole
-from app.schemas.resumes import ATSAnalysisSchema, AnalyzeTextPayload, ResumeResponse
+from app.schemas.resumes import (
+    AnalyzeTextPayload,
+    ATSAnalysisSchema,
+    ATSIssueSchema,
+    ResumeResponse,
+)
 from app.services.ats_analyzer import ats_analyzer
 from app.services.audit import record_audit_event
 from app.services.education_extractor import extract_education_from_text
@@ -123,9 +128,10 @@ async def upload_resume(
     6. Return ResumeResponse
     """
     settings = get_settings()
-    job = JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
+    JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
 
     # Step 1: Validate, deduplicate, and store the file
+    resume = None
     try:
         resume = await ResumeService.ingest_for_job(db, job_id=job_id, upload=file)
 
@@ -143,9 +149,11 @@ async def upload_resume(
         db.refresh(resume)
     except Exception:
         db.rollback()
-        if "resume" in locals() and resume and getattr(resume, "storage_key", None):
+        if resume and getattr(resume, "storage_key", None):
             ResumeService.delete_storage_key(resume.storage_key, db=db)
         raise
+
+    assert resume is not None
 
     # Step 2: Dispatch processing after successful transaction commit
     if settings.enable_worker:
@@ -346,7 +354,6 @@ def verify_resume_access(resume: Resume, current_user: User, db: Session) -> Non
                 return
 
         # Or check if resume is attached to an application for a job owned by this recruiter
-        from app.models.entities import Application, Job
         app_exists = (
             db.query(Application)
             .join(Job, Application.job_id == Job.id)
@@ -402,8 +409,8 @@ def analyze_stored_resume_ats(
     text = resume.extracted_text or ""
     if not text.strip() and resume.storage_key:
         try:
-            from app.services.text_extraction import extract_text_from_file
             from app.core.config import get_settings
+            from app.services.text_extraction import extract_text_from_file
             settings = get_settings()
             root = settings.upload_directory.expanduser().resolve()
             file_path = (root / resume.storage_key).resolve()
@@ -434,12 +441,12 @@ def analyze_stored_resume_ats(
         word_count=res.word_count,
         strengths=res.strengths,
         issues=[
-            {
-                "category": i.category,
-                "severity": i.severity,
-                "issue": i.issue,
-                "recommendation": i.recommendation,
-            }
+            ATSIssueSchema(
+                category=i.category,
+                severity=i.severity,
+                issue=i.issue,
+                recommendation=i.recommendation,
+            )
             for i in res.issues
         ],
     )
@@ -469,12 +476,12 @@ def analyze_text_ats(
         word_count=res.word_count,
         strengths=res.strengths,
         issues=[
-            {
-                "category": i.category,
-                "severity": i.severity,
-                "issue": i.issue,
-                "recommendation": i.recommendation,
-            }
+            ATSIssueSchema(
+                category=i.category,
+                severity=i.severity,
+                issue=i.issue,
+                recommendation=i.recommendation,
+            )
             for i in res.issues
         ],
     )

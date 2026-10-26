@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
@@ -9,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from contextlib import asynccontextmanager
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging

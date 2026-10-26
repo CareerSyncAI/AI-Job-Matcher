@@ -1,9 +1,9 @@
 """Tests validating binary PDF and DOCX parsing pipelines with layout structures."""
 
 import io
-from src.parsers.pdf_parser import PDFParser
+
 from src.parsers.docx_parser import DOCXParser
-from src.parsers.section_detector import SectionDetector
+from src.parsers.pdf_parser import PDFParser
 
 try:
     import docx

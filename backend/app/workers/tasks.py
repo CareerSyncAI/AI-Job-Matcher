@@ -7,8 +7,9 @@ from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.models.entities import CandidateProfile, Resume
 from app.models.enums import AttentionReason, ProcessingStatus
+
 try:
-    from celery.exceptions import SoftTimeLimitExceeded
+    from celery.exceptions import SoftTimeLimitExceeded  # pyright: ignore[reportAssignmentType]
 except ImportError:
     class SoftTimeLimitExceeded(Exception):
         pass

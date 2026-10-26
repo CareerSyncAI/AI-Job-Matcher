@@ -1,6 +1,7 @@
 """Unit tests for Section Detector and Parser utilities."""
 
 import pytest
+
 from src.parsers.section_detector import SectionDetector
 
 

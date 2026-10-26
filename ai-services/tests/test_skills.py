@@ -1,6 +1,7 @@
 """Unit tests for Skill Extraction and Normalization Engine."""
 
 import pytest
+
 from src.extractors.skill_extractor import SkillExtractor
 from src.normalizers.skill_normalizer import SkillNormalizer
 

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
-from app.db.session import engine, SessionLocal
-from app.db.base import Base
+
 import app.models.entities  # noqa: F401
+from app.db.base import Base
+from app.db.session import SessionLocal, engine
 from app.models.entities import User
 
 logger = logging.getLogger(__name__)

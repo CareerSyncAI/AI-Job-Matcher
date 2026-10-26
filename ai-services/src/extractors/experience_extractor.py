@@ -5,10 +5,10 @@ and calculates realistic non-overlapping tenure duration in months.
 """
 
 from __future__ import annotations
+
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
-
+from typing import Any
 
 MONTH_MAP = {
     "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,
@@ -34,7 +34,7 @@ COMMON_ROLE_TITLES = [
 class ExperienceExtractor:
     """Extracts employment history and calculates verified tenure."""
 
-    def extract(self, experience_text: str) -> Dict[str, any]:
+    def extract(self, experience_text: str) -> dict[str, Any]:
         if not experience_text or not experience_text.strip():
             return {
                 "entries": [],
@@ -43,8 +43,8 @@ class ExperienceExtractor:
             }
 
         lines = [line.strip() for line in experience_text.splitlines() if line.strip()]
-        entries: List[Dict[str, any]] = []
-        date_intervals: List[Tuple[datetime, datetime]] = []
+        entries: list[dict[str, Any]] = []
+        date_intervals: list[tuple[datetime, datetime]] = []
 
         in_education = False
         # Find date range lines and parse surrounding organization and title
@@ -91,7 +91,7 @@ class ExperienceExtractor:
             "total_experience_years": round(total_months / 12.0, 1)
         }
 
-    def _parse_date_pair(self, start_str: str, end_str: str) -> Tuple[Optional[datetime], Optional[datetime], bool]:
+    def _parse_date_pair(self, start_str: str, end_str: str) -> tuple[datetime | None, datetime | None, bool]:
         start_dt = self._parse_single_date(start_str)
         is_current = bool(re.search(r"present|current|now", end_str, re.IGNORECASE))
 
@@ -102,7 +102,7 @@ class ExperienceExtractor:
 
         return start_dt, end_dt, is_current
 
-    def _parse_single_date(self, text: str) -> Optional[datetime]:
+    def _parse_single_date(self, text: str) -> datetime | None:
         text = text.strip().lower()
         # Pattern 1: Month Year (e.g. 'Jan 2021', 'January 2020')
         m1 = re.search(r"([a-z]+)\.?\s+((?:19|20)\d{2})", text)
@@ -129,7 +129,7 @@ class ExperienceExtractor:
 
         return None
 
-    def _extract_title_org(self, lines: List[str], current_idx: int, date_match: re.Match) -> Tuple[str, str]:
+    def _extract_title_org(self, lines: list[str], current_idx: int, date_match: re.Match) -> tuple[str, str]:
         current_line = lines[current_idx]
         # Check if title/org are on the same line as the date (e.g. "Software Engineer - Google | 2020 - 2022")
         line_without_date = current_line[:date_match.start()] + current_line[date_match.end():]
@@ -147,7 +147,7 @@ class ExperienceExtractor:
             return candidate_line, "Organization"
         return "Software Engineer", "Organization"
 
-    def _extract_highlights(self, lines: List[str], start_idx: int) -> List[str]:
+    def _extract_highlights(self, lines: list[str], start_idx: int) -> list[str]:
         highlights = []
         for i in range(start_idx, min(len(lines), start_idx + 4)):
             line = lines[i].strip()
@@ -159,12 +159,12 @@ class ExperienceExtractor:
                 highlights.append(line)
         return highlights[:3]
 
-    def _calculate_non_overlapping_tenure(self, intervals: List[Tuple[datetime, datetime]]) -> int:
+    def _calculate_non_overlapping_tenure(self, intervals: list[tuple[datetime, datetime]]) -> int:
         """Merge overlapping intervals to prevent double-counting parallel employments."""
         if not intervals:
             return 0
         sorted_intervals = sorted(intervals, key=lambda x: x[0])
-        merged: List[Tuple[datetime, datetime]] = [sorted_intervals[0]]
+        merged: list[tuple[datetime, datetime]] = [sorted_intervals[0]]
 
         for current_start, current_end in sorted_intervals[1:]:
             last_start, last_end = merged[-1]

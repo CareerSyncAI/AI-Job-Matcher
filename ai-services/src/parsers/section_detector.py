@@ -6,9 +6,8 @@ Supports clean newline headers, multi-space/tab headers, and column breaks.
 """
 
 from __future__ import annotations
-import re
-from typing import Dict, List, Tuple
 
+import re
 
 SECTION_PATTERNS = {
     "summary": re.compile(
@@ -50,11 +49,11 @@ UNIVERSAL_HEADER_REGEX = re.compile(
 class SectionDetector:
     """Segments arbitrary resume text streams into semantic sections."""
 
-    def split_sections(self, text: str) -> Dict[str, str]:
+    def split_sections(self, text: str) -> dict[str, str]:
         if not text or not text.strip():
             return {}
 
-        sections: Dict[str, List[str]] = {
+        sections: dict[str, list[str]] = {
             "contact": [],
             "summary": [],
             "skills": [],

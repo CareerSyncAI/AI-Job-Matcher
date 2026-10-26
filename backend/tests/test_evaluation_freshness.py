@@ -21,7 +21,6 @@ from __future__ import annotations
 import io
 from uuid import UUID, uuid4
 
-import docx
 import pytest
 from docx import Document
 
@@ -37,11 +36,8 @@ from app.models.entities import (
     User,
 )
 from app.models.enums import (
-    ApplicationStatus,
     EvaluationStatus,
-    JobStatus,
     ProcessingStatus,
-    UserRole,
 )
 from app.services.evaluation import (
     EvaluationService,
@@ -606,7 +602,6 @@ def test_batch_reevaluation_endpoint(client, db_session):
 
     app1_res = client.post(f"/api/v1/jobs/{job_id}/applications", headers=c1_headers, json={"resume_id": r1_id})
     assert app1_res.status_code == 201
-    app1_id = app1_res.json()["id"]
 
     # 3. Candidate 2 applies with another valid resume
     client.post(
@@ -630,7 +625,6 @@ def test_batch_reevaluation_endpoint(client, db_session):
 
     app2_res = client.post(f"/api/v1/jobs/{job_id}/applications", headers=c2_headers, json={"resume_id": r2_id})
     assert app2_res.status_code == 201
-    app2_id = app2_res.json()["id"]
 
     # Applications are auto-evaluated on creation, so cards are initially fresh
     cand_list = client.get(f"/api/v1/jobs/{job_id}/candidates", headers=r_headers).json()
@@ -1165,7 +1159,6 @@ def test_database_lock_contention_returns_409(client, db_session, monkeypatch):
     job_id = job_res.json()["id"]
 
     # Simulate PostgreSQL SELECT FOR UPDATE NOWAIT contention raising OperationalError
-    orig_with_for_update = Query.with_for_update
 
     def mock_with_for_update(self, *args, **kwargs):
         raise OperationalError("could not obtain lock on row in relation \"jobs\"", params={}, orig=Exception("lock contention"))

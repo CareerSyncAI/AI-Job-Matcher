@@ -5,10 +5,12 @@ and contextual disambiguation to eliminate common NLP false positives.
 """
 
 from __future__ import annotations
+
 import re
-from typing import Dict, List, Set
-from src.normalizers.taxonomy import ALIAS_LOOKUP, AMBIGUOUS_SKILLS
+from typing import Any
+
 from src.normalizers.skill_normalizer import SkillNormalizer
+from src.normalizers.taxonomy import ALIAS_LOOKUP, AMBIGUOUS_SKILLS
 
 
 class SkillExtractor:
@@ -19,7 +21,7 @@ class SkillExtractor:
         self.alias_lookup = ALIAS_LOOKUP
         self._compiled_patterns = self._compile_patterns()
 
-    def _compile_patterns(self) -> Dict[str, re.Pattern]:
+    def _compile_patterns(self) -> dict[str, re.Pattern]:
         """Pre-compile regex patterns with word boundaries for each skill alias."""
         patterns = {}
         for alias in self.alias_lookup.keys():
@@ -30,9 +32,9 @@ class SkillExtractor:
             patterns[alias] = pattern
         return patterns
 
-    def extract_from_sections(self, sections: Dict[str, str]) -> List[Dict[str, any]]:
+    def extract_from_sections(self, sections: dict[str, str]) -> list[dict[str, Any]]:
         """Extract skills across sections with section-based weighting."""
-        detected_skills: Dict[str, Dict[str, any]] = {}
+        detected_skills: dict[str, dict[str, Any]] = {}
 
         # Prioritize sections: skills > experience > projects > summary
         section_weights = {
@@ -53,13 +55,13 @@ class SkillExtractor:
 
         return list(detected_skills.values())
 
-    def extract_from_text(self, text: str) -> List[Dict[str, any]]:
+    def extract_from_text(self, text: str) -> list[dict[str, Any]]:
         """Extract skills from a flat text string."""
         return self._extract_from_text(text, default_confidence_mult=0.90, section="full_text")
 
-    def _extract_from_text(self, text: str, default_confidence_mult: float, section: str) -> List[Dict[str, any]]:
-        results: List[Dict[str, any]] = []
-        seen_canonical: Set[str] = set()
+    def _extract_from_text(self, text: str, default_confidence_mult: float, section: str) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
+        seen_canonical: set[str] = set()
         lower_text = text.lower()
 
         for alias, pattern in self._compiled_patterns.items():

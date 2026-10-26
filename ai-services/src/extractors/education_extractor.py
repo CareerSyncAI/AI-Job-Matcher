@@ -5,9 +5,9 @@ fields of study, and graduation years without hallucinating missing data.
 """
 
 from __future__ import annotations
-import re
-from typing import Dict, List, Optional
 
+import re
+from typing import Any
 
 DEGREE_LEVEL_PATTERNS = [
     (re.compile(r"\b(?:ph\.?d|doctorate|doctor\s+of\s+philosophy)\b", re.IGNORECASE), "Doctorate"),
@@ -27,11 +27,11 @@ YEAR_PATTERN = re.compile(r"\b((?:19|20)\d{2})\b")
 class EducationExtractor:
     """Extracts verified academic degrees and institutions from education sections."""
 
-    def extract(self, education_text: str) -> List[Dict[str, any]]:
+    def extract(self, education_text: str) -> list[dict[str, Any]]:
         if not education_text or not education_text.strip():
             return []
 
-        entries: List[Dict[str, any]] = []
+        entries: list[dict[str, Any]] = []
         lines = [line.strip() for line in education_text.splitlines() if line.strip()]
 
         for line in lines:
@@ -60,12 +60,12 @@ class EducationExtractor:
 
         return entries
 
-    def _parse_inst_and_degree(self, line: str) -> Tuple[Optional[str], Optional[str]]:
+    def _parse_inst_and_degree(self, line: str) -> tuple[str | None, str | None]:
         parts = re.split(r"[,|•\-–—]", line)
         parts = [p.strip() for p in parts if p.strip()]
 
-        inst: Optional[str] = None
-        degree: Optional[str] = None
+        inst: str | None = None
+        degree: str | None = None
 
         for part in parts:
             if INSTITUTION_KEYWORDS.search(part):
@@ -78,7 +78,7 @@ class EducationExtractor:
 
         return inst, degree
 
-    def _infer_field(self, line: str) -> Optional[str]:
+    def _infer_field(self, line: str) -> str | None:
         lower = line.lower()
         if re.search(r"\b(?:computer\s+science|cs)\b", lower):
             return "Computer Science"

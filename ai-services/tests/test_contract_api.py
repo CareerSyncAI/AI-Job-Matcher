@@ -1,9 +1,9 @@
 """API Conformance Tests against docs/ai-service-contract.md."""
 
-import os
 import pytest
 from fastapi.testclient import TestClient
-from src.api.app import app, check_production_security, DEFAULT_DEV_KEY
+
+from src.api.app import DEFAULT_DEV_KEY, app, check_production_security
 
 
 @pytest.mark.parametrize(

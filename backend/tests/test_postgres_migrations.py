@@ -166,7 +166,7 @@ def test_postgres_relational_constraints_and_cascade(pg_engine):
         )
 
         invalid_job_id = uuid4()
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             conn.execute(
                 text(
                     """
@@ -183,8 +183,9 @@ def test_postgres_relational_constraints_and_cascade(pg_engine):
 
 def test_postgres_downgrade_and_reupgrade_cycle(pg_engine):
     """Verify that Alembic downgrade base cleanly drops tables and re-upgrade head recreates them."""
-    from alembic import command
     from alembic.config import Config
+
+    from alembic import command
 
     backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ini_path = os.path.join(backend_dir, "alembic.ini")

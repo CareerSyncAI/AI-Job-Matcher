@@ -25,7 +25,7 @@ import math
 import os
 import sys
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -33,12 +33,12 @@ from src.similarity.baseline_matcher import BaselineSemanticMatcher
 from src.similarity.embedding_matcher import SentenceEmbeddingMatcher
 
 
-def compute_spearman_rho(x: List[float], y: List[float]) -> float:
+def compute_spearman_rho(x: list[float], y: list[float]) -> float:
     """Computes Spearman rank correlation coefficient between predictions and ordinal ground truth."""
     if len(x) < 2:
         return 0.0
 
-    def get_ranks(seq: List[float]) -> List[float]:
+    def get_ranks(seq: list[float]) -> list[float]:
         sorted_indices = sorted(range(len(seq)), key=lambda i: seq[i])
         ranks = [0.0] * len(seq)
         i = 0
@@ -58,7 +58,7 @@ def compute_spearman_rho(x: List[float], y: List[float]) -> float:
     mean_rx = sum(rank_x) / len(rank_x)
     mean_ry = sum(rank_y) / len(rank_y)
 
-    numerator = sum((rx - mean_rx) * (ry - mean_ry) for rx, ry in zip(rank_x, rank_y))
+    numerator = sum((rx - mean_rx) * (ry - mean_ry) for rx, ry in zip(rank_x, rank_y, strict=True))
     den_x = math.sqrt(sum((rx - mean_rx) ** 2 for rx in rank_x))
     den_y = math.sqrt(sum((ry - mean_ry) ** 2 for ry in rank_y))
 
@@ -67,21 +67,21 @@ def compute_spearman_rho(x: List[float], y: List[float]) -> float:
     return numerator / (den_x * den_y)
 
 
-def compute_pearson_r(x: List[float], y: List[float]) -> float:
+def compute_pearson_r(x: list[float], y: list[float]) -> float:
     """Computes standard Pearson correlation coefficient."""
     if len(x) < 2:
         return 0.0
     mean_x = sum(x) / len(x)
     mean_y = sum(y) / len(y)
 
-    num = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y))
+    num = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y, strict=True))
     den = math.sqrt(sum((xi - mean_x) ** 2 for xi in x) * sum((yi - mean_y) ** 2 for yi in y))
     if den == 0.0:
         return 0.0
     return num / den
 
 
-def compute_pairwise_accuracy(scores: List[float], ground_truth: List[int]) -> float:
+def compute_pairwise_accuracy(scores: list[float], ground_truth: list[int]) -> float:
     """Computes percentage of valid pairs where higher ground truth is correctly assigned higher score."""
     total_pairs = 0
     correct_pairs = 0
@@ -114,14 +114,14 @@ def compute_pairwise_accuracy(scores: List[float], ground_truth: List[int]) -> f
 
 def evaluate_engine_on_split(
     engine: Any,
-    pairs: List[Dict[str, Any]],
+    pairs: list[dict[str, Any]],
     is_embedding: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Runs evaluation on a specific split of candidate-job pairs."""
     scores = []
     raw_sims = []
     latencies = []
-    tier_scores: Dict[str, List[float]] = {
+    tier_scores: dict[str, list[float]] = {
         "strong_match": [],
         "partial_match": [],
         "weak_match": [],
@@ -189,7 +189,7 @@ def main():
         print(f"[Error] Benchmark file not found at: {benchmark_path}")
         sys.exit(1)
 
-    with open(benchmark_path, "r", encoding="utf-8") as f:
+    with open(benchmark_path, encoding="utf-8") as f:
         benchmark_data = json.load(f)
 
     all_pairs = benchmark_data["pairs"]
@@ -211,7 +211,7 @@ def main():
     embedding = SentenceEmbeddingMatcher(lazy_load=False)
     e_init_ms = (time.perf_counter() - start_e) * 1000
 
-    print(f"\nCold-Start Initialization Latency:")
+    print("\nCold-Start Initialization Latency:")
     print(f"  - Baseline (tf-cosine-v1):               {b_init_ms:.2f} ms")
     print(f"  - Neural (all-MiniLM-L6-v2):             {e_init_ms:.2f} ms")
 

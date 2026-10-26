@@ -66,7 +66,7 @@ Every prior finding from the earlier audit documents has been evaluated and assi
 ## 3. Targeted Fixes & Regression Test Added
 
 ### 3.1 Added Test: Login Rate Limiting Lockout
-* **File Updated:** [`backend/tests/test_auth.py`](file:///c:/Users/Hit/Desktop/SGP%205TH%20Sem/AI-Job-Matcher/backend/tests/test_auth.py)
+* **File Updated:** [`backend/tests/test_auth.py`](../../../backend/tests/test_auth.py)
 * **Function Added:** `test_login_rate_limiting_lockout(client)`
 * **Description:** Simulates an attacker or automated script attempting 5 consecutive failed logins with an invalid password, followed by a 6th attempt with the correct password. Confirms that the server enforces lockout by returning `HTTP 429 Too Many Requests` with message `"Too many failed login attempts. Please wait 5 minutes before trying again."`
 

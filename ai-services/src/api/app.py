@@ -4,36 +4,50 @@ Implements all endpoints defined in docs/ai-service-contract.md.
 """
 
 from __future__ import annotations
+
 import io
 import os
 import time
-from typing import Optional
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
+
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.parsers.pdf_parser import PDFParser
-from src.parsers.docx_parser import DOCXParser
-from src.parsers.section_detector import SectionDetector
-from src.extractors.skill_extractor import SkillExtractor
-from src.extractors.experience_extractor import ExperienceExtractor
-from src.extractors.education_extractor import EducationExtractor
-from src.normalizers.skill_normalizer import SkillNormalizer
-from src.similarity.semantic_matcher import SemanticMatcher
 from src.api.schemas import (
-    HealthResponse,
-    ParseResumeResponse,
+    CapabilitiesSchema,
+    EducationEntity,
+    EntitiesPayload,
+    ErrorDetail,
+    ExperienceEntity,
     ExtractEntitiesRequest,
     ExtractEntitiesResponse,
-    EntitiesPayload,
+    HealthResponse,
+    NormalizedSkillItem,
     NormalizeSkillsRequest,
     NormalizeSkillsResponse,
-    NormalizedSkillItem,
+    ParseResumeResponse,
     SemanticMatchRequest,
     SemanticMatchResponse,
+    SkillEntity,
     StandardErrorResponse,
-    ErrorDetail
 )
+from src.extractors.education_extractor import EducationExtractor
+from src.extractors.experience_extractor import ExperienceExtractor
+from src.extractors.skill_extractor import SkillExtractor
+from src.normalizers.skill_normalizer import SkillNormalizer
+from src.parsers.docx_parser import DOCXParser
+from src.parsers.pdf_parser import PDFParser
+from src.parsers.section_detector import SectionDetector
+from src.similarity.semantic_matcher import SemanticMatcher
 
 app = FastAPI(
     title="CareerSync AI Engine",
@@ -73,9 +87,9 @@ REQUIRE_API_KEY = os.getenv("AI_SERVICE_REQUIRE_AUTH", "true").lower() in ("true
 
 
 def verify_ai_service_key(
-    authorization: Optional[str] = Header(None),
-    x_api_key: Optional[str] = Header(None, alias="X-AI-Service-Key"),
-    x_api_key_alt: Optional[str] = Header(None, alias="X-API-Key")
+    authorization: str | None = Header(None),
+    x_api_key: str | None = Header(None, alias="X-AI-Service-Key"),
+    x_api_key_alt: str | None = Header(None, alias="X-API-Key")
 ) -> None:
     expected_key = os.getenv("AI_SERVICE_API_KEY", DEFAULT_DEV_KEY)
     key = x_api_key or x_api_key_alt
@@ -114,25 +128,25 @@ async def health_check():
     """Verify AI microservice health and active capabilities."""
     info = semantic_matcher.get_active_engine_info()
     return HealthResponse(
-        capabilities={
-            "pdf_parsing": True,
-            "docx_parsing": True,
-            "skill_extraction": True,
-            "skill_normalization": True,
-            "experience_structuring": True,
-            "semantic_similarity": True,
-            "embedding_matcher_available": True,
-            "active_matcher_engine": info["default_method"],
-            "embedding_model_id": info["embedding_model_id"],
-            "embedding_model_loaded": info["embedding_model_loaded"]
-        }
+        capabilities=CapabilitiesSchema(
+            pdf_parsing=True,
+            docx_parsing=True,
+            skill_extraction=True,
+            skill_normalization=True,
+            experience_structuring=True,
+            semantic_similarity=True,
+            embedding_matcher_available=True,
+            active_matcher_engine=str(info["default_method"]),
+            embedding_model_id=str(info["embedding_model_id"]),
+            embedding_model_loaded=bool(info["embedding_model_loaded"]),
+        )
     )
 
 
 @app.post("/api/v1/ai/parse-resume", response_model=ParseResumeResponse, dependencies=[Depends(verify_ai_service_key)])
 async def parse_resume(
     file: UploadFile = File(...),
-    resume_id: Optional[str] = Form(None)
+    resume_id: str | None = Form(None)
 ):
 
     """Parse raw PDF or DOCX file into normalized text and semantic sections."""
@@ -209,7 +223,7 @@ async def parse_resume(
                 )
             ).model_dump()
         )
-    except Exception as e:
+    except Exception:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=StandardErrorResponse(
@@ -250,11 +264,11 @@ async def extract_entities(payload: ExtractEntitiesRequest):
         status="completed",
         parser_version="1.0.0",
         entities=EntitiesPayload(
-            skills=skills_data,
-            experience=exp_data["entries"],
+            skills=[SkillEntity.model_validate(s) for s in skills_data],
+            experience=[ExperienceEntity.model_validate(e) for e in exp_data["entries"]],
             total_experience_months=exp_data["total_experience_months"],
             total_experience_years=exp_data["total_experience_years"],
-            education=edu_data
+            education=[EducationEntity.model_validate(e) for e in edu_data],
         ),
         extraction_metadata={
             "total_skills_detected": len(skills_data),

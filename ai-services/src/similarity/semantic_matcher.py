@@ -11,7 +11,7 @@ transparent fallback handling, and strictly verifiable evidence extraction.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
 from src.similarity.baseline_matcher import BaselineSemanticMatcher
@@ -21,7 +21,7 @@ from src.similarity.embedding_matcher import SentenceEmbeddingMatcher
 class SemanticMatcher(BaseSimilarityEngine):
     """Unified pluggable semantic matcher coordinating baseline and embedding implementations."""
 
-    def __init__(self, default_engine: Optional[str] = None) -> None:
+    def __init__(self, default_engine: str | None = None) -> None:
         configured = default_engine or os.getenv("SEMANTIC_MATCHER", "baseline").lower()
         self.default_method = "embedding" if configured in ("embedding", "neural", "sentence_transformers") else "baseline"
 
@@ -33,12 +33,12 @@ class SemanticMatcher(BaseSimilarityEngine):
         self.engine_name = "sentence-transformers/all-MiniLM-L6-v2" if self.default_method == "embedding" else "semantic-cosine-v1"
         self.vector_dimensions = 384
 
-    def match(
+    def match(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        candidate_profile: Dict[str, Any],
-        job_requisition: Dict[str, Any],
-        method: Optional[str] = None
-    ) -> Dict[str, Any]:
+        candidate_profile: dict[str, Any],
+        job_requisition: dict[str, Any],
+        method: str | None = None
+    ) -> dict[str, Any]:
         """Calculate semantic similarity score and explainable concept overlap.
 
         Args:
@@ -55,7 +55,7 @@ class SemanticMatcher(BaseSimilarityEngine):
 
         return output.to_dict()
 
-    def get_active_engine_info(self) -> Dict[str, Any]:
+    def get_active_engine_info(self) -> dict[str, Any]:
         """Return diagnostic information about active engine and model status."""
         return {
             "default_method": self.default_method,

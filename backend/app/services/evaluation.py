@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import get_settings
 from app.models.entities import (
     Application,
     CandidateProfile,
@@ -28,14 +29,17 @@ from app.models.enums import (
     EvidenceKind,
 )
 from app.schemas.evaluations import CandidateCardDTO, CandidateEvidenceItem
-from app.core.config import get_settings
 from app.services.scoring import (
     EvaluatedRequirement,
     Weights,
     calculate_weighted_score,
     education_satisfies,
 )
-from app.services.semantic_matcher import AIServiceDiagnosticMatcher, BaseSemanticMatcher, SublinearTFCosineMatcher
+from app.services.semantic_matcher import (
+    AIServiceDiagnosticMatcher,
+    BaseSemanticMatcher,
+    SublinearTFCosineMatcher,
+)
 from app.services.taxonomy import taxonomy
 
 logger = logging.getLogger(__name__)
@@ -222,7 +226,6 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
         transferable_skills: list[str] = []
         missing_skills: list[str] = []
 
-        total_required_skills = sum(1 for s in job.skills if s.required) or 1
         matched_required_count = 0
 
         # Evaluate each skill in the job requisition
@@ -603,7 +606,7 @@ class EvaluationService:
             resume=resume,
             weights=weights,
             scoring_version="deterministic-v2-taxonomy",
-            semantic_matcher=self.engine.semantic_matcher if hasattr(self.engine, "semantic_matcher") else None,
+            semantic_matcher=getattr(self.engine, "semantic_matcher", None),
         )
 
         now_dt = datetime.now(UTC)

@@ -7,7 +7,6 @@ from uuid import UUID
 from pydantic import Field
 
 from app.models.enums import (
-    ApplicationStatus,
     EvaluatedSkillStatus,
     EvaluationStatus,
     EvidenceConfidence,

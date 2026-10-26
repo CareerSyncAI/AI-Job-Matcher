@@ -31,6 +31,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
+      - name: Run Backend Ruff Lint Check
+        working-directory: backend
+        run: |
+          ruff check .
+
       - name: Run Backend Pytest Suite
         working-directory: backend
         env:
@@ -62,6 +67,11 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r ai-services/requirements.txt
 
+      - name: Run AI Services Ruff Lint Check
+        working-directory: ai-services
+        run: |
+          ruff check .
+
       - name: Run AI Services Pytest Suite
         working-directory: ai-services
         env:
@@ -70,7 +80,7 @@ jobs:
           pytest -v
 
   frontend-build:
-    name: Frontend Build
+    name: Frontend Build & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +95,14 @@ jobs:
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Run ESLint Check
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run TypeScript Type Check
+        working-directory: frontend
+        run: npx tsc --noEmit
 
       - name: Build Next.js Application
         working-directory: frontend

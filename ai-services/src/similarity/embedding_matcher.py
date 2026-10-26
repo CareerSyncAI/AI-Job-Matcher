@@ -14,7 +14,7 @@ import logging
 import os
 import threading
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -34,11 +34,11 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
 
     def __init__(
         self,
-        model_id: Optional[str] = None,
-        model_revision: Optional[str] = None,
-        cache_dir: Optional[str] = None,
-        device: Optional[str] = None,
-        fallback_enabled: Optional[bool] = None,
+        model_id: str | None = None,
+        model_revision: str | None = None,
+        cache_dir: str | None = None,
+        device: str | None = None,
+        fallback_enabled: bool | None = None,
         lazy_load: bool = True
     ) -> None:
         self.model_id = model_id or os.getenv("EMBEDDING_MODEL_ID", self.DEFAULT_MODEL_ID)
@@ -55,7 +55,7 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
         self._model = None
         self._load_lock = threading.Lock()
         self._load_failed = False
-        self._load_error_msg: Optional[str] = None
+        self._load_error_msg: str | None = None
         self._baseline_fallback = BaselineSemanticMatcher()
 
         if not lazy_load:
@@ -81,7 +81,7 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                 logger.info(f"Loading embedding model '{self.model_id}' (revision: {self.model_revision}) on {self.device}...")
                 from sentence_transformers import SentenceTransformer
 
-                kwargs: Dict[str, Any] = {"device": self.device}
+                kwargs: dict[str, Any] = {"device": self.device}
                 if self.cache_dir:
                     kwargs["cache_folder"] = self.cache_dir
                 if self.model_revision:
@@ -95,14 +95,14 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                 return self._model
             except Exception as exc:
                 self._load_failed = True
-                self._load_error_msg = f"{type(exc).__name__}: {str(exc)}"
+                self._load_error_msg = f"{type(exc).__name__}: {exc!s}"
                 logger.error(f"Failed to load embedding model '{self.model_id}': {self._load_error_msg}")
                 raise RuntimeError(self._load_error_msg) from exc
 
     def match(
         self,
-        candidate_profile: Dict[str, Any],
-        job_requisition: Dict[str, Any]
+        candidate_profile: dict[str, Any],
+        job_requisition: dict[str, Any]
     ) -> SemanticMatchOutput:
         start_time = time.perf_counter()
 
@@ -210,8 +210,8 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
             job_pref_skills = job_requisition.get("preferred_skills", []) or []
             all_job_skills = job_req_skills + job_pref_skills
 
-            matched_concepts: List[str] = []
-            missing_concepts: List[str] = []
+            matched_concepts: list[str] = []
+            missing_concepts: list[str] = []
             for s in all_job_skills:
                 if s.lower() in cand_skills_set or s.lower() in full_cand_text:
                     matched_concepts.append(s)
@@ -259,13 +259,13 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                 return fallback_output
             raise
 
-    def _chunk_candidate_profile(self, profile: Dict[str, Any]) -> Tuple[List[str], bool, int]:
+    def _chunk_candidate_profile(self, profile: dict[str, Any]) -> tuple[list[str], bool, int]:
         """Produce bounded text chunks for candidate profile."""
         headline = (profile.get("headline", "") or "").strip()
         skills = profile.get("skills", []) or []
         summary = (profile.get("experience_summary", "") or "").strip()
 
-        chunks: List[str] = []
+        chunks: list[str] = []
         truncated = False
         total_chars = len(headline) + sum(len(s) for s in skills) + len(summary)
 
@@ -292,14 +292,14 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
 
         return chunks, truncated, total_chars
 
-    def _chunk_job_requisition(self, requisition: Dict[str, Any]) -> Tuple[List[str], bool, int]:
+    def _chunk_job_requisition(self, requisition: dict[str, Any]) -> tuple[list[str], bool, int]:
         """Produce bounded text chunks for job requisition."""
         title = (requisition.get("title", "") or "").strip()
         req_skills = requisition.get("required_skills", []) or []
         pref_skills = requisition.get("preferred_skills", []) or []
         desc = (requisition.get("description", "") or "").strip()
 
-        chunks: List[str] = []
+        chunks: list[str] = []
         truncated = False
         total_chars = len(title) + sum(len(s) for s in req_skills + pref_skills) + len(desc)
 
@@ -331,7 +331,7 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
 
         return chunks, truncated, total_chars
 
-    def _split_text_to_chunks(self, text: str, max_chars: int) -> List[str]:
+    def _split_text_to_chunks(self, text: str, max_chars: int) -> list[str]:
         """Splits long text into sentence/boundary-aware chunks."""
         text = text.strip()
         if len(text) <= max_chars:

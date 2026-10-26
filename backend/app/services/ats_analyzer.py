@@ -15,7 +15,7 @@ It is NEVER merged with the Job Match Score, which measures candidate fit agains
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -97,7 +97,6 @@ class ATSAnalyzer:
 
         words = re.findall(r"\b\w+\b", text)
         word_count = len(words)
-        lower_text = text.lower()
 
         issues: list[ATSIssue] = []
         strengths: list[str] = []

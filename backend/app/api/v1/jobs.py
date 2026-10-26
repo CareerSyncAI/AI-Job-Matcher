@@ -27,6 +27,7 @@ def list_jobs(
     db: Session = Depends(get_db),
 ) -> list[JobResponse]:
     from sqlalchemy import func
+
     from app.models.entities import Application
 
     jobs = (
@@ -162,7 +163,8 @@ def reevaluate_job_applications(
     5. Returns accurate counts and per-application outcomes without leaking internal exception traces.
     """
     from datetime import UTC, datetime
-    from app.models.entities import Application, EvaluationRun, Resume
+
+    from app.models.entities import Application, EvaluationRun
     from app.models.enums import EvaluationStatus, ProcessingStatus
     from app.schemas.jobs import ApplicationReevaluationItem, BatchReevaluationResponse
     from app.services.evaluation import EvaluationService, compute_evaluation_fingerprint
@@ -185,11 +187,11 @@ def reevaluate_job_applications(
                 .with_for_update(nowait=True)
                 .one_or_none()
             )
-        except OperationalError:
+        except OperationalError as err:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="A batch re-evaluation for this job is already in progress.",
-            )
+            ) from err
 
         if not job:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
@@ -258,7 +260,7 @@ def reevaluate_job_applications(
                 candidate=candidate,
                 resume=resume,
                 weights=weights,
-                semantic_matcher=evaluation_service.engine.semantic_matcher if hasattr(evaluation_service.engine, "semantic_matcher") else None,
+                semantic_matcher=getattr(evaluation_service.engine, "semantic_matcher", None),
             )
 
             latest_run = (
@@ -294,7 +296,7 @@ def reevaluate_job_applications(
 
             if is_match:
                 already_fresh_count += 1
-                score = latest_run.match_result.overall_score if latest_run.match_result else None
+                score = latest_run.match_result.overall_score if (latest_run and latest_run.match_result) else None
                 results.append(
                     ApplicationReevaluationItem(
                         application_id=app.id,

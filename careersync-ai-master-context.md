@@ -1,7 +1,8 @@
-# CareerSync AI — Master Project Context
+# CareerSync AI — Master Project Context & Founding Charter
 
-**Document version:** 5.5 (Final Polish)
-**Last reviewed:** August 9, 2026
+**Charter Version:** 5.5  
+**Founding Reviewed:** August 9, 2026 | **Status:** Active Foundation Charter  
+**Active Implementation Notice:** For the live verified implementation, test counts, and current contracts, consult the authoritative documentation in [`docs/README.md`](docs/README.md) and [`AGENTS.md`](AGENTS.md).
 
 ---
 

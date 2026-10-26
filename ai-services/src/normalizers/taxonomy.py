@@ -5,7 +5,6 @@ with verified alias mappings for robust resume normalization.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Set, Tuple
 
 # Domain Categories
 DOMAINS = {
@@ -20,7 +19,7 @@ DOMAINS = {
 }
 
 # Canonical Skill -> (Domain, Primary Aliases / Variations)
-CANONICAL_SKILLS: Dict[str, Tuple[str, List[str]]] = {
+CANONICAL_SKILLS: dict[str, tuple[str, list[str]]] = {
     # Backend Engineering
     "Python": (DOMAINS["BACKEND"], ["python", "python3", "python 3", "py"]),
     "Java": (DOMAINS["BACKEND"], ["java", "java 8", "java 11", "java 17", "java 21", "core java", "j2ee"]),
@@ -138,7 +137,7 @@ CANONICAL_SKILLS: Dict[str, Tuple[str, List[str]]] = {
 }
 
 # Reverse index: alias_lower -> (canonical_name, category)
-ALIAS_LOOKUP: Dict[str, Tuple[str, str]] = {}
+ALIAS_LOOKUP: dict[str, tuple[str, str]] = {}
 for canonical, (category, aliases) in CANONICAL_SKILLS.items():
     ALIAS_LOOKUP[canonical.lower()] = (canonical, category)
     for alias in aliases:

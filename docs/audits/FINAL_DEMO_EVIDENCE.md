@@ -462,7 +462,7 @@ https://github.com/CareerSyncAI/AI-Job-Matcher/actions/runs/40186513530
 
 ## 9. Security Verification Summary
 
-Full findings: [`PROMPT_8_RESIDUAL_SECURITY_REVIEW.md`](PROMPT_8_RESIDUAL_SECURITY_REVIEW.md)
+Full findings: [`SECURITY_AND_QUALITY_REGISTER.md`](SECURITY_AND_QUALITY_REGISTER.md) (Archived: [`PROMPT_8_RESIDUAL_SECURITY_REVIEW.md`](../archive/audits/PROMPT_8_RESIDUAL_SECURITY_REVIEW.md))
 
 | Control | Implementation | Verification |
 |---------|----------------|-------------|
@@ -493,11 +493,12 @@ Full findings: [`PROMPT_8_RESIDUAL_SECURITY_REVIEW.md`](PROMPT_8_RESIDUAL_SECURI
 
 | File | Contents |
 |------|----------|
-| `CareerSyncAI_Second_Deep_Audit.md` | Comprehensive second-pass audit |
-| `DELTA_AUDIT.md` | Delta audit since baseline |
-| `EMBEDDING_AND_RANKING_DECISION.md` | ADR: dual-engine semantic search |
-| `SECURITY_AND_POSTGRES_CI_AUDIT.md` | Infrastructure and security baseline audit |
-| `PROMPT_8_RESIDUAL_SECURITY_REVIEW.md` | Prompt 8 security residual review |
+| `SECURITY_AND_QUALITY_REGISTER.md` | Consolidated active security and defect register |
+| `archive/audits/CareerSyncAI_Second_Deep_Audit.md` | Comprehensive second-pass audit (archived) |
+| `archive/audits/DELTA_AUDIT.md` | Delta audit since baseline (archived) |
+| `decisions/ADR-001-embedding-and-ranking-architecture.md` | ADR: dual-engine semantic search |
+| `archive/audits/SECURITY_AND_POSTGRES_CI_AUDIT.md` | Infrastructure and security baseline audit (archived) |
+| `archive/audits/PROMPT_8_RESIDUAL_SECURITY_REVIEW.md` | Prompt 8 security residual review (archived) |
 | `FINAL_DEMO_EVIDENCE.md` | **This document** |
 
 ### 10.4 Environment Configuration — ℹ️ INFERRED FROM CODE

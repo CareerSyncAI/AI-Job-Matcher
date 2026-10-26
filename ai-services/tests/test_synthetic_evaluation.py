@@ -1,16 +1,17 @@
 """End-to-End Evaluation Tests using Synthetic Full-Document Fixtures."""
 
 import os
-from src.parsers.section_detector import SectionDetector
-from src.extractors.skill_extractor import SkillExtractor
-from src.extractors.experience_extractor import ExperienceExtractor
+
 from src.extractors.education_extractor import EducationExtractor
+from src.extractors.experience_extractor import ExperienceExtractor
+from src.extractors.skill_extractor import SkillExtractor
+from src.parsers.section_detector import SectionDetector
 from src.similarity.semantic_matcher import SemanticMatcher
 
 
 def test_senior_ai_engineer_fixture_evaluation():
     fixture_path = os.path.join(os.path.dirname(__file__), "..", "fixtures", "synthetic", "senior_ai_engineer.txt")
-    with open(fixture_path, "r", encoding="utf-8") as f:
+    with open(fixture_path, encoding="utf-8") as f:
         text = f.read()
 
     detector = SectionDetector()
@@ -65,7 +66,7 @@ def test_senior_ai_engineer_fixture_evaluation():
 
 def test_fullstack_developer_fixture_evaluation():
     fixture_path = os.path.join(os.path.dirname(__file__), "..", "fixtures", "synthetic", "fullstack_developer.txt")
-    with open(fixture_path, "r", encoding="utf-8") as f:
+    with open(fixture_path, encoding="utf-8") as f:
         text = f.read()
 
     detector = SectionDetector()
