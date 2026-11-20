@@ -1,8 +1,15 @@
+export type EvidenceType =
+  | "matched"
+  | "transferable"
+  | "not_detected"
+  | "not_provided"
+  | "gap";
+
 export interface SkillEvidenceItem {
   requirement: string;
   claim: string;
   sourceText?: string | null;
-  type: "matched" | "transferable" | "not_detected" | string;
+  type: EvidenceType;
   details?: string | null;
 }
 

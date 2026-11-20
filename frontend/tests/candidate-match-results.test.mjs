@@ -20,7 +20,7 @@ test('CandidateMatchResultsDTO schema contract integrity', () => {
         requirement: 'React',
         claim: 'Candidate has 4 years React experience',
         sourceText: 'Developed complex responsive frontends with React and Redux',
-        type: 'explicit'
+        type: 'matched'
       }
     ],
     experience: {

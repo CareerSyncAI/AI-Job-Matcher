@@ -80,7 +80,7 @@ export default function CandidateMatchResultsPage() {
 
         setErrorStatus(status);
         if (status === 404) {
-          setErrorMessage(detail || "The requested job application or evaluation was not found.");
+          setErrorMessage(detail || "The requested job application was not found or does not belong to your account.");
         } else if (status === 403 || status === 401) {
           setErrorMessage(detail || "You do not have permission to view evaluation results for this application.");
         } else {
@@ -105,7 +105,7 @@ export default function CandidateMatchResultsPage() {
   const isPending = data?.evaluation_status === "pending" || data?.evaluation_status === "queued" || data?.evaluation_status === "running";
 
   return (
-    <ProtectedRoute allowedRoles={["candidate", "admin"]}>
+    <ProtectedRoute allowedRoles={["candidate"]}>
       <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto font-sans pb-12">
         {/* Navigation Breadcrumb & Back Action */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -617,7 +617,7 @@ export default function CandidateMatchResultsPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-sm">Verbatim Resume Evidence Anchoring</h3>
                   <span className={`text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                    Zero Hallucination Guarantee
+                    AI-assisted evaluation with supporting resume evidence
                   </span>
                 </div>
 
