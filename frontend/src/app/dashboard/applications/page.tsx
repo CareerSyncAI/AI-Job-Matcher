@@ -303,13 +303,21 @@ export default function CandidateApplicationsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 shrink-0">
-                    {app.match_score && (
-                      <div className="text-right">
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                    {app.match_score != null && (
+                      <div className="text-right mr-1">
                         <span className="text-xs text-slate-400 font-medium block">Match Score</span>
                         <span className="text-2xl font-bold font-mono leading-none text-emerald-500">{app.match_score}%</span>
                       </div>
                     )}
+
+                    <Link
+                      href={`/dashboard/applications/${app.id}/match-results`}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
+                    >
+                      <IconTarget size={14} />
+                      View Match Results
+                    </Link>
 
                     <Link
                       href="/dashboard/jobs"
@@ -319,7 +327,7 @@ export default function CandidateApplicationsPage() {
                           : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
-                      View Job Details
+                      Job Details
                     </Link>
                   </div>
                 </div>
