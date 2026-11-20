@@ -1,6 +1,220 @@
 import io
+from uuid import UUID
 
 import docx
+
+
+def test_candidate_match_results_end_to_end(client, db_session):
+    from app.models.entities import (
+        Application,
+        EvaluatedSkill,
+        EvaluationRun,
+        MatchResult,
+        RecruiterNote,
+    )
+    from app.models.enums import EvaluatedSkillStatus, EvaluationStatus
+
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "e2e-rec@example.com",
+            "password": "Password123456!",
+            "role": "recruiter",
+            "organization_name": "Synthetic Org",
+        },
+    )
+    recruiter_token = client.post(
+        "/api/v1/auth/login",
+        json={"email": "e2e-rec@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
+    job = client.post(
+        "/api/v1/jobs",
+        headers=recruiter_headers,
+        json={
+            "title": "Python Engineer",
+            "description": "Python API role",
+            "employment_type": "Full-time",
+            "work_arrangement": "Remote",
+            "skills": [{"name": "Python", "required": True}],
+            "status": "open",
+        },
+    ).json()
+
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "e2e-candidate@example.com",
+            "password": "Password123456!",
+            "role": "candidate",
+        },
+    )
+    token = client.post(
+        "/api/v1/auth/login",
+        json={"email": "e2e-candidate@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    resume = _create_docx_resume_bytes("Python software engineer with experience building APIs.")
+    upload = client.post(
+        "/api/v1/profile/resumes",
+        headers=headers,
+        files={
+            "file": (
+                "resume.docx",
+                resume,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+    )
+    assert upload.status_code == 202
+    application_response = client.post(
+        f"/api/v1/jobs/{job['id']}/applications",
+        headers=headers,
+        json={"resume_id": upload.json()["id"]},
+    )
+    assert application_response.status_code == 201
+    application_id = application_response.json()["id"]
+    application = db_session.get(Application, UUID(application_id))
+    private_note = "SECRET RECRUITER ONLY NOTE"
+    db_session.add(
+        RecruiterNote(
+            application_id=application.id,
+            recruiter_id=application.job.recruiter_id,
+            body=private_note,
+        )
+    )
+    db_session.flush()
+    run = (
+        db_session.query(EvaluationRun)
+        .filter_by(application_id=application.id, status=EvaluationStatus.COMPLETED)
+        .one()
+    )
+    persisted = db_session.query(MatchResult).filter_by(evaluation_run_id=run.id).one()
+    application.candidate.total_experience_years = None
+    application.candidate.education = None
+    application.job.recruiter.organization_name = None
+    db_session.flush()
+    result = client.get(f"/api/v1/applications/{application_id}/match-results", headers=headers)
+    assert result.status_code == 200
+    assert result.json()["application_id"] == application_id
+    assert result.json()["job_id"] == job["id"]
+    assert result.json()["overall_match_score"] == persisted.overall_score
+    assert result.json()["evaluation_status"] == "completed"
+    assert result.json()["company_name"] is None
+    assert result.json()["experience"]["candidate_years"] is None
+    assert result.json()["education"]["candidate_degree"] is None
+    assert result.json()["matched_skills"] == [
+        skill.name for skill in persisted.evaluated_skills if skill.status.value == "matched"
+    ]
+    assert result.json()["missing_skills"] == [
+        skill.name
+        for skill in persisted.evaluated_skills
+        if skill.status.value in {"not_detected", "gap"}
+    ]
+    assert result.json()["transferable_skills"] == [
+        skill.name for skill in persisted.evaluated_skills if skill.status.value == "transferable"
+    ]
+    assert set(result.json()) == {
+        "application_id",
+        "application_status",
+        "job_id",
+        "job_title",
+        "company_name",
+        "overall_match_score",
+        "evaluation_status",
+        "evaluated_at",
+        "matched_skills",
+        "missing_skills",
+        "transferable_skills",
+        "skill_evidence",
+        "experience",
+        "education",
+        "recommendations",
+    }
+    assert "storage_key" not in result.text and application.resume.storage_key not in result.text
+    assert "recruiter_notes" not in result.text and "weights_used" not in result.text
+    assert private_note not in result.text
+
+    persisted.evaluated_skills.extend(
+        [
+            EvaluatedSkill(name="Test matched", status=EvaluatedSkillStatus.MATCHED),
+            EvaluatedSkill(name="Test missing", status=EvaluatedSkillStatus.NOT_DETECTED),
+            EvaluatedSkill(name="Test transferable", status=EvaluatedSkillStatus.TRANSFERABLE),
+        ]
+    )
+    db_session.flush()
+    classified = client.get(
+        f"/api/v1/applications/{application_id}/match-results", headers=headers
+    ).json()
+    assert "Test matched" in classified["matched_skills"]
+    assert "Test missing" in classified["missing_skills"]
+    assert "Test transferable" in classified["transferable_skills"]
+    assert classified["experience"]["candidate_years"] is None
+    assert classified["education"]["candidate_degree"] is None
+    assert client.get(f"/api/v1/applications/{application_id}/match-results").status_code == 401
+    assert (
+        client.get(
+            f"/api/v1/applications/{application_id}/match-results",
+            headers=recruiter_headers,
+        ).status_code
+        == 403
+    )
+
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "other-candidate@example.com",
+            "password": "Password123456!",
+            "role": "candidate",
+        },
+    )
+    other_token = client.post(
+        "/api/v1/auth/login",
+        json={"email": "other-candidate@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    assert (
+        client.get(
+            f"/api/v1/applications/{application_id}/match-results",
+            headers={"Authorization": f"Bearer {other_token}"},
+        ).status_code
+        == 404
+    )
+    assert (
+        client.get("/api/v1/applications/not-a-uuid/match-results", headers=headers).status_code
+        == 422
+    )
+    assert (
+        client.get(f"/api/v1/applications/{UUID(int=0)}/match-results", headers=headers).status_code
+        == 404
+    )
+
+    db_session.delete(run)
+    db_session.flush()
+    db_session.expire(application, ["evaluation_runs"])
+    unavailable = client.get(
+        f"/api/v1/applications/{application_id}/match-results", headers=headers
+    )
+    assert unavailable.status_code == 200
+    assert unavailable.json()["evaluation_status"] == "unavailable"
+    assert unavailable.json()["overall_match_score"] is None
+    assert unavailable.json()["evaluated_at"] is None
+    assert unavailable.json()["experience"] is None
+    assert unavailable.json()["education"] is None
+
+    incomplete_run = EvaluationRun(
+        application_id=application.id,
+        status=EvaluationStatus.COMPLETED,
+        scoring_version="test-incomplete",
+        weights_used={},
+    )
+    db_session.add(incomplete_run)
+    db_session.flush()
+    incomplete = client.get(
+        f"/api/v1/applications/{application_id}/match-results", headers=headers
+    )
+    assert incomplete.status_code == 200
+    assert incomplete.json()["evaluation_status"] == "unavailable"
+    assert incomplete.json()["overall_match_score"] is None
 
 
 def _create_docx_resume_bytes(text: str = "Experienced Software Engineer with Python, React, and Docker expertise.") -> bytes:

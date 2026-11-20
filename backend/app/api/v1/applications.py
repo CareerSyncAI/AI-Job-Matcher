@@ -14,6 +14,7 @@ from app.models.entities import (
     CandidateProfile,
     EvaluationRun,
     Job,
+    MatchResult,
     RecruiterNote,
     RecruiterProfile,
     Resume,
@@ -33,7 +34,12 @@ from app.schemas.applications import (
     RecruiterNoteCreate,
     RecruiterNoteResponse,
 )
-from app.schemas.evaluations import CandidateCardDTO, EvaluationRunSchema
+from app.schemas.evaluations import (
+    CandidateCardDTO,
+    CandidateEvidenceItem,
+    CandidateMatchResultsDTO,
+    EvaluationRunSchema,
+)
 from app.schemas.resumes import ResumeResponse
 from app.services.audit import record_audit_event
 from app.services.education_extractor import extract_education_from_text
@@ -367,6 +373,136 @@ def list_my_applications(
         db.query(Application).filter(Application.candidate_id == candidate.id).order_by(Application.applied_at.desc()).all()
     )
     return [_application_response(application) for application in applications]
+
+
+@router.get(
+    "/applications/{application_id}/match-results",
+    response_model=CandidateMatchResultsDTO,
+)
+def candidate_match_results(
+    application_id: UUID,
+    current_user: User = Depends(require_roles(UserRole.CANDIDATE)),
+    db: Session = Depends(get_db),
+) -> CandidateMatchResultsDTO:
+    candidate = _candidate_for_user(db, current_user)
+    application = (
+        db.query(Application)
+        .options(
+            selectinload(Application.job).selectinload(Job.recruiter),
+            selectinload(Application.evaluation_runs)
+            .selectinload(EvaluationRun.match_result)
+            .selectinload(MatchResult.evaluated_skills),
+            selectinload(Application.evaluation_runs)
+            .selectinload(EvaluationRun.match_result)
+            .selectinload(MatchResult.evidence_claims),
+        )
+        .filter(Application.id == application_id, Application.candidate_id == candidate.id)
+        .one_or_none()
+    )
+    if not application:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found.")
+
+    completed_runs = sorted(
+        (
+            run
+            for run in application.evaluation_runs
+            if run.status is EvaluationStatus.COMPLETED and run.match_result
+        ),
+        key=lambda run: (run.completed_at or run.created_at, str(run.id)),
+        reverse=True,
+    )
+    run = completed_runs[0] if completed_runs else None
+    result = run.match_result if run else None
+    attribution = (
+        result.ranking_attribution
+        if result and isinstance(result.ranking_attribution, dict)
+        else {}
+    )
+    skills = result.evaluated_skills if result else []
+    matched = [skill.name for skill in skills if skill.status.value == "matched"]
+    missing = [skill.name for skill in skills if skill.status.value in {"not_detected", "gap"}]
+    transferable = [skill.name for skill in skills if skill.status.value == "transferable"]
+    if result and not skills:
+        matched, missing, transferable = (
+            attribution.get(key, [])
+            for key in ("matched_skills", "missing_skills", "transferable_skills")
+        )
+    matched = matched if isinstance(matched, list) else []
+    missing = missing if isinstance(missing, list) else []
+    transferable = transferable if isinstance(transferable, list) else []
+    claims = result.evidence_claims if result else []
+    evidence_types = {
+        "skill_match": "matched",
+        "transferable_skill": "transferable",
+        "not_detected": "not_detected",
+    }
+    evidence = [
+        CandidateEvidenceItem(
+            requirement=claim.claim_type.replace("_", " ").title(),
+            claim=claim.claim_text,
+            sourceText=claim.source_snippet,
+            type=evidence_types[claim.claim_type],
+        )
+        for claim in claims if claim.claim_type in evidence_types
+    ]
+    candidate_profile = application.candidate
+    experience = education = None
+    recommendations = []
+    if result:
+        experience = {
+            "candidate_years": candidate_profile.total_experience_years,
+            "required_years": application.job.experience_min_years,
+            "alignment_score": result.experience_score,
+            "tenure_delta_years": result.tenure_delta_years,
+        }
+        degree = (
+            candidate_profile.education.get("degree")
+            if isinstance(candidate_profile.education, dict)
+            else None
+        )
+        education = {
+            "candidate_degree": degree,
+            "required_education": application.job.education_required,
+            "alignment_score": result.education_score,
+        }
+        for skill in missing:
+            if any(
+                claim.claim_type == "not_detected"
+                and skill.casefold() in claim.claim_text.casefold()
+                for claim in claims
+            ):
+                recommendations.append(
+                    f"Consider adding relevant {skill} experience or evidence to your resume if you have it."
+                )
+    evaluation_status = "completed" if result else (
+        "pending"
+        if any(
+            run.status in (EvaluationStatus.QUEUED, EvaluationStatus.RUNNING)
+            for run in application.evaluation_runs
+        )
+        else "unavailable"
+    )
+    return CandidateMatchResultsDTO(
+        application_id=application.id,
+        application_status=application.status.value,
+        job_id=application.job.id,
+        job_title=application.job.title,
+        company_name=(
+            application.job.recruiter.organization_name
+            if application.job.recruiter
+            else None
+        ),
+        overall_match_score=result.overall_score if result else None,
+        evaluation_status=evaluation_status,
+        evaluated_at=run.completed_at if run else None,
+        matched_skills=matched,
+        missing_skills=missing,
+        transferable_skills=transferable,
+        skill_evidence=evidence,
+        experience=experience,
+        education=education,
+        recommendations=recommendations,
+    )
 
 
 @router.patch("/applications/{application_id}/status", response_model=ApplicationResponse)

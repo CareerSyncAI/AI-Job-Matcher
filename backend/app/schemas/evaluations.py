@@ -99,3 +99,20 @@ class CandidateCardDTO(APIModel):
     evaluation_status: str = "not_evaluated"  # "current" | "stale" | "pending" | "failed" | "not_evaluated"
     is_fresh: bool = False
     evaluated_at: datetime | None = None
+
+class CandidateMatchResultsDTO(APIModel):
+    application_id: UUID
+    application_status: str
+    job_id: UUID
+    job_title: str
+    company_name: str | None = None
+    overall_match_score: float | None = None
+    evaluation_status: str
+    evaluated_at: datetime | None = None
+    matched_skills: list[str] = Field(default_factory=list)
+    missing_skills: list[str] = Field(default_factory=list)
+    transferable_skills: list[str] = Field(default_factory=list)
+    skill_evidence: list[CandidateEvidenceItem] = Field(default_factory=list)
+    experience: dict[str, Any] | None = None
+    education: dict[str, Any] | None = None
+    recommendations: list[str] = Field(default_factory=list)

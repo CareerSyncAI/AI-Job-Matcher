@@ -92,3 +92,5 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 # Run complete backend test suite (48 tests)
 pytest -v
 ```
+
+Candidate match-results API contract: see [docs/candidate-match-results-api.md](docs/candidate-match-results-api.md).
