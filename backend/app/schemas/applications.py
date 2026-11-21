@@ -21,6 +21,12 @@ class RecruiterNoteCreate(APIModel):
     body: str = Field(min_length=1, max_length=10_000)
 
 
+class ApplicationStatusHistoryResponse(APIModel):
+    from_status: ApplicationStatus | None
+    to_status: ApplicationStatus
+    changed_at: datetime
+
+
 class ApplicationResponse(APIModel):
     id: UUID
     job_id: UUID
@@ -28,6 +34,7 @@ class ApplicationResponse(APIModel):
     resume_id: UUID
     status: ApplicationStatus
     applied_at: datetime
+    status_history: list[ApplicationStatusHistoryResponse] = Field(default_factory=list)
 
 
 class CandidateLeaderboardItem(APIModel):

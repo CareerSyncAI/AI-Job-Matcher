@@ -160,6 +160,15 @@ def process_resume(self, resume_id: str, db=None) -> None:
                     )
                     db.add(app_record)
                     db.flush()
+                    from app.services.application_status import record_application_status_change
+
+                    record_application_status_change(
+                        db,
+                        app_record,
+                        from_status=None,
+                        to_status=app_record.status,
+                        changed_by_user_id=None,
+                    )
                 else:
                     app_record = existing_app
                     app_record.resume_id = resume.id

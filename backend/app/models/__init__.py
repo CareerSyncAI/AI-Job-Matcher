@@ -2,6 +2,7 @@
 
 from app.models.entities import (  # noqa: F401
     Application,
+    ApplicationStatusHistory,
     AuditEvent,
     CandidateProfile,
     EvaluatedSkill,

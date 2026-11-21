@@ -41,6 +41,10 @@ from app.schemas.evaluations import (
     EvaluationRunSchema,
 )
 from app.schemas.resumes import ResumeResponse
+from app.services.application_status import (
+    can_transition_application_status,
+    record_application_status_change,
+)
 from app.services.audit import record_audit_event
 from app.services.education_extractor import extract_education_from_text
 from app.services.evaluation import EvaluationService
@@ -71,6 +75,7 @@ def _application_response(application: Application) -> ApplicationResponse:
         resume_id=application.resume_id,
         status=application.status,
         applied_at=application.applied_at,
+        status_history=application.status_history,
     )
 
 
@@ -121,6 +126,13 @@ def apply_to_job(
     application = Application(job_id=job_id, candidate_id=candidate.id, resume_id=resume.id)
     db.add(application)
     db.flush()
+    record_application_status_change(
+        db,
+        application,
+        from_status=None,
+        to_status=application.status,
+        changed_by_user_id=current_user.id,
+    )
 
     # Trigger evaluation immediately upon application creation with savepoint protection
     try:
@@ -513,11 +525,28 @@ def update_application_status(
     recruiter: RecruiterProfile = Depends(get_recruiter_profile),
     db: Session = Depends(get_db),
 ) -> ApplicationResponse:
-    application = db.get(Application, application_id)
+    application = (
+        db.query(Application)
+        .filter(Application.id == application_id)
+        .with_for_update()
+        .one_or_none()
+    )
     if not application:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found.")
     JobService.owned_job(db, job_id=application.job_id, recruiter_id=recruiter.id)
-    application.status = payload.status
+    if not can_transition_application_status(application.status, payload.status):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Application cannot move from '{application.status.value}' to '{payload.status.value}'.",
+        )
+    previous_status = application.status
+    record_application_status_change(
+        db,
+        application,
+        from_status=previous_status,
+        to_status=payload.status,
+        changed_by_user_id=recruiter.user_id,
+    )
     record_audit_event(
         db,
         action="application_status_changed",

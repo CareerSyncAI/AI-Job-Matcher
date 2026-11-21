@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { APPLICATION_STATUS_LABELS, NEXT_APPLICATION_STATUS, normalizeApplicationStatus, type ApplicationStatus } from "@/lib/applicationStatus";
 import { useTheme } from "@/lib/theme";
 import {
   IconUsers,
@@ -62,6 +63,7 @@ export default function RecruiterCandidatesPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateCardDTO | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingResume, setUploadingResume] = useState(false);
+  const [savingApplicationId, setSavingApplicationId] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Fetch recruiter's jobs on mount
@@ -98,7 +100,11 @@ export default function RecruiterCandidatesPage() {
         setLoading(true);
         const res = await api.get(`/jobs/${selectedJobId}/candidates`);
         if (isMounted) {
-          setCandidates(Array.isArray(res.data) ? res.data : []);
+          const list: CandidateCardDTO[] = Array.isArray(res.data) ? res.data : [];
+          setCandidates(list.map((candidate) => ({
+            ...candidate,
+            status: normalizeApplicationStatus(candidate.status) || candidate.status,
+          })));
         }
       } catch (err) {
         console.error("Failed to load job candidates:", err);
@@ -144,7 +150,11 @@ export default function RecruiterCandidatesPage() {
   });
 
   const toggleShortlist = async (candidate: CandidateCardDTO) => {
-    const newStatus = candidate.status === "shortlisted" ? "under_review" : "shortlisted";
+    const currentStatus = normalizeApplicationStatus(candidate.status);
+    const newStatus = currentStatus ? NEXT_APPLICATION_STATUS[currentStatus] : undefined;
+    if (!newStatus || savingApplicationId) return;
+    setSavingApplicationId(candidate.application_id);
+    setUploadFeedback(null);
     try {
       await api.patch(`/applications/${candidate.application_id}/status`, {
         status: newStatus,
@@ -159,6 +169,9 @@ export default function RecruiterCandidatesPage() {
       }
     } catch (err) {
       console.error("Failed to update candidate status:", err);
+      setUploadFeedback({ type: "error", message: "The application status could not be updated. Refresh and try again." });
+    } finally {
+      setSavingApplicationId(null);
     }
   };
 
@@ -521,14 +534,15 @@ export default function RecruiterCandidatesPage() {
                   </button>
                   <button
                     type="button"
+                    disabled={!NEXT_APPLICATION_STATUS[candidate.status as ApplicationStatus] || savingApplicationId !== null}
                     onClick={() => toggleShortlist(candidate)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                      isShortlisted
-                        ? "bg-emerald-600 text-white"
-                        : "bg-[#059669] hover:bg-[#047857] text-white shadow-sm"
-                    }`}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer bg-[#059669] hover:bg-[#047857] text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isShortlisted ? "✓ Shortlisted" : "+ Shortlist"}
+                    {savingApplicationId === candidate.application_id
+                      ? "Saving…"
+                      : NEXT_APPLICATION_STATUS[candidate.status as ApplicationStatus]
+                        ? `Advance to ${APPLICATION_STATUS_LABELS[NEXT_APPLICATION_STATUS[candidate.status as ApplicationStatus]!]}`
+                        : isShortlisted ? "✓ Shortlisted" : "Pipeline complete"}
                   </button>
                 </div>
               </div>
@@ -640,13 +654,18 @@ export default function RecruiterCandidatesPage() {
               >
                 Close
               </button>
-              <button
-                type="button"
-                onClick={() => toggleShortlist(selectedCandidate)}
-                className="px-5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl"
-              >
-                {selectedCandidate.status === "shortlisted" ? "Remove Shortlist" : "Add to Shortlist"}
-              </button>
+              {NEXT_APPLICATION_STATUS[selectedCandidate.status as ApplicationStatus] && (
+                <button
+                  type="button"
+                  disabled={savingApplicationId !== null}
+                  onClick={() => toggleShortlist(selectedCandidate)}
+                  className="px-5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl disabled:opacity-50"
+                >
+                  {savingApplicationId === selectedCandidate.application_id
+                    ? "Saving…"
+                    : `Advance to ${APPLICATION_STATUS_LABELS[NEXT_APPLICATION_STATUS[selectedCandidate.status as ApplicationStatus]!]}`}
+                </button>
+              )}
             </div>
           </div>
         </div>

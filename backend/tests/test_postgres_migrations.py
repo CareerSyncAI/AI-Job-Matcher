@@ -43,6 +43,7 @@ EXPECTED_TABLES = {
     "job_skills",
     "resumes",
     "applications",
+    "application_status_history",
     "evaluation_runs",
     "match_results",
     "evaluated_skills",
@@ -66,7 +67,7 @@ def test_postgres_connection_and_pgvector_extension(pg_engine):
 
 
 def test_postgres_alembic_schema_verification(pg_engine):
-    """Verify that all 15 relational tables, critical indexes, and foreign keys exist in PostgreSQL."""
+    """Verify that all 16 relational tables, critical indexes, and foreign keys exist in PostgreSQL."""
     assert pg_engine.dialect.name == "postgresql"
     inspector = inspect(pg_engine)
     existing_tables = set(inspector.get_table_names())

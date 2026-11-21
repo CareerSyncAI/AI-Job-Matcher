@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { getApplicationStatusLabel } from "@/lib/applicationStatus";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -14,12 +15,19 @@ import {
   IconSearch,
 } from "@/components/Icons";
 
+interface ApplicationStatusHistoryItem {
+  from_status: string | null;
+  to_status: string;
+  changed_at: string;
+}
+
 interface ApplicationItem {
   id: string;
   job_id: string;
   candidate_id: string;
-  status: "new" | "under_review" | "shortlisted" | "rejected" | string;
+  status: "new" | "under_review" | "shortlisted" | "interviewing" | "offered" | "hired" | "rejected" | string;
   applied_at: string;
+  status_history?: ApplicationStatusHistoryItem[];
   job_title?: string;
   company_name?: string;
   location?: string;
@@ -83,24 +91,27 @@ export default function CandidateApplicationsPage() {
     const s = status?.toLowerCase();
     switch (s) {
       case "shortlisted":
-        return {
-          label: "Shortlisted",
-          bg: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-        };
+        return { label: getApplicationStatusLabel(s), bg: "bg-purple-500/10 text-purple-400 border-purple-500/20" };
+      case "interviewing":
+        return { label: getApplicationStatusLabel(s), bg: "bg-sky-500/10 text-sky-400 border-sky-500/20" };
+      case "offered":
+        return { label: getApplicationStatusLabel(s), bg: "bg-violet-500/10 text-violet-400 border-violet-500/20" };
+      case "hired":
+        return { label: getApplicationStatusLabel(s), bg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" };
       case "under_review":
         return {
-          label: "In Review / Screening",
+          label: getApplicationStatusLabel(s),
           bg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
         };
       case "rejected":
         return {
-          label: "Archived / Rejected",
+          label: getApplicationStatusLabel(s),
           bg: "bg-slate-500/10 text-slate-400 border-slate-500/20",
         };
       case "new":
       default:
         return {
-          label: "Application Submitted",
+          label: getApplicationStatusLabel(s),
           bg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
         };
     }
@@ -108,7 +119,7 @@ export default function CandidateApplicationsPage() {
 
   const filteredApps = applications.filter((app) => {
     const s = app.status?.toLowerCase();
-    if (activeFilter === "ACTIVE" && s === "rejected") return false;
+    if (activeFilter === "ACTIVE" && (s === "rejected" || s === "hired")) return false;
     if (activeFilter === "UNDER_REVIEW" && s !== "under_review") return false;
     if (activeFilter === "SHORTLISTED" && s !== "shortlisted") return false;
     if (searchQuery.trim()) {
@@ -171,7 +182,7 @@ export default function CandidateApplicationsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Under Review</span>
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Reviewed</span>
           <p className="text-2xl font-bold font-mono leading-none mt-2 text-amber-500">
             {applications.filter((a) => a.status?.toLowerCase() === "under_review").length}
           </p>
@@ -191,9 +202,9 @@ export default function CandidateApplicationsPage() {
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
           }`}
         >
-          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Archived</span>
+          <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Hiring Outcomes</span>
           <p className="text-2xl font-bold font-mono leading-none mt-2 text-slate-400">
-            {applications.filter((a) => a.status?.toLowerCase() === "rejected").length}
+            {applications.filter((a) => a.status === "hired" || a.status === "rejected").length}
           </p>
         </div>
       </div>
@@ -208,7 +219,7 @@ export default function CandidateApplicationsPage() {
           {[
             { key: "ALL", label: "All" },
             { key: "ACTIVE", label: "Active" },
-            { key: "UNDER_REVIEW", label: "Under Review" },
+            { key: "UNDER_REVIEW", label: "Reviewed" },
             { key: "SHORTLISTED", label: "Shortlisted" },
           ].map((f) => (
             <button
@@ -302,6 +313,19 @@ export default function CandidateApplicationsPage() {
                       </span>
                     </div>
                   </div>
+                  {app.status_history && app.status_history.length > 0 && (
+                    <div className={`mt-4 border-t pt-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+                      <p className={`mb-2 text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Status history</p>
+                      <ol className="flex flex-wrap gap-x-5 gap-y-2">
+                        {app.status_history.map((entry, index) => (
+                          <li key={`${entry.changed_at}-${index}`} className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                            <span className="font-medium">{getStatusBadge(entry.to_status).label}</span>
+                            <span className="ml-1.5 text-slate-500">{new Date(entry.changed_at).toLocaleString()}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
                     {app.match_score != null && (

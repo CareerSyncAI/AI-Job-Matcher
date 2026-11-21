@@ -21,6 +21,9 @@ class ApplicationStatus(StrEnum):
     UNDER_REVIEW = "under_review"
     SHORTLISTED = "shortlisted"
     REJECTED = "rejected"
+    INTERVIEWING = "interviewing"
+    OFFERED = "offered"
+    HIRED = "hired"
 
 
 class ProcessingStatus(StrEnum):

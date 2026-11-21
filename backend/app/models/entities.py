@@ -186,7 +186,13 @@ class Application(TimestampMixin, Base):
         Uuid(as_uuid=True), ForeignKey("resumes.id", ondelete="RESTRICT"), index=True
     )
     status: Mapped[ApplicationStatus] = mapped_column(
-        Enum(ApplicationStatus, name="application_status"), default=ApplicationStatus.NEW, index=True
+        Enum(
+            ApplicationStatus,
+            name="application_status",
+            values_callable=lambda statuses: [status.value for status in statuses],
+        ),
+        default=ApplicationStatus.NEW,
+        index=True,
     )
     applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -195,6 +201,40 @@ class Application(TimestampMixin, Base):
     resume: Mapped[Resume] = relationship(back_populates="applications")
     evaluation_runs: Mapped[list[EvaluationRun]] = relationship(back_populates="application")
     notes: Mapped[list[RecruiterNote]] = relationship(back_populates="application")
+    status_history: Mapped[list[ApplicationStatusHistory]] = relationship(
+        back_populates="application", cascade="all, delete-orphan", order_by="ApplicationStatusHistory.changed_at"
+    )
+
+
+class ApplicationStatusHistory(Base):
+    __tablename__ = "application_status_history"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    application_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("applications.id", ondelete="CASCADE"), index=True
+    )
+    from_status: Mapped[ApplicationStatus | None] = mapped_column(
+        Enum(
+            ApplicationStatus,
+            name="application_status",
+            values_callable=lambda statuses: [status.value for status in statuses],
+        ),
+        nullable=True,
+    )
+    to_status: Mapped[ApplicationStatus] = mapped_column(
+        Enum(
+            ApplicationStatus,
+            name="application_status",
+            values_callable=lambda statuses: [status.value for status in statuses],
+        )
+    )
+    changed_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    application: Mapped[Application] = relationship(back_populates="status_history")
+    changed_by: Mapped[User | None] = relationship()
 
 
 class EvaluationRun(TimestampMixin, Base):

@@ -670,10 +670,6 @@ class EvaluationService:
                 )
             )
 
-        # Update application status to under review if new
-        if application.status == ApplicationStatus.NEW:
-            application.status = ApplicationStatus.UNDER_REVIEW
-
         if commit:
             db.commit()
             db.refresh(run)
@@ -849,12 +845,15 @@ class EvaluationService:
                 candidate_skills = [str(s) for s in raw_cand_skills if s is not None]
 
         status_map = {
-            ApplicationStatus.NEW: "screened",
-            ApplicationStatus.UNDER_REVIEW: "screened",
+            ApplicationStatus.NEW: "new",
+            ApplicationStatus.UNDER_REVIEW: "under_review",
             ApplicationStatus.SHORTLISTED: "shortlisted",
+            ApplicationStatus.INTERVIEWING: "interviewing",
+            ApplicationStatus.OFFERED: "offered",
+            ApplicationStatus.HIRED: "hired",
             ApplicationStatus.REJECTED: "rejected",
         }
-        ui_status = status_map.get(application.status, "screened")
+        ui_status = status_map.get(application.status, ApplicationStatus.NEW.value)
 
         return CandidateCardDTO(
             id=candidate.id,

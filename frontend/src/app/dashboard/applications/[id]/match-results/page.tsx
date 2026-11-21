@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import api from "@/lib/api";
 import { useTheme } from "@/lib/theme";
+import { getApplicationStatusLabel } from "@/lib/applicationStatus";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MatchScoreGauge } from "@/components/MatchScoreGauge";
 import {
@@ -286,7 +287,7 @@ export default function CandidateMatchResultsPage() {
                         ? isDark ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-purple-50 text-purple-700 border-purple-200"
                         : isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
                     }`}>
-                      {data.application_status?.replace("_", " ") || "Application Submitted"}
+                      {getApplicationStatusLabel(data.application_status)}
                     </span>
                     {data.evaluated_at && (
                       <span className={`text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>

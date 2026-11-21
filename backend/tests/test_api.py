@@ -963,7 +963,7 @@ def test_apply_to_job_handles_evaluation_failure_cleanly(client, monkeypatch):
         db.close()
 
 
-def test_prompt_7_recruiter_journey_e2e(client):
+def test_prompt_7_recruiter_journey_e2e(client, db_session):
     """
     Prompt 7 — Recruiter Journey:
     1. Recruiter registers and logs in.
@@ -1064,6 +1064,35 @@ def test_prompt_7_recruiter_journey_e2e(client):
     # 6. Update application stage and add note
     app_id = top_cand["application_id"]
     cand_id = top_cand["id"]
+    invalid_jump = client.patch(
+        f"/api/v1/applications/{app_id}/status",
+        headers=rec_h,
+        json={"status": "offered"},
+    )
+    assert invalid_jump.status_code == 409
+
+    # A different recruiter cannot manage this application's job.
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "p7.other.recruiter@example.com", "password": "Password123456!", "role": "recruiter"},
+    )
+    other_tok = client.post(
+        "/api/v1/auth/login",
+        json={"email": "p7.other.recruiter@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    unauthorized_update = client.patch(
+        f"/api/v1/applications/{app_id}/status",
+        headers={"Authorization": f"Bearer {other_tok}"},
+        json={"status": "shortlisted"},
+    )
+    assert unauthorized_update.status_code == 404
+
+    review_res = client.patch(
+        f"/api/v1/applications/{app_id}/status",
+        headers=rec_h,
+        json={"status": "under_review"},
+    )
+    assert review_res.status_code == 200
     patch_res = client.patch(
         f"/api/v1/applications/{app_id}/status",
         headers=rec_h,
@@ -1071,6 +1100,10 @@ def test_prompt_7_recruiter_journey_e2e(client):
     )
     assert patch_res.status_code == 200
     assert patch_res.json()["status"] == "shortlisted"
+    history = patch_res.json()["status_history"]
+    assert [event["to_status"] for event in history][-3:] == ["new", "under_review", "shortlisted"]
+    assert history[-1]["from_status"] == "under_review"
+    assert history[-1]["changed_at"]
 
     note_res = client.post(
         f"/api/v1/applications/{app_id}/notes",
@@ -1086,6 +1119,20 @@ def test_prompt_7_recruiter_journey_e2e(client):
     assert detail["status"] == "shortlisted"
     assert "Scheduled for technical interview" in detail["recruiterNotes"]
     assert detail["matchScore"] == top_cand["matchScore"]
+
+    from uuid import UUID
+
+    from app.models.entities import Application, ApplicationStatusHistory
+
+    persisted_application = db_session.get(Application, UUID(app_id))
+    persisted_history = (
+        db_session.query(ApplicationStatusHistory)
+        .filter(ApplicationStatusHistory.application_id == UUID(app_id))
+        .order_by(ApplicationStatusHistory.changed_at)
+        .all()
+    )
+    assert persisted_application.status.value == "shortlisted"
+    assert [event.to_status.value for event in persisted_history][-3:] == ["new", "under_review", "shortlisted"]
 
 
 def test_prompt_7_candidate_journey_e2e(client, db_session):
@@ -1172,7 +1219,7 @@ def test_prompt_7_candidate_journey_e2e(client, db_session):
     open_jobs = browse_res.json()
     assert any(j["id"] == job_id for j in open_jobs)
 
-    # 6. Candidate applies using stored resume (auto-evaluates to under_review)
+    # 6. Candidate applies using stored resume; evaluation leaves recruiter status as Applied.
     apply_res = client.post(
         f"/api/v1/jobs/{job_id}/applications",
         headers=cand_h,
@@ -1181,7 +1228,15 @@ def test_prompt_7_candidate_journey_e2e(client, db_session):
     assert apply_res.status_code == 201
     app_data = apply_res.json()
     assert app_data["job_id"] == job_id
-    assert app_data["status"] == "under_review"
+    assert app_data["status"] == "new"
+    assert [event["to_status"] for event in app_data["status_history"]] == ["new"]
+
+    candidate_status_update = client.patch(
+        f"/api/v1/applications/{app_data['id']}/status",
+        headers=cand_h,
+        json={"status": "shortlisted"},
+    )
+    assert candidate_status_update.status_code == 403
 
     # 7. Edge Case: Duplicate application to same job -> 409 Conflict
     dup_apply = client.post(
@@ -1198,7 +1253,8 @@ def test_prompt_7_candidate_journey_e2e(client, db_session):
     apps_list = my_apps.json()
     assert len(apps_list) == 1
     assert apps_list[0]["job_id"] == job_id
-    assert apps_list[0]["status"] == "under_review"
+    assert apps_list[0]["status"] == "new"
+    assert apps_list[0]["status_history"] == app_data["status_history"]
 
     # 9. Edge Case: Candidate applies with resume in NEEDS_ATTENTION state -> 422
     from uuid import UUID

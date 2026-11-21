@@ -19,6 +19,7 @@ from app.schemas.resumes import (
     ATSIssueSchema,
     ResumeResponse,
 )
+from app.services.application_status import record_application_status_change
 from app.services.ats_analyzer import ats_analyzer
 from app.services.audit import record_audit_event
 from app.services.education_extractor import extract_education_from_text
@@ -280,6 +281,13 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
             )
             db.add(application)
             db.flush()
+            record_application_status_change(
+                db,
+                application,
+                from_status=None,
+                to_status=application.status,
+                changed_by_user_id=None,
+            )
         else:
             application = existing_app
             application.resume_id = resume.id

@@ -229,7 +229,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-4 flex items-baseline justify-between">
                 <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
-                  {myApplications.filter((a) => a.status === "under_review" || a.status === "shortlisted").length}
+                  {myApplications.filter((a) => ["under_review", "shortlisted", "interviewing", "offered"].includes(a.status)).length}
                 </span>
                 <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>In Pipeline</span>
               </div>

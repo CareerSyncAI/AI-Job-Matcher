@@ -93,7 +93,7 @@ class CandidateCardDTO(APIModel):
     matchedSkills: list[str] = Field(default_factory=list)
     transferableSkills: list[str] = Field(default_factory=list)
     missingSkills: list[str] = Field(default_factory=list)
-    status: str = "screened"  # "screened" | "shortlisted" | "interviewing" | "rejected"
+    status: str = "new"  # ApplicationStatus value exposed by the ATS pipeline.
     evidence: list[CandidateEvidenceItem] = Field(default_factory=list)
     recruiterNotes: str | None = None
     evaluation_status: str = "not_evaluated"  # "current" | "stale" | "pending" | "failed" | "not_evaluated"
