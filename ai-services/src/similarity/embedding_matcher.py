@@ -29,6 +29,7 @@ import numpy as np
 
 from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
 from src.similarity.baseline_matcher import BaselineSemanticMatcher
+from src.similarity.evidence import classify_skill_evidence, unique_skill_items
 
 logger = logging.getLogger("careersync.similarity.embedding")
 
@@ -370,16 +371,15 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                 grade = "Low"
 
             # 4. Extract verifiable concepts with 3-way evidence status and authentic verbatim quotes
-            cand_skills = candidate_profile.get("skills", []) or []
+            cand_skills = unique_skill_items(candidate_profile.get("skills", []) or [])
             cand_headline = candidate_profile.get("headline", "") or ""
             cand_summary = candidate_profile.get("experience_summary", "") or ""
             sections = candidate_profile.get("sections") or {}
             all_cand_section_text = " ".join(sections.values()) if isinstance(sections, dict) else ""
             full_cand_text = f"{cand_headline} {' '.join(cand_skills)} {cand_summary} {all_cand_section_text}".lower()
-            cand_skills_set = set(s.lower() for s in cand_skills)
 
-            job_req_skills = job_requisition.get("required_skills", []) or []
-            job_pref_skills = job_requisition.get("preferred_skills", []) or []
+            job_req_skills = unique_skill_items(job_requisition.get("required_skills", []) or [])
+            job_pref_skills = unique_skill_items(job_requisition.get("preferred_skills", []) or [])
 
             matched_concepts: list[str] = []
             missing_concepts: list[str] = []
@@ -392,36 +392,10 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
             )
 
             for category, s in all_req_skills_categorized:
-                s_lower = s.lower()
-                if s_lower in cand_skills_set or s_lower in full_cand_text:
-                    matched_concepts.append(s)
-                    # Extract authentic verbatim text quote from candidate materials
-                    raw_quote = (
-                        self._find_verbatim_quote(s, cand_summary) or
-                        self._find_verbatim_quote(s, all_cand_section_text) or
-                        self._find_verbatim_quote(s, cand_headline)
-                    )
-                    evidence_breakdown.append({
-                        "requirement": s,
-                        "category": category,
-                        "status": "supported",
-                        "evidence_quote": raw_quote or f"Declared skill item: '{s}'",
-                        "verification_type": "verbatim_text_quote" if raw_quote else "declared_skill_token",
-                        "is_confirmed_gap": False,
-                        "note": "Direct mention verified in candidate source text. Profoundness/seniority requires recruiter review.",
-                    })
-                elif not has_substantive_text:
-                    missing_concepts.append(s)
-                    evidence_breakdown.append({
-                        "requirement": s,
-                        "category": category,
-                        "status": "insufficient_information",
-                        "evidence_quote": None,
-                        "verification_type": "insufficient_material",
-                        "is_confirmed_gap": False,
-                        "note": "Candidate profile contains insufficient text to evaluate requirement.",
-                    })
-                else:
+                evidence, raw_quote, verification_type, note = classify_skill_evidence(
+                    s, cand_skills, f"{cand_headline} {cand_summary} {all_cand_section_text}"
+                )
+                if evidence == "not_detected" and verification_type != "explicit_negation" and has_substantive_text:
                     missing_concepts.append(s)
                     evidence_breakdown.append({
                         "requirement": s,
@@ -432,6 +406,25 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                         "is_confirmed_gap": False,
                         "note": "Not detected in candidate profile. Absence of mention is not proof of candidate deficiency.",
                     })
+                    continue
+
+                if evidence == "not_detected" and verification_type != "explicit_negation":
+                    evidence = "insufficient_information"
+                    verification_type = "insufficient_material"
+                    note = "Candidate profile contains insufficient text to evaluate requirement."
+                if evidence == "supported":
+                    matched_concepts.append(s)
+                else:
+                    missing_concepts.append(s)
+                evidence_breakdown.append({
+                    "requirement": s,
+                    "category": category,
+                    "status": evidence,
+                    "evidence_quote": raw_quote,
+                    "verification_type": verification_type,
+                    "is_confirmed_gap": False,
+                    "note": note,
+                })
 
             evidence_status = {
                 "supported": [e["requirement"] for e in evidence_breakdown if e["status"] == "supported"],
@@ -567,7 +560,7 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
     def _chunk_candidate_profile_detailed(self, profile: dict[str, Any]) -> dict[str, Any]:
         """Produce structured, tokenizer-aware chunks with complete diagnostic metadata."""
         headline = (profile.get("headline", "") or "").strip()
-        skills = profile.get("skills", []) or []
+        skills = unique_skill_items(profile.get("skills", []) or [])
         summary = (profile.get("experience_summary", "") or "").strip()
         sections_dict = profile.get("sections") if isinstance(profile.get("sections"), dict) else {}
 
@@ -642,8 +635,8 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
     def _chunk_job_requisition_detailed(self, requisition: dict[str, Any]) -> dict[str, Any]:
         """Produce structured, tokenizer-aware chunks for job requisition with metadata."""
         title = (requisition.get("title", "") or "").strip()
-        req_skills = requisition.get("required_skills", []) or []
-        pref_skills = requisition.get("preferred_skills", []) or []
+        req_skills = unique_skill_items(requisition.get("required_skills", []) or [])
+        pref_skills = unique_skill_items(requisition.get("preferred_skills", []) or [])
         desc = (requisition.get("description", "") or "").strip()
 
         chunk_records: list[tuple[str, str]] = []

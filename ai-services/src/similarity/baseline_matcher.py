@@ -13,6 +13,7 @@ from collections import Counter
 from typing import Any
 
 from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
+from src.similarity.evidence import classify_skill_evidence, unique_skill_items
 
 
 class BaselineSemanticMatcher(BaseSimilarityEngine):
@@ -41,14 +42,14 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
 
         # 1. Build composite candidate text
         cand_headline = candidate_profile.get("headline", "") or ""
-        cand_skills = candidate_profile.get("skills", []) or []
+        cand_skills = unique_skill_items(candidate_profile.get("skills", []) or [])
         cand_summary = candidate_profile.get("experience_summary", "") or ""
         candidate_corpus = f"{cand_headline} {' '.join(cand_skills)} {cand_summary}".lower()
 
         # 2. Build composite job text
         job_title = job_requisition.get("title", "") or ""
-        job_req_skills = job_requisition.get("required_skills", []) or []
-        job_pref_skills = job_requisition.get("preferred_skills", []) or []
+        job_req_skills = unique_skill_items(job_requisition.get("required_skills", []) or [])
+        job_pref_skills = unique_skill_items(job_requisition.get("preferred_skills", []) or [])
         job_desc = job_requisition.get("description", "") or ""
         job_corpus = f"{job_title} {' '.join(job_req_skills)} {' '.join(job_pref_skills)} {job_desc}".lower()
 
@@ -64,8 +65,8 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
         similarity_index = round(min(100.0, max(0.0, calibrated_sim * 100)), 1)
 
         # 4. Extract explainable concept overlaps and 3-way evidence status
-        cand_skills_set = set(s.lower() for s in cand_skills)
         has_substantive_cand_text = len(candidate_corpus.strip()) >= 20
+        candidate_source_text = " ".join([cand_headline, cand_summary])
 
         matched_concepts: list[str] = []
         missing_concepts: list[str] = []
@@ -77,31 +78,10 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
         )
 
         for category, s in all_requisition_skills:
-            s_lower = s.lower()
-            if s_lower in cand_skills_set or s_lower in candidate_corpus:
-                matched_concepts.append(s)
-                raw_quote = self._find_verbatim_quote(s, cand_summary) or self._find_verbatim_quote(s, candidate_corpus)
-                evidence_breakdown.append({
-                    "requirement": s,
-                    "category": category,
-                    "status": "supported",
-                    "evidence_quote": raw_quote or f"Declared skill item: '{s}'",
-                    "verification_type": "verbatim_text_quote" if raw_quote else "declared_skill_token",
-                    "is_confirmed_gap": False,
-                    "note": "Direct mention verified in candidate source text. Profoundness/seniority requires recruiter review.",
-                })
-            elif not has_substantive_cand_text:
-                missing_concepts.append(s)
-                evidence_breakdown.append({
-                    "requirement": s,
-                    "category": category,
-                    "status": "insufficient_information",
-                    "evidence_quote": None,
-                    "verification_type": "insufficient_material",
-                    "is_confirmed_gap": False,
-                    "note": "Candidate text is too sparse or missing to verify requirement.",
-                })
-            else:
+            evidence, raw_quote, verification_type, note = classify_skill_evidence(
+                s, cand_skills, candidate_source_text
+            )
+            if evidence == "not_detected" and verification_type != "explicit_negation" and has_substantive_cand_text:
                 missing_concepts.append(s)
                 evidence_breakdown.append({
                     "requirement": s,
@@ -112,6 +92,25 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
                     "is_confirmed_gap": False,
                     "note": "Not detected in candidate text. Absence of mention is not proof of candidate deficiency.",
                 })
+                continue
+
+            if evidence == "not_detected" and verification_type != "explicit_negation":
+                evidence = "insufficient_information"
+                verification_type = "insufficient_material"
+                note = "Candidate text is too sparse or missing to verify requirement."
+            if evidence == "supported":
+                matched_concepts.append(s)
+            else:
+                missing_concepts.append(s)
+            evidence_breakdown.append({
+                "requirement": s,
+                "category": category,
+                "status": evidence,
+                "evidence_quote": raw_quote,
+                "verification_type": verification_type,
+                "is_confirmed_gap": False,
+                "note": note,
+            })
 
         evidence_status = {
             "supported": [e["requirement"] for e in evidence_breakdown if e["status"] == "supported"],

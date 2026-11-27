@@ -12,6 +12,7 @@ import pytest
 
 from src.similarity.baseline_matcher import BaselineSemanticMatcher
 from src.similarity.embedding_matcher import SentenceEmbeddingMatcher
+from src.similarity.evidence import classify_skill_evidence
 from src.similarity.semantic_matcher import SemanticMatcher
 
 
@@ -273,6 +274,61 @@ def test_evidence_status_distinction():
             if item["requirement"] == req:
                 assert item["status"] == "insufficient_information"
                 assert item["is_confirmed_gap"] is False
+
+
+@pytest.mark.parametrize(
+    ("text", "expected", "kind"),
+    [
+        ("I have no experience with FastAPI.", "not_detected", "explicit_negation"),
+        ("I am not proficient in FastAPI.", "not_detected", "explicit_negation"),
+        ("Currently learning FastAPI.", "insufficient_information", "learning_intent"),
+        ('The posting said “FastAPI required”.', "insufficient_information", "quoted_mention"),
+        ("FastAPI is listed in the project README.", "insufficient_information", "unqualified_mention"),
+        ("Built a FastAPI service for internal document search.", "supported", "demonstrated_context"),
+    ],
+)
+def test_skill_evidence_requires_candidate_context(text, expected, kind):
+    status, quote, verification_type, _ = classify_skill_evidence("FastAPI", [], text)
+    assert status == expected
+    assert verification_type == kind
+    assert quote and "FastAPI" in quote
+
+
+def test_skill_evidence_declared_skill_and_boundaries():
+    assert classify_skill_evidence("Python", ["python"], "")[0] == "supported"
+    assert classify_skill_evidence("Go", [], "I am ongoing a project.")[0] == "not_detected"
+
+
+def test_baseline_matcher_deduplicates_declared_skill_stuffing():
+    matcher = BaselineSemanticMatcher()
+    job = {"title": "Backend Engineer", "required_skills": ["Python", "FastAPI"]}
+    single = matcher.match({"skills": ["Python"]}, job)
+    stuffed = matcher.match({"skills": ["Python"] * 100}, job)
+    assert stuffed.raw_similarity == single.raw_similarity
+    negated = matcher.match(
+        {"headline": "Developer", "experience_summary": "I have no experience with FastAPI."},
+        job,
+    )
+    fastapi_evidence = next(item for item in negated.evidence_breakdown if item["requirement"] == "FastAPI")
+    assert fastapi_evidence["status"] == "not_detected"
+    assert fastapi_evidence["verification_type"] == "explicit_negation"
+    assert "FastAPI" not in negated.matched_key_concepts
+
+
+def test_embedding_matcher_does_not_promote_negated_or_ambiguous_mentions():
+    matcher = SentenceEmbeddingMatcher(lazy_load=False)
+    job = {"title": "Backend Engineer", "required_skills": ["FastAPI"]}
+    examples = [
+        ("I have no experience with FastAPI.", "not_detected", "explicit_negation"),
+        ("Currently learning FastAPI.", "insufficient_information", "learning_intent"),
+        ('The job post says "FastAPI required".', "insufficient_information", "quoted_mention"),
+        ("Built a FastAPI API for document search.", "supported", "demonstrated_context"),
+    ]
+    for summary, expected_status, expected_type in examples:
+        output = matcher.match({"headline": "Backend Engineer", "experience_summary": summary}, job)
+        evidence = output.evidence_breakdown[0]
+        assert evidence["status"] == expected_status
+        assert evidence["verification_type"] == expected_type
 
 
 def test_safety_ceiling_truncation_on_massive_document():
