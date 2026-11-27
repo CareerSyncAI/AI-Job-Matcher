@@ -13,7 +13,7 @@ from collections import Counter
 from typing import Any
 
 from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
-from src.similarity.evidence import classify_skill_evidence, unique_skill_items
+from src.similarity.evidence import evaluate_skill_evidence, unique_skill_items
 
 
 class BaselineSemanticMatcher(BaseSimilarityEngine):
@@ -64,60 +64,6 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
         calibrated_sim = min(1.0, raw_sim * 1.8)
         similarity_index = round(min(100.0, max(0.0, calibrated_sim * 100)), 1)
 
-        # 4. Extract explainable concept overlaps and 3-way evidence status
-        has_substantive_cand_text = len(candidate_corpus.strip()) >= 20
-        candidate_source_text = " ".join([cand_headline, cand_summary])
-
-        matched_concepts: list[str] = []
-        missing_concepts: list[str] = []
-        evidence_breakdown: list[dict[str, Any]] = []
-
-        all_requisition_skills = (
-            [("required", s) for s in job_req_skills] +
-            [("preferred", s) for s in job_pref_skills]
-        )
-
-        for category, s in all_requisition_skills:
-            evidence, raw_quote, verification_type, note = classify_skill_evidence(
-                s, cand_skills, candidate_source_text
-            )
-            if evidence == "not_detected" and verification_type != "explicit_negation" and has_substantive_cand_text:
-                missing_concepts.append(s)
-                evidence_breakdown.append({
-                    "requirement": s,
-                    "category": category,
-                    "status": "not_detected",
-                    "evidence_quote": None,
-                    "verification_type": "unmentioned",
-                    "is_confirmed_gap": False,
-                    "note": "Not detected in candidate text. Absence of mention is not proof of candidate deficiency.",
-                })
-                continue
-
-            if evidence == "not_detected" and verification_type != "explicit_negation":
-                evidence = "insufficient_information"
-                verification_type = "insufficient_material"
-                note = "Candidate text is too sparse or missing to verify requirement."
-            if evidence == "supported":
-                matched_concepts.append(s)
-            else:
-                missing_concepts.append(s)
-            evidence_breakdown.append({
-                "requirement": s,
-                "category": category,
-                "status": evidence,
-                "evidence_quote": raw_quote,
-                "verification_type": verification_type,
-                "is_confirmed_gap": False,
-                "note": note,
-            })
-
-        evidence_status = {
-            "supported": [e["requirement"] for e in evidence_breakdown if e["status"] == "supported"],
-            "not_detected": [e["requirement"] for e in evidence_breakdown if e["status"] == "not_detected"],
-            "insufficient_information": [e["requirement"] for e in evidence_breakdown if e["status"] == "insufficient_information"],
-        }
-
         # Determine alignment grade
         if similarity_index >= 80.0:
             grade = "High"
@@ -126,6 +72,7 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
         else:
             grade = "Low"
 
+        evidence = evaluate_skill_evidence(candidate_profile, job_requisition)
         duration_ms = (time.perf_counter() - start_time) * 1000
 
         return SemanticMatchOutput(
@@ -136,10 +83,6 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
             method=self.method_name,
             status="ok",
             fallback_reason=None,
-            matched_key_concepts=matched_concepts[:8],
-            missing_or_gap_concepts=missing_concepts[:5],
-            evidence_status=evidence_status,
-            evidence_breakdown=evidence_breakdown,
             model_info={
                 "engine": self.engine_name,
                 "model_id": self.engine_name,
@@ -166,7 +109,8 @@ class BaselineSemanticMatcher(BaseSimilarityEngine):
                 "coverage_ratio": 1.0,
                 "omitted_sections": [],
                 "latency_ms": round(duration_ms, 2)
-            }
+            },
+            **evidence,
         )
 
     def _find_verbatim_quote(self, query: str, text: str) -> str | None:

@@ -5,6 +5,7 @@ import zipfile
 
 import pytest
 
+from src.parsers import pdf_parser
 from src.parsers.docx_parser import DOCXParser, DOCXSecurityError
 from src.parsers.pdf_parser import PDFPageLimitExceeded, PDFParser
 
@@ -62,6 +63,20 @@ def test_ai_pdf_parser_within_limit():
     res = parser.parse_stream(io.BytesIO(pdf_bytes))
     assert res["page_count"] == 3
     assert "Test Candidate" in res["text"]
+
+
+def test_ai_pdf_parser_extracts_text_when_pdfplumber_fails(monkeypatch):
+    def failing_pdfplumber_open(_stream):
+        raise ValueError("layout reader failed")
+
+    monkeypatch.setattr(pdf_parser.pdfplumber, "open", failing_pdfplumber_open)
+    stream = io.BytesIO(_make_pdf(1, "Test Candidate"))
+
+    result = PDFParser().parse_stream(stream)
+
+    assert result["page_count"] == 1
+    assert result["text"] == "Test Candidate"
+    assert any("attempting pypdf fallback" in warning for warning in result["warnings"])
 
 
 def test_ai_pdf_parser_exceeding_limit_raises():

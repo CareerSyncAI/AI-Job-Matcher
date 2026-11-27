@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
+from typing import Any, TypedDict
 
 _NEGATION = re.compile(
     r"\b(?:no|not|never|without|lack(?:s|ed|ing)?)\b.{0,48}\b(?:experience|proficiency|expertise|use|uses|using|used|worked|knowledge|familiar)\b"
@@ -38,10 +39,77 @@ def unique_skill_items(values: Iterable[str] | None) -> list[str]:
     result: list[str] = []
     seen: set[str] = set()
     for value in values or ():
-        if isinstance(value, str) and value.strip() and value.casefold() not in seen:
-            seen.add(value.casefold())
-            result.append(value.strip())
+        if not isinstance(value, str):
+            continue
+        item = value.strip()
+        if item and item.casefold() not in seen:
+            seen.add(item.casefold())
+            result.append(item)
     return result
+
+
+class SkillEvidenceOutput(TypedDict):
+    matched_key_concepts: list[str]
+    missing_or_gap_concepts: list[str]
+    evidence_status: dict[str, list[str]]
+    evidence_breakdown: list[dict[str, Any]]
+
+
+def evaluate_skill_evidence(
+    candidate_profile: dict[str, Any], job_requisition: dict[str, Any]
+) -> SkillEvidenceOutput:
+    """Evaluate original profile text independently of semantic scoring or chunking."""
+    skills = unique_skill_items(candidate_profile.get("skills"))
+    sections = candidate_profile.get("sections")
+    fields = [candidate_profile.get("headline"), candidate_profile.get("experience_summary")]
+    if isinstance(sections, dict):
+        fields.extend(sections.values())
+
+    lines: list[str] = []
+    seen: set[str] = set()
+    for field in fields:
+        if not isinstance(field, str):
+            continue
+        for line in field.splitlines():
+            key = " ".join(line.casefold().split())
+            if key and key not in seen:
+                seen.add(key)
+                lines.append(line.strip())
+
+    # Keep claims in independent fields from becoming one classifier sentence.
+    source_text = "\n".join(lines)
+    has_substantive_text = len(" ".join([source_text, *skills]).strip()) >= 20
+    evidence_status: dict[str, list[str]] = {
+        "supported": [], "not_detected": [], "insufficient_information": [],
+    }
+    breakdown: list[dict[str, Any]] = []
+    missing: list[str] = []
+    for category in ("required", "preferred"):
+        for skill in unique_skill_items(job_requisition.get(f"{category}_skills")):
+            status, quote, verification_type, note = classify_skill_evidence(skill, skills, source_text)
+            if verification_type == "unmentioned" and not has_substantive_text:
+                status = "insufficient_information"
+                verification_type = "insufficient_material"
+                note = "Candidate text is too sparse or missing to verify requirement."
+            evidence_status[status].append(skill)
+            if status != "supported":
+                missing.append(skill)
+            breakdown.append({
+                "requirement": skill,
+                "category": category,
+                "status": status,
+                "evidence_quote": quote,
+                "verification_type": verification_type,
+                "is_confirmed_gap": False,
+                "note": note,
+            })
+
+    return {
+        "matched_key_concepts": evidence_status["supported"][:8],
+        "missing_or_gap_concepts": missing[:5],
+        "evidence_status": evidence_status,
+        "evidence_breakdown": breakdown,
+    }
 
 
 def _requirement_pattern(skill: str) -> re.Pattern[str]:

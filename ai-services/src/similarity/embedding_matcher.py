@@ -29,7 +29,7 @@ import numpy as np
 
 from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
 from src.similarity.baseline_matcher import BaselineSemanticMatcher
-from src.similarity.evidence import classify_skill_evidence, unique_skill_items
+from src.similarity.evidence import evaluate_skill_evidence, unique_skill_items
 
 logger = logging.getLogger("careersync.similarity.embedding")
 
@@ -269,89 +269,27 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
             cand_truncated = cand_meta["truncated"]
             job_truncated = job_meta["truncated"]
 
-            # Edge case: empty input from candidate or job
-            if not cand_chunks or not job_chunks:
-                duration_ms = (time.perf_counter() - start_time) * 1000
-                req_skills = job_requisition.get("required_skills", []) or []
-                pref_skills = job_requisition.get("preferred_skills", []) or []
-                all_skills = req_skills + pref_skills
-
-                return SemanticMatchOutput(
-                    raw_similarity=0.0,
-                    similarity_index=0.0,
-                    semantic_similarity_score=0.0,
-                    alignment_grade="Low",
-                    method=self.method_name,
-                    status="ok",
-                    fallback_reason=None,
-                    matched_key_concepts=[],
-                    missing_or_gap_concepts=all_skills[:5],
-                    evidence_status={
-                        "supported": [],
-                        "not_detected": [],
-                        "insufficient_information": all_skills,
-                    },
-                    evidence_breakdown=[
-                        {
-                            "requirement": s,
-                            "category": "required" if s in req_skills else "preferred",
-                            "status": "insufficient_information",
-                            "evidence_quote": None,
-                            "verification_type": "insufficient_material",
-                            "is_confirmed_gap": False,
-                            "note": "Document lacks sufficient readable content for evaluation."
-                        }
-                        for s in all_skills
-                    ],
-                    model_info={
-                        "engine": self.model_id,
-                        "model_id": self.model_id,
-                        "model_revision": self.model_revision,
-                        "vector_dimensions": self.vector_dimensions,
-                        "device": self.device,
-                        "offline_compatible": True
-                    },
-                    diagnostics={
-                        "unclamped_raw_cosine": 0.0,
-                        "raw_cosine_clamped": 0.0,
-                        "raw_similarity_definition": "Clamped cosine similarity [0.0, 1.0] for v1.1.0 contract compatibility.",
-                        "unclamped_cosine_definition": "Unbounded mathematical cosine similarity in [-1.0, 1.0].",
-                        "similarity_index_definition": "Calibrated 0-100 alignment index for recruiter UI presentation; not a hiring probability.",
-                        "candidate_tokens_total": cand_tokens,
-                        "job_tokens_total": job_tokens,
-                        "candidate_chunks_identified": cand_meta["total_identified"],
-                        "candidate_chunks_processed": cand_meta["processed_count"],
-                        "job_chunks_identified": job_meta["total_identified"],
-                        "job_chunks_processed": job_meta["processed_count"],
-                        "candidate_chunks_count": cand_meta["processed_count"],
-                        "job_chunks_count": job_meta["processed_count"],
-                        "chunks_processed": 0,
-                        "truncated": False,
-                        "coverage_ratio": 1.0,
-                        "omitted_sections": [],
-                        "latency_ms": round(duration_ms, 2)
-                    }
+            pooled_sim = 0.0
+            if cand_chunks and job_chunks:
+                # 2. Encode all chunks via SentenceTransformer (in memory)
+                cand_embeddings = model.encode(
+                    cand_chunks,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True,
+                    show_progress_bar=False
                 )
+                job_embeddings = self._encode_job_chunks(model, job_chunks)
 
-            # 2. Encode all chunks via SentenceTransformer (in memory)
-            cand_embeddings = model.encode(
-                cand_chunks,
-                convert_to_numpy=True,
-                normalize_embeddings=True,
-                show_progress_bar=False
-            )
-            job_embeddings = self._encode_job_chunks(model, job_chunks)
+                # 3. Compute cosine similarity between normalized embeddings
+                # sim_matrix shape: (len(cand_chunks), len(job_chunks))
+                sim_matrix = np.dot(cand_embeddings, job_embeddings.T)
 
-            # 3. Compute cosine similarity between normalized embeddings
-            # sim_matrix shape: (len(cand_chunks), len(job_chunks))
-            sim_matrix = np.dot(cand_embeddings, job_embeddings.T)
-
-            # Pooled cross-chunk alignment:
-            # - max_sim_cand_to_job: for every job chunk, what is the best matching resume chunk? (60% weight)
-            # - max_sim_job_to_cand: for every candidate chunk, what is the best matching job chunk? (40% weight)
-            max_sim_cand_to_job = float(np.mean(np.max(sim_matrix, axis=0)))
-            max_sim_job_to_cand = float(np.mean(np.max(sim_matrix, axis=1)))
-            pooled_sim = 0.6 * max_sim_cand_to_job + 0.4 * max_sim_job_to_cand
+                # Pooled cross-chunk alignment:
+                # - max_sim_cand_to_job: for every job chunk, what is the best matching resume chunk? (60% weight)
+                # - max_sim_job_to_cand: for every candidate chunk, what is the best matching job chunk? (40% weight)
+                max_sim_cand_to_job = float(np.mean(np.max(sim_matrix, axis=0)))
+                max_sim_job_to_cand = float(np.mean(np.max(sim_matrix, axis=1)))
+                pooled_sim = 0.6 * max_sim_cand_to_job + 0.4 * max_sim_job_to_cand
 
             # Unclamped true mathematical cosine similarity [-1.0, 1.0]
             unclamped_raw_cosine = float(pooled_sim)
@@ -370,68 +308,7 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
             else:
                 grade = "Low"
 
-            # 4. Extract verifiable concepts with 3-way evidence status and authentic verbatim quotes
-            cand_skills = unique_skill_items(candidate_profile.get("skills", []) or [])
-            cand_headline = candidate_profile.get("headline", "") or ""
-            cand_summary = candidate_profile.get("experience_summary", "") or ""
-            sections = candidate_profile.get("sections") or {}
-            all_cand_section_text = " ".join(sections.values()) if isinstance(sections, dict) else ""
-            full_cand_text = f"{cand_headline} {' '.join(cand_skills)} {cand_summary} {all_cand_section_text}".lower()
-
-            job_req_skills = unique_skill_items(job_requisition.get("required_skills", []) or [])
-            job_pref_skills = unique_skill_items(job_requisition.get("preferred_skills", []) or [])
-
-            matched_concepts: list[str] = []
-            missing_concepts: list[str] = []
-            evidence_breakdown: list[dict[str, Any]] = []
-
-            has_substantive_text = len(full_cand_text.strip()) >= 20
-            all_req_skills_categorized = (
-                [("required", s) for s in job_req_skills] +
-                [("preferred", s) for s in job_pref_skills]
-            )
-
-            for category, s in all_req_skills_categorized:
-                evidence, raw_quote, verification_type, note = classify_skill_evidence(
-                    s, cand_skills, f"{cand_headline} {cand_summary} {all_cand_section_text}"
-                )
-                if evidence == "not_detected" and verification_type != "explicit_negation" and has_substantive_text:
-                    missing_concepts.append(s)
-                    evidence_breakdown.append({
-                        "requirement": s,
-                        "category": category,
-                        "status": "not_detected",
-                        "evidence_quote": None,
-                        "verification_type": "unmentioned",
-                        "is_confirmed_gap": False,
-                        "note": "Not detected in candidate profile. Absence of mention is not proof of candidate deficiency.",
-                    })
-                    continue
-
-                if evidence == "not_detected" and verification_type != "explicit_negation":
-                    evidence = "insufficient_information"
-                    verification_type = "insufficient_material"
-                    note = "Candidate profile contains insufficient text to evaluate requirement."
-                if evidence == "supported":
-                    matched_concepts.append(s)
-                else:
-                    missing_concepts.append(s)
-                evidence_breakdown.append({
-                    "requirement": s,
-                    "category": category,
-                    "status": evidence,
-                    "evidence_quote": raw_quote,
-                    "verification_type": verification_type,
-                    "is_confirmed_gap": False,
-                    "note": note,
-                })
-
-            evidence_status = {
-                "supported": [e["requirement"] for e in evidence_breakdown if e["status"] == "supported"],
-                "not_detected": [e["requirement"] for e in evidence_breakdown if e["status"] == "not_detected"],
-                "insufficient_information": [e["requirement"] for e in evidence_breakdown if e["status"] == "insufficient_information"],
-            }
-
+            evidence = evaluate_skill_evidence(candidate_profile, job_requisition)
             duration_ms = (time.perf_counter() - start_time) * 1000
 
             total_chunks = len(cand_chunks) + len(job_chunks)
@@ -453,10 +330,6 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                 method=self.method_name,
                 status="ok",
                 fallback_reason=None,
-                matched_key_concepts=matched_concepts[:8],
-                missing_or_gap_concepts=missing_concepts[:5],
-                evidence_status=evidence_status,
-                evidence_breakdown=evidence_breakdown,
                 model_info={
                     "engine": self.model_id,
                     "model_id": self.model_id,
@@ -479,12 +352,13 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                     "job_chunks_processed": job_meta["processed_count"],
                     "candidate_chunks_count": cand_meta["processed_count"],
                     "job_chunks_count": job_meta["processed_count"],
-                    "chunks_processed": total_chunks,
+                    "chunks_processed": total_chunks if cand_chunks and job_chunks else 0,
                     "truncated": cand_truncated or job_truncated,
                     "coverage_ratio": effective_coverage,
                     "omitted_sections": omitted,
                     "latency_ms": round(duration_ms, 2)
-                }
+                },
+                **evidence,
             )
 
         except Exception as exc:

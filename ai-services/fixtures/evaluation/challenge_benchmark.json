@@ -1,0 +1,526 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "purpose": "Evaluation-only synthetic diagnostic challenge, grouped by requisition. No training or tuning split.",
+    "provenance": "Every profile, requisition and label was authored for A4 before the controlled run. No source resume, job posting or independently reviewed suitability label was used.",
+    "label_policy": {
+      "expected_evidence": "Judge only the candidate's claim for each named requirement. Recognize explicit declarations and unambiguous same-technology names. Keep transferable nonidentical skills, insufficient material and unsupported claims distinct.",
+      "semantic_order": "Each ordered triple lists the profile expected to be more topically related to the same job, the profile expected to be less related, and the reason.",
+      "qualification_order": "Each ordered triple lists the profile with stronger evidence for explicitly scoped job requirements, a comparison profile and the reason. This is an evidence or eligibility contrast, not a hiring or suitability judgment."
+    }
+  },
+  "groups": [
+    {
+      "id": "python-api",
+      "job_requisition": {
+        "title": "Python API Engineer",
+        "required_skills": [
+          "Python",
+          "FastAPI"
+        ],
+        "preferred_skills": [
+          "Docker"
+        ],
+        "description": "Build Python API services with FastAPI. Develop scalable web endpoints, run integration tests, and deploy services using Docker."
+      },
+      "cases": [
+        {
+          "id": "api-exact",
+          "focus": ["exact_match", "declared_skill", "relevant_experience"],
+          "candidate_profile": {
+            "headline": "Backend Engineer",
+            "skills": [
+              "Python"
+            ],
+            "experience_summary": "Built async web endpoints with FastAPI and deployed API services with Docker."
+          },
+          "expected_evidence": {
+            "Python": "supported",
+            "FastAPI": "supported",
+            "Docker": "supported"
+          },
+          "rationale": "Python is declared. FastAPI and Docker are used in work examples."
+        },
+        {
+          "id": "api-mandatory-absent",
+          "focus": ["same_domain_missing_mandatory"],
+          "candidate_profile": {
+            "headline": "Python API Engineer",
+            "skills": [
+              "Python",
+              "Docker"
+            ],
+            "experience_summary": "Built Python API services, developed scalable web endpoints, ran integration tests, and deployed services using Docker. The endpoints use Django."
+          },
+          "expected_evidence": {
+            "Python": "supported",
+            "FastAPI": "not_detected",
+            "Docker": "supported"
+          },
+          "rationale": "The candidate is topically close and has Django experience. No FastAPI claim appears."
+        },
+        {
+          "id": "api-negated",
+          "focus": ["explicit_negation"],
+          "candidate_profile": {
+            "headline": "Python API Engineer",
+            "skills": [
+              "Python"
+            ],
+            "experience_summary": "Built web endpoints using Python. No experience with FastAPI."
+          },
+          "expected_evidence": {
+            "Python": "supported",
+            "FastAPI": "not_detected",
+            "Docker": "not_detected"
+          },
+          "rationale": "FastAPI is explicitly denied. Docker is unmentioned in substantive text."
+        },
+        {
+          "id": "api-learning",
+          "focus": ["learning_only"],
+          "candidate_profile": {
+            "headline": "Python Backend Developer",
+            "skills": [
+              "Python"
+            ],
+            "experience_summary": "Built REST endpoints with Django. Currently learning FastAPI and Docker."
+          },
+          "expected_evidence": {
+            "Python": "supported",
+            "FastAPI": "insufficient_information",
+            "Docker": "insufficient_information"
+          },
+          "rationale": "The candidate expresses learning intent for both technologies."
+        },
+        {
+          "id": "api-third-party",
+          "focus": ["third_party"],
+          "candidate_profile": {
+            "headline": "Release Coordinator",
+            "experience_summary": "The company built a FastAPI platform. Engineers at another vendor built Docker images. I scheduled release meetings and wrote status reports."
+          },
+          "expected_evidence": {
+            "Python": "not_detected",
+            "FastAPI": "insufficient_information",
+            "Docker": "insufficient_information"
+          },
+          "rationale": "Both technical claims are attributed to others, including one whose actor is outside the existing third-party cue list."
+        },
+        {
+          "id": "api-quoted",
+          "focus": ["quoted_requirements"],
+          "candidate_profile": {
+            "headline": "Implementation Coordinator",
+            "experience_summary": "The job posting said “Developed Python services with FastAPI”. I organized onboarding and wrote meeting notes."
+          },
+          "expected_evidence": {
+            "Python": "insufficient_information",
+            "FastAPI": "insufficient_information",
+            "Docker": "not_detected"
+          },
+          "rationale": "The quoted Python and FastAPI work are requisition text. The candidate claims coordination only."
+        },
+        {
+          "id": "api-stuffing",
+          "focus": ["keyword_stuffing"],
+          "candidate_profile": {
+            "headline": "Python FastAPI Docker Python FastAPI Docker",
+            "experience_summary": "Python FastAPI Docker Python FastAPI Docker. Python FastAPI Docker Python FastAPI Docker."
+          },
+          "expected_evidence": {
+            "Python": "insufficient_information",
+            "FastAPI": "insufficient_information",
+            "Docker": "insufficient_information"
+          },
+          "rationale": "Repeated keywords appear in unqualified prose rather than in the declared skills field or a work claim."
+        },
+        {
+          "id": "api-conflict",
+          "focus": ["conflicting_evidence", "section_only"],
+          "candidate_profile": {
+            "headline": "Service Engineer",
+            "skills": [
+              "Python"
+            ],
+            "experience_summary": "No experience with FastAPI.",
+            "sections": {
+              "experience": "No experience with FastAPI.",
+              "projects": "Built a FastAPI service."
+            }
+          },
+          "expected_evidence": {
+            "Python": "supported",
+            "FastAPI": "insufficient_information",
+            "Docker": "not_detected"
+          },
+          "rationale": "A repeated denial conflicts with direct project use and no chronology resolves the contradiction."
+        },
+        {
+          "id": "api-historical",
+          "focus": ["historical_gap", "section_only"],
+          "candidate_profile": {
+            "headline": "Built integration tasks using Python",
+            "experience_summary": "Previously, no experience with FastAPI.",
+            "sections": {
+              "projects": "Later built a FastAPI web service for volunteer scheduling."
+            }
+          },
+          "expected_evidence": {
+            "Python": "supported",
+            "FastAPI": "supported",
+            "Docker": "not_detected"
+          },
+          "rationale": "The text explicitly places the gap in the past and a direct project claim later."
+        },
+        {
+          "id": "api-unrelated",
+          "focus": ["irrelevant_experience"],
+          "candidate_profile": {
+            "headline": "Textile Exhibit Conservator",
+            "experience_summary": "Repaired antique woven panels, controlled humidity in display cases, and documented fiber damage."
+          },
+          "expected_evidence": {
+            "Python": "not_detected",
+            "FastAPI": "not_detected",
+            "Docker": "not_detected"
+          },
+          "rationale": "There is substantive but unrelated work and none of the listed technologies appear."
+        }
+      ],
+      "semantic_order": [
+        [
+          "api-exact",
+          "api-unrelated",
+          "API delivery is closer to the job topic than textile conservation."
+        ],
+        [
+          "api-mandatory-absent",
+          "api-unrelated",
+          "Work on other web API frameworks is still topically relevant."
+        ],
+        [
+          "api-negated",
+          "api-unrelated",
+          "One framework denial does not erase a shared API engineering topic."
+        ]
+      ],
+      "qualification_order": [
+        [
+          "api-exact",
+          "api-mandatory-absent",
+          "The former supplies both mandatory technologies."
+        ],
+        [
+          "api-exact",
+          "api-negated",
+          "The latter explicitly denies mandatory FastAPI experience."
+        ],
+        [
+          "api-exact",
+          "api-stuffing",
+          "The latter supplies no meaningful skill claims."
+        ],
+        [
+          "api-exact",
+          "api-conflict",
+          "The latter has unresolved FastAPI claims."
+        ]
+      ]
+    },
+    {
+      "id": "streaming-lead",
+      "job_requisition": {
+        "title": "Senior Streaming Platform Lead",
+        "required_skills": [
+          "Kafka",
+          "Spark"
+        ],
+        "preferred_skills": [
+          "Kubernetes"
+        ],
+        "description": "Lead a streaming platform team, own architecture and incident response, and mentor engineers. Requires five years running distributed Kafka and Spark pipelines in production."
+      },
+      "cases": [
+        {
+          "id": "stream-lead",
+          "focus": ["seniority_match", "section_only", "relevant_experience"],
+          "candidate_profile": {
+            "headline": "Distributed Data Platform Lead",
+            "sections": {
+              "experience": "Led a team of six engineers for seven years. Operated Kafka pipelines in production. Managed Spark jobs and configured Kubernetes deployments. Owned incident response and coached engineers."
+            }
+          },
+          "expected_evidence": {
+            "Kafka": "supported",
+            "Spark": "supported",
+            "Kubernetes": "supported"
+          },
+          "rationale": "The work section explicitly supports each technology and the leadership requirement."
+        },
+        {
+          "id": "stream-intern",
+          "focus": ["seniority_mismatch", "exact_match"],
+          "candidate_profile": {
+            "headline": "Streaming Platform Intern",
+            "skills": [
+              "Kafka",
+              "Spark",
+              "Kubernetes"
+            ],
+            "experience_summary": "One summer internship. Practiced on sample data in a sandbox and observed incident response. I have never led a team."
+          },
+          "expected_evidence": {
+            "Kafka": "supported",
+            "Spark": "supported",
+            "Kubernetes": "supported"
+          },
+          "rationale": "All technologies are declared, while the stated duration and role fail the seniority requirement."
+        },
+        {
+          "id": "stream-transfer",
+          "focus": ["cross_domain_transfer", "alternative_terminology"],
+          "candidate_profile": {
+            "headline": "Satellite Telemetry Operations Lead",
+            "experience_summary": "Led an on-call team for nine years. Tuned real-time sensor event queues, restored backlogged readings after outages, and coordinated automatic restart of container workloads. Implemented Apache Pulsar pipelines."
+          },
+          "expected_evidence": {
+            "Kafka": "not_detected",
+            "Spark": "not_detected",
+            "Kubernetes": "not_detected"
+          },
+          "rationale": "Adjacent operating skills carry over, but Apache Pulsar is a separate technology and the required products are unmentioned."
+        },
+        {
+          "id": "stream-unrelated",
+          "focus": ["irrelevant_experience"],
+          "candidate_profile": {
+            "headline": "Senior Museum Educator",
+            "experience_summary": "Led eight years of tours and designed classroom materials for ancient art exhibitions."
+          },
+          "expected_evidence": {
+            "Kafka": "not_detected",
+            "Spark": "not_detected",
+            "Kubernetes": "not_detected"
+          },
+          "rationale": "Generic leadership overlaps, while the subject and work differ from data streaming."
+        }
+      ],
+      "semantic_order": [
+        [
+          "stream-lead",
+          "stream-unrelated",
+          "The work covers production streaming and leadership."
+        ],
+        [
+          "stream-intern",
+          "stream-unrelated",
+          "The declared technologies and work topic are closer despite the seniority gap."
+        ],
+        [
+          "stream-transfer",
+          "stream-unrelated",
+          "Production event flow and on-call work are closer to streaming operations."
+        ]
+      ],
+      "qualification_order": [
+        [
+          "stream-lead",
+          "stream-intern",
+          "Both list the technologies, while only the former supplies the experience and leadership requested."
+        ],
+        [
+          "stream-lead",
+          "stream-transfer",
+          "The latter has relevant operations experience with different technologies."
+        ]
+      ]
+    },
+    {
+      "id": "go-services",
+      "job_requisition": {
+        "title": "Go Microservices Engineer",
+        "required_skills": [
+          "Go"
+        ],
+        "preferred_skills": [
+          "gRPC"
+        ],
+        "description": "Implement concurrent Go backend services and gRPC endpoints. Maintain production service-to-service APIs."
+      },
+      "cases": [
+        {
+          "id": "go-alt-name",
+          "focus": ["alternative_terminology", "equivalent_skill_name"],
+          "candidate_profile": {
+            "headline": "Distributed Services Engineer",
+            "experience_summary": "Implemented Golang worker pools for service-to-service calls. Created gRPC endpoints for production traffic."
+          },
+          "expected_evidence": {
+            "Go": "supported",
+            "gRPC": "supported"
+          },
+          "rationale": "Golang denotes the same language as Go. gRPC use is explicit."
+        },
+        {
+          "id": "go-ambiguous",
+          "focus": ["ambiguous_skill"],
+          "candidate_profile": {
+            "headline": "Customer Support Account Coordinator",
+            "experience_summary": "I designed a go-live checklist for customer onboarding. Built a calendar of board game club events after work."
+          },
+          "expected_evidence": {
+            "Go": "not_detected",
+            "gRPC": "not_detected"
+          },
+          "rationale": "Go-live and board game references carry no programming-language claim."
+        },
+        {
+          "id": "go-sparse",
+          "focus": ["sparse_valid", "declared_skill"],
+          "candidate_profile": {
+            "skills": [
+              "Go"
+            ]
+          },
+          "expected_evidence": {
+            "Go": "supported",
+            "gRPC": "insufficient_information"
+          },
+          "rationale": "The single structured Go declaration is valid. There is insufficient material to judge gRPC."
+        },
+        {
+          "id": "go-empty",
+          "focus": ["unavailable_evidence"],
+          "candidate_profile": {},
+          "expected_evidence": {
+            "Go": "insufficient_information",
+            "gRPC": "insufficient_information"
+          },
+          "rationale": "No candidate material exists for either skill."
+        }
+      ],
+      "semantic_order": [
+        [
+          "go-alt-name",
+          "go-ambiguous",
+          "The same language under an alternative name and production RPC work are semantically closer."
+        ],
+        [
+          "go-sparse",
+          "go-empty",
+          "A valid language declaration supplies some relevance signal."
+        ]
+      ],
+      "qualification_order": [
+        [
+          "go-alt-name",
+          "go-ambiguous",
+          "Only the former describes work in the mandatory language."
+        ],
+        [
+          "go-sparse",
+          "go-ambiguous",
+          "Only the former makes a candidate claim about the language. Proficiency remains unverified."
+        ]
+      ]
+    },
+    {
+      "id": "privacy-ops",
+      "job_requisition": {
+        "title": "Data Protection Operations Analyst",
+        "required_skills": [
+          "Data Loss Prevention"
+        ],
+        "preferred_skills": [
+          "SIEM"
+        ],
+        "description": "Operate Data Loss Prevention controls that identify sensitive records and prevent unauthorized transfers. Triage and investigate alerts in a SIEM."
+      },
+      "cases": [
+        {
+          "id": "privacy-exact",
+          "focus": ["exact_match", "section_only"],
+          "candidate_profile": {
+            "sections": {
+              "experience": "Configured Data Loss Prevention for file uploads. Investigated unauthorized transfers using SIEM dashboards."
+            }
+          },
+          "expected_evidence": {
+            "Data Loss Prevention": "supported",
+            "SIEM": "supported"
+          },
+          "rationale": "The experience field names both technologies in direct work claims."
+        },
+        {
+          "id": "privacy-alias",
+          "focus": ["alternative_terminology", "equivalent_skill_name"],
+          "candidate_profile": {
+            "headline": "Information Protection Analyst",
+            "experience_summary": "Configured DLP policies that quarantined sensitive exports. Investigated alerts using a security information and event management tool."
+          },
+          "expected_evidence": {
+            "Data Loss Prevention": "supported",
+            "SIEM": "supported"
+          },
+          "rationale": "DLP expands to the job's mandatory skill and SIEM is described by its expanded name."
+        },
+        {
+          "id": "privacy-transfer",
+          "focus": ["cross_domain_transfer", "transferable_nonidentical"],
+          "candidate_profile": {
+            "headline": "Clinical Records Compliance Coordinator",
+            "experience_summary": "Audited outbound patient record requests, escalated unauthorized disclosures, and designed access reviews. Maintained an incident intake queue for compliance staff."
+          },
+          "expected_evidence": {
+            "Data Loss Prevention": "not_detected",
+            "SIEM": "not_detected"
+          },
+          "rationale": "The work addresses a related risk using different processes and does not identify either product category."
+        },
+        {
+          "id": "privacy-unrelated",
+          "focus": ["irrelevant_experience"],
+          "candidate_profile": {
+            "headline": "Concert Lighting Designer",
+            "experience_summary": "Designed stage lighting, programmed dimmer cues, and loaded fixtures for touring acts."
+          },
+          "expected_evidence": {
+            "Data Loss Prevention": "not_detected",
+            "SIEM": "not_detected"
+          },
+          "rationale": "The candidate's subject matter is unrelated and no target skill is stated."
+        }
+      ],
+      "semantic_order": [
+        [
+          "privacy-alias",
+          "privacy-unrelated",
+          "Sensitive data quarantine and incident investigation are close to the role topic."
+        ],
+        [
+          "privacy-transfer",
+          "privacy-unrelated",
+          "Clinical records controls share the goal of preventing unauthorized disclosure."
+        ],
+        [
+          "privacy-exact",
+          "privacy-unrelated",
+          "Direct data protection work is closer than concert lighting."
+        ]
+      ],
+      "qualification_order": [
+        [
+          "privacy-alias",
+          "privacy-transfer",
+          "Only the former states work operating the required controls."
+        ],
+        [
+          "privacy-exact",
+          "privacy-transfer",
+          "Only the former directly demonstrates the mandatory control."
+        ]
+      ]
+    }
+  ]
+}
