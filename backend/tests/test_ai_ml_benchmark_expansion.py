@@ -11,8 +11,8 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from app.models.enums import EvaluatedSkillStatus
-from app.services.evaluation import DeterministicEvaluationEngine
 from app.services.education_extractor import extract_education_from_text
+from app.services.evaluation import DeterministicEvaluationEngine
 from app.services.experience_extractor import extract_experience_years_from_text
 from app.services.scoring import (
     CoverageTier,
@@ -23,7 +23,6 @@ from app.services.scoring import (
 from app.services.semantic_matcher import SublinearTFCosineMatcher
 from app.services.taxonomy import taxonomy
 from app.services.text_extraction import _normalize
-
 
 # These labels describe only skills plainly evidenced by each synthetic text.
 EXTRACTION_CASES = [
@@ -119,7 +118,7 @@ def test_synthetic_skill_evidence_classification_and_score_separately():
         actual = [skill["status"].value for skill in result["evaluated_skills"]]
         results[name] = result
         assert actual == expected
-        for want, got in zip(expected, actual):
+        for want, got in zip(expected, actual, strict=True):
             confusion[want][got] += 1
 
     per_class = {}
@@ -127,7 +126,7 @@ def test_synthetic_skill_evidence_classification_and_score_separately():
         tp = confusion[label][label]
         fp = sum(confusion[other][label] for other in confusion if other != label)
         fn = sum(confusion[label][other] for other in confusion if other != label)
-        per_class[label] = dict(zip(("precision", "recall", "f1"), (round(v, 3) for v in _metrics(tp, fp, fn))))
+        per_class[label] = dict(zip(("precision", "recall", "f1"), (round(v, 3) for v in _metrics(tp, fp, fn)), strict=True))
 
     direct = results["direct"]["skills_score"]
     transferable = results["transferable"]["skills_score"]

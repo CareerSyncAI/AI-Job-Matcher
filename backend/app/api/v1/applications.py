@@ -37,9 +37,9 @@ from app.schemas.applications import (
 from app.schemas.evaluations import (
     CandidateCardDTO,
     CandidateEvidenceItem,
-    sanitize_character_offsets,
     CandidateMatchResultsDTO,
     EvaluationRunSchema,
+    sanitize_character_offsets,
 )
 from app.schemas.resumes import ResumeResponse
 from app.services.application_status import (
@@ -56,9 +56,13 @@ from app.services.evaluation import (
 from app.services.experience_extractor import extract_experience_years_from_text
 from app.services.jobs import JobService
 from app.services.resumes import ResumeService
-from app.services.scoring import CoverageTier, Weights, candidate_card_rank_key
+from app.services.scoring import Weights, candidate_card_rank_key
 from app.services.taxonomy import taxonomy
-from app.services.text_extraction import DocumentSecurityError, ScannedDocumentError, extract_text_from_file
+from app.services.text_extraction import (
+    DocumentSecurityError,
+    ScannedDocumentError,
+    extract_text_from_file,
+)
 
 logger = logging.getLogger(__name__)
 

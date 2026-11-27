@@ -51,6 +51,14 @@ class EvaluationStatus(StrEnum):
     FAILED = "failed"
 
 
+class ResumeAnalysisStatus(StrEnum):
+    READY = "ready"
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class EvaluatedSkillStatus(StrEnum):
     MATCHED = "matched"
     TRANSFERABLE = "transferable"

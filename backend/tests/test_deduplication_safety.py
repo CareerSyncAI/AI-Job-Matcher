@@ -12,16 +12,13 @@ Verifies:
 """
 import tempfile
 from pathlib import Path
-import pandas as pd
-import pytest
 
+import pandas as pd
 from scripts.data_ingestion.deduplicate import (
     clean_canonical_url,
     clean_company_name,
-    compute_full_content_hash,
     deduplicate_cross_dataset,
     extract_seniority_tier,
-    normalize_location_conservative,
     normalize_title_preserving_seniority,
 )
 
@@ -116,7 +113,7 @@ def test_reused_url_with_conflicting_job_version():
 
         # Verify flagged in review queue
         import json
-        with open(review_json, "r", encoding="utf-8") as f:
+        with open(review_json, encoding="utf-8") as f:
             rev = json.load(f)
         assert rev["total_flagged"] >= 1
         assert any(item["reason"] == "reused_url_conflicting_job_version" for item in rev["review_items"])
@@ -166,7 +163,7 @@ def test_shared_introductory_boilerplate_different_body():
         ]
         pd.DataFrame(data).to_parquet(input_parquet)
 
-        rep = deduplicate_cross_dataset(
+        deduplicate_cross_dataset(
             [("test_source", input_parquet)],
             output_parquet,
             report_json,
@@ -210,7 +207,7 @@ def test_missing_description_safety():
         ]
         pd.DataFrame(data).to_parquet(input_parquet)
 
-        rep = deduplicate_cross_dataset(
+        deduplicate_cross_dataset(
             [("test_source", input_parquet)],
             output_parquet,
             report_json,

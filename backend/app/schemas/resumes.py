@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.models.enums import AttentionReason, ProcessingStatus
+from app.models.enums import AttentionReason, ProcessingStatus, ResumeAnalysisStatus
 from app.schemas.common import APIModel
 
 
@@ -47,3 +47,20 @@ class ATSAnalysisSchema(APIModel):
 
 class AnalyzeTextPayload(APIModel):
     text: str = Field(min_length=1, max_length=100_000)
+
+
+class ResumeAnalysisStatusResponse(APIModel):
+    resume_id: UUID
+    run_id: UUID | None = None
+    status: ResumeAnalysisStatus
+    current_stage: str | None = None
+    attempt_number: int = 0
+    retry_of_run_id: UUID | None = None
+    result_available: bool = False
+    failure_code: str | None = None
+    failure_detail: str | None = None
+    result: ATSAnalysisSchema | None = None
+    created_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    failed_at: datetime | None = None

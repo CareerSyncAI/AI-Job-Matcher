@@ -4,7 +4,16 @@ import re
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_recruiter_profile
@@ -16,7 +25,7 @@ from app.models.enums import ApplicationStatus, AttentionReason, ProcessingStatu
 from app.schemas.resumes import (
     AnalyzeTextPayload,
     ATSAnalysisSchema,
-    ATSIssueSchema,
+    ResumeAnalysisStatusResponse,
     ResumeResponse,
 )
 from app.services.application_status import record_application_status_change
@@ -26,6 +35,7 @@ from app.services.education_extractor import extract_education_from_text
 from app.services.evaluation import EvaluationService
 from app.services.experience_extractor import extract_experience_years_from_text
 from app.services.jobs import JobService
+from app.services.resume_analysis import ResumeAnalysisService, build_ats_analysis_schema
 from app.services.resumes import ResumeService
 from app.services.text_extraction import (
     DocumentSecurityError,
@@ -559,32 +569,7 @@ def analyze_stored_resume_ats(
             pass
 
     res = ats_analyzer.analyze(text)
-    return ATSAnalysisSchema(
-        overall_ats_score=res.overall_ats_score,
-        grade=res.grade,
-        section_score=res.section_score,
-        contact_score=res.contact_score,
-        impact_score=res.impact_score,
-        formatting_score=res.formatting_score,
-        skills_score=res.skills_score,
-        detected_sections=res.detected_sections,
-        detected_skills=res.detected_skills,
-        missing_critical_sections=res.missing_critical_sections,
-        contact_details=res.contact_details,
-        action_verbs_found=res.action_verbs_found,
-        quantifiable_metrics_count=res.quantifiable_metrics_count,
-        word_count=res.word_count,
-        strengths=res.strengths,
-        issues=[
-            ATSIssueSchema(
-                category=i.category,
-                severity=i.severity,
-                issue=i.issue,
-                recommendation=i.recommendation,
-            )
-            for i in res.issues
-        ],
-    )
+    return build_ats_analysis_schema(res)
 
 
 @download_router.post("/analyze-text-ats", response_model=ATSAnalysisSchema)
@@ -594,29 +579,79 @@ def analyze_text_ats(
 ) -> ATSAnalysisSchema:
     """Instant ATS quality inspection for raw resume text in Resume Studio."""
     res = ats_analyzer.analyze(payload.text)
-    return ATSAnalysisSchema(
-        overall_ats_score=res.overall_ats_score,
-        grade=res.grade,
-        section_score=res.section_score,
-        contact_score=res.contact_score,
-        impact_score=res.impact_score,
-        formatting_score=res.formatting_score,
-        skills_score=res.skills_score,
-        detected_sections=res.detected_sections,
-        detected_skills=res.detected_skills,
-        missing_critical_sections=res.missing_critical_sections,
-        contact_details=res.contact_details,
-        action_verbs_found=res.action_verbs_found,
-        quantifiable_metrics_count=res.quantifiable_metrics_count,
-        word_count=res.word_count,
-        strengths=res.strengths,
-        issues=[
-            ATSIssueSchema(
-                category=i.category,
-                severity=i.severity,
-                issue=i.issue,
-                recommendation=i.recommendation,
-            )
-            for i in res.issues
-        ],
+    return build_ats_analysis_schema(res)
+
+
+def _get_authorized_resume(resume_id: UUID, current_user: User, db: Session) -> Resume:
+    resume = db.get(Resume, resume_id)
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+    verify_resume_access(resume, current_user, db)
+    return resume
+
+
+@download_router.post(
+    "/{resume_id}/analysis",
+    response_model=ResumeAnalysisStatusResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def start_resume_analysis(
+    resume_id: UUID,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResumeAnalysisStatusResponse:
+    """Explicitly start an asynchronous resume analysis run."""
+    resume = _get_authorized_resume(resume_id, current_user, db)
+    run = ResumeAnalysisService.start_run(
+        db,
+        resume=resume,
+        initiated_by_user_id=current_user.id,
     )
+    return ResumeAnalysisService.dispatch(run, db=db, background_tasks=background_tasks)
+
+
+@download_router.get("/{resume_id}/analysis", response_model=ResumeAnalysisStatusResponse)
+def get_latest_resume_analysis(
+    resume_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResumeAnalysisStatusResponse:
+    """Get the latest resume analysis run status (or 'ready' if none started yet)."""
+    _get_authorized_resume(resume_id, current_user, db)
+    return ResumeAnalysisService.get_latest_status(db, resume_id=resume_id)
+
+
+@download_router.get("/{resume_id}/analysis/{run_id}", response_model=ResumeAnalysisStatusResponse)
+def get_resume_analysis_run(
+    resume_id: UUID,
+    run_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResumeAnalysisStatusResponse:
+    """Poll a specific resume analysis run by ID."""
+    _get_authorized_resume(resume_id, current_user, db)
+    return ResumeAnalysisService.get_run_status(db, resume_id=resume_id, run_id=run_id)
+
+
+@download_router.post(
+    "/{resume_id}/analysis/{run_id}/retry",
+    response_model=ResumeAnalysisStatusResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def retry_resume_analysis_run(
+    resume_id: UUID,
+    run_id: UUID,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResumeAnalysisStatusResponse:
+    """Retry a failed resume analysis run."""
+    resume = _get_authorized_resume(resume_id, current_user, db)
+    run = ResumeAnalysisService.retry_run(
+        db,
+        resume=resume,
+        run_id=run_id,
+        initiated_by_user_id=current_user.id,
+    )
+    return ResumeAnalysisService.dispatch(run, db=db, background_tasks=background_tasks)

@@ -240,3 +240,45 @@ def process_resume(self, resume_id: str, db=None) -> None:
     finally:
         if close_db:
             db.close()
+
+
+@celery_app.task(
+    name="careersync.resume.analyze",
+    bind=True,
+    max_retries=2,
+    time_limit=45,
+    soft_time_limit=30,
+)
+def analyze_resume_task(self, run_id: str, db=None) -> None:
+    """Execute a queued ResumeAnalysisRun in the background worker."""
+    from datetime import UTC, datetime
+
+    from app.models.entities import ResumeAnalysisRun
+    from app.models.enums import ResumeAnalysisStatus
+    from app.services.resume_analysis import STAGE_FAILED, execute_analysis_run
+
+    run_uuid = UUID(run_id)
+    close_db = False
+    if db is None:
+        db = SessionLocal()
+        close_db = True
+
+    try:
+        execute_analysis_run(run_uuid, db=db)
+    except SoftTimeLimitExceeded:
+        logger.warning("Analysis task soft time limit exceeded for run %s", run_id)
+        db.rollback()
+        try:
+            run = db.get(ResumeAnalysisRun, run_uuid)
+            if run and run.status != ResumeAnalysisStatus.COMPLETED:
+                run.status = ResumeAnalysisStatus.FAILED
+                run.current_stage = STAGE_FAILED
+                run.failure_code = "worker_timeout"
+                run.failure_detail = "Resume analysis exceeded worker time limit."
+                run.failed_at = datetime.now(UTC)
+                db.commit()
+        except Exception:
+            db.rollback()
+    finally:
+        if close_db:
+            db.close()

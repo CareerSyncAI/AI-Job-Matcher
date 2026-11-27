@@ -7,12 +7,10 @@ Verifies:
 4. Atomic temporary file promotion and cleanup of incomplete temporary artifacts.
 """
 import hashlib
-import json
 import tempfile
 from pathlib import Path
-import pandas as pd
-import pytest
 
+import pandas as pd
 from scripts.data_ingestion.config import CheckpointManager
 
 
@@ -65,8 +63,6 @@ def test_interrupted_batch_resumption_no_duplication_or_skips():
         ckpt_file = tmp_path / "ckpt.json"
         out_parquet = tmp_path / "target.parquet"
         mgr = CheckpointManager(ckpt_file)
-
-        batch_size = 50
 
         # Run 1: Interrupted after 1 batch (rows 0-49)
         batch1 = source_df.iloc[0:50]

@@ -1,6 +1,6 @@
 """add application status progression and history
 
-Revision ID: 0003_application_status_progression
+Revision ID: 0003_app_status_progression
 Revises: 0002_add_eval_config_hash
 """
 import sqlalchemy as sa
@@ -8,7 +8,7 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision = "0003_application_status_progression"
+revision = "0003_app_status_progression"
 down_revision = "0002_add_eval_config_hash"
 branch_labels = None
 depends_on = None

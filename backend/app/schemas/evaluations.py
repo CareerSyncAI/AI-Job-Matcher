@@ -99,7 +99,7 @@ class CandidateEvidenceItem(APIModel):
     character_end: int | None = None
 
     @model_validator(mode="after")
-    def validate_character_offsets(self) -> "CandidateEvidenceItem":
+    def validate_character_offsets(self) -> CandidateEvidenceItem:
         self.character_start, self.character_end = sanitize_character_offsets(
             self.character_start, self.character_end
         )

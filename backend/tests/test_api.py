@@ -1369,7 +1369,6 @@ def test_production_candidate_list_ranking_correctness(client, db_session):
     6. Candidates with equivalent coverage tier order by overall score.
     """
     from app.models.entities import (
-        Application,
         EvaluationRun,
         EvidenceClaim,
     )

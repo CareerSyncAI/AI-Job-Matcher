@@ -8,8 +8,8 @@ Verifies:
 5. Preservation of original skill string, canonical name, method, and heuristic confidence.
 """
 from pathlib import Path
-import pytest
 
+import pytest
 from scripts.data_ingestion.taxonomy_integrator import TaxonomyIntegrator
 
 

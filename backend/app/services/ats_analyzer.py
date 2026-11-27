@@ -115,9 +115,9 @@ SECTION_HEADER_ALIASES = {
 
 def _normalize_heading(value: str) -> str:
     """Normalize punctuation and whitespace while retaining a full-line heading match."""
-    normalized = re.sub(r"[^\w]|_", " ", value.casefold(), flags=re.UNICODE)
-    normalized = " ".join(normalized.split())
-    return re.sub(r"\s+continued$", "", normalized)
+    cleaned = "".join(ch if ch.isalnum() else " " for ch in value.casefold())
+    normalized = " ".join(cleaned.split())
+    return normalized.removesuffix(" continued")
 
 
 SECTION_HEADER_LOOKUP = {
@@ -218,16 +218,19 @@ class ATSAnalyzer:
             strengths.append("All primary resume sections (Experience, Skills, Education) are clearly detectable.")
 
         # ── 2. Contact Information (Weight: 20%) ──
-        email_match = re.search(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b", text)
-        phone_match = re.search(r"\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b", text)
+        email_match = re.search(r"\b[A-Za-z0-9._%+\-]{1,64}@(?:[A-Za-z0-9\-]+\.)+[A-Za-z]{2,24}\b", text)
+        phone_match = re.search(r"\b(?:\+?\d{1,3}[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}\b", text)
         linkedin_match = re.search(r"\b(?:https?://)?(?:www\.)?linkedin\.com/in/[A-Za-z0-9._%+\-]+\b", text, re.IGNORECASE)
         github_match = re.search(r"\b(?:https?://)?(?:www\.)?github\.com/[A-Za-z0-9._%+\-]+\b", text, re.IGNORECASE)
         portfolio_match = re.search(
-            r"\b(?:portfolio|personal\s+website|website)\s*[:|\-]?\s*((?:https?://|www\.)[A-Za-z0-9.-]+(?:/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]*)?)",
+            r"\b(?:portfolio|personal[ \t]+website|website)[ \t]*(?:[:|\-][ \t]*)?((?:https?://|www\.)[A-Za-z0-9.-]+(?:/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]*)?)",
             text,
             re.IGNORECASE,
         )
-        location_match = re.search(r"\b(?:[A-Z][a-zA-Z\s]+,\s*(?:[A-Z]{2}|[A-Za-z]+))\b", text)
+        location_match = re.search(
+            r"\b[A-Z][a-zA-Z]{1,30}(?: [A-Z]?[a-zA-Z]{1,30}){0,3},[ \t]{0,3}(?:[A-Z]{2}|[A-Za-z]{2,30})\b",
+            text,
+        )
 
         from app.services.taxonomy import taxonomy
         detected_skills_raw = taxonomy.extract_skills_from_text(text)
@@ -302,7 +305,7 @@ class ATSAnalyzer:
         # Quantifiable metrics: percentages, currency, numerical values with explicit metric units/multipliers.
         # Excludes standalone 4-digit years (e.g. 2021) and software versions (e.g. 3.10).
         metric_matches = re.findall(
-            r"(?:\$[\d,]+(?:\.\d+)?(?:k|m|b|million|billion)?|\b\d+(?:\.\d+)?%|\b\d+x\b|\b\d+\s*(?:k|m|million|billion|users|requests|ms|seconds|hours|\+?\s*years\b))",
+            r"(?:\$[\d,]+(?:\.\d+)?(?:k|m|b|million|billion)?|\b\d+(?:\.\d+)?%|\b\d+x\b|\b\d+(?:[ \t]{0,3}(?:k|m|million|billion|users|requests|ms|seconds|hours)|(?:\+[ \t]{0,2}|[ \t]{0,3})years)\b)",
             text,
             re.IGNORECASE,
         )

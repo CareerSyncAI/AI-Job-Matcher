@@ -32,6 +32,7 @@ from app.models.enums import (
     EvidenceKind,
     JobStatus,
     ProcessingStatus,
+    ResumeAnalysisStatus,
     UserRole,
 )
 from app.models.mixins import TimestampMixin
@@ -166,9 +167,49 @@ class Resume(TimestampMixin, Base):
     candidate: Mapped[CandidateProfile | None] = relationship(back_populates="resumes")
     ingestion_job: Mapped[Job | None] = relationship(back_populates="resumes")
     applications: Mapped[list[Application]] = relationship(back_populates="resume")
+    analysis_runs: Mapped[list[ResumeAnalysisRun]] = relationship(
+        back_populates="resume",
+        cascade="all, delete-orphan",
+        order_by="ResumeAnalysisRun.created_at.desc()",
+    )
     embedding: Mapped[ResumeEmbedding | None] = relationship(
         back_populates="resume", cascade="all, delete-orphan", uselist=False
     )
+
+
+class ResumeAnalysisRun(TimestampMixin, Base):
+    __tablename__ = "resume_analysis_runs"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    resume_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("resumes.id", ondelete="CASCADE"), index=True
+    )
+    initiated_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True
+    )
+    retry_of_run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("resume_analysis_runs.id", ondelete="SET NULL"), nullable=True
+    )
+    status: Mapped[ResumeAnalysisStatus] = mapped_column(
+        Enum(
+            ResumeAnalysisStatus,
+            name="resume_analysis_status",
+            values_callable=lambda statuses: [s.value for s in statuses],
+        ),
+        default=ResumeAnalysisStatus.QUEUED,
+        index=True,
+    )
+    current_stage: Mapped[str] = mapped_column(String(64), default="queued")
+    attempt_number: Mapped[int] = mapped_column(Integer, default=1)
+    failure_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    failure_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result_payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    resume: Mapped[Resume] = relationship(back_populates="analysis_runs")
+    initiated_by: Mapped[User | None] = relationship()
 
 
 class Application(TimestampMixin, Base):

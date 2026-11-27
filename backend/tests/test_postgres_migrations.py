@@ -42,6 +42,7 @@ EXPECTED_TABLES = {
     "jobs",
     "job_skills",
     "resumes",
+    "resume_analysis_runs",
     "applications",
     "application_status_history",
     "evaluation_runs",
@@ -228,3 +229,82 @@ def test_postgres_downgrade_and_reupgrade_cycle(pg_engine):
     assert "configuration_hash" in eval_run_columns, "Column 'configuration_hash' missing from evaluation_runs"
     eval_run_indexes = {idx["name"] for idx in inspector_reloaded.get_indexes("evaluation_runs")}
     assert "ix_evaluation_runs_configuration_hash" in eval_run_indexes, "Index 'ix_evaluation_runs_configuration_hash' missing"
+
+
+def test_postgres_upgrade_from_0002_preserves_data_and_fks(pg_engine):
+    """Verify upgrading from 0002_add_eval_config_hash to head preserves existing data and enforces FKs."""
+    from alembic.config import Config
+
+    from alembic import command
+
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    alembic_cfg = Config(os.path.join(backend_dir, "alembic.ini"))
+
+    command.downgrade(alembic_cfg, "0002_add_eval_config_hash")
+
+    user_id = uuid4()
+    recruiter_id = uuid4()
+    candidate_id = uuid4()
+    job_id = uuid4()
+    resume_id = uuid4()
+    app_id = uuid4()
+
+    with pg_engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO users (id, email, password_hash, role, is_active) "
+                "VALUES (:uid, :email, 'pw', 'recruiter', true)"
+            ),
+            {"uid": user_id, "email": f"mig_{user_id.hex[:8]}@example.com"},
+        )
+        conn.execute(
+            text("INSERT INTO recruiter_profiles (id, user_id, organization_name) VALUES (:rid, :uid, 'MigCorp')"),
+            {"rid": recruiter_id, "uid": user_id},
+        )
+        conn.execute(
+            text("INSERT INTO candidate_profiles (id, name) VALUES (:cid, 'Mig Candidate')"),
+            {"cid": candidate_id},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO jobs (id, recruiter_id, title, employment_type, work_arrangement, "
+                "description, status, skills_weight, experience_weight, education_weight, semantic_weight) "
+                "VALUES (:jid, :rid, 'Eng', 'full_time', 'remote', 'Desc', 'open', 35, 35, 15, 15)"
+            ),
+            {"jid": job_id, "rid": recruiter_id},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO resumes (id, candidate_id, ingestion_job_id, original_filename, storage_key, "
+                "mime_type, byte_size, sha256, processing_status) "
+                "VALUES (:rsid, :cid, :jid, 'r.pdf', :skey, 'application/pdf', 100, :sha, 'completed')"
+            ),
+            {"rsid": resume_id, "cid": candidate_id, "jid": job_id, "skey": f"k_{resume_id.hex}.pdf", "sha": "f" * 64},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO applications (id, candidate_id, job_id, resume_id, status) "
+                "VALUES (:aid, :cid, :jid, :rsid, 'new')"
+            ),
+            {"aid": app_id, "cid": candidate_id, "jid": job_id, "rsid": resume_id},
+        )
+
+    command.upgrade(alembic_cfg, "head")
+
+    with pg_engine.connect() as conn:
+        preserved = conn.execute(
+            text("SELECT status::text FROM applications WHERE id = :aid"),
+            {"aid": app_id},
+        ).scalar_one()
+        assert preserved == "new"
+
+        version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+        assert len(version) <= 32
+        assert version == "0004_resume_analysis_runs"
+
+    inspector = inspect(pg_engine)
+    history_fks = {fk["referred_table"] for fk in inspector.get_foreign_keys("application_status_history")}
+    assert {"applications", "users"}.issubset(history_fks)
+
+    analysis_fks = {fk["referred_table"] for fk in inspector.get_foreign_keys("resume_analysis_runs")}
+    assert {"resumes", "users"}.issubset(analysis_fks)

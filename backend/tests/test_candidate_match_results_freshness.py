@@ -5,23 +5,16 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import docx
-import pytest
 
 from app.models.entities import (
     Application,
-    CandidateProfile,
-    EvaluatedSkill,
     EvaluationRun,
     EvidenceClaim,
     Job,
     JobSkill,
     MatchResult,
-    RecruiterProfile,
-    Resume,
-    User,
 )
 from app.models.enums import (
-    EvaluatedSkillStatus,
     EvaluationStatus,
     EvidenceConfidence,
     EvidenceKind,
@@ -628,7 +621,6 @@ def test_changed_job_requirements_marks_evaluations_stale(client, db_session):
     assert card_before["is_fresh"] is True
 
     # Job requirements change: add a new required skill
-    job_record = db_session.query(Job).filter_by(id=job_id).one()
     new_skill = JobSkill(job_id=job_id, name="Kubernetes", normalized_name="kubernetes", required=True)
     db_session.add(new_skill)
     db_session.commit()
@@ -641,12 +633,13 @@ def test_changed_job_requirements_marks_evaluations_stale(client, db_session):
 
 
 def test_unknown_and_unevaluated_cannot_receive_tier_1():
+    from types import SimpleNamespace
+
     from app.services.scoring import (
         CoverageTier,
         candidate_card_coverage_tier,
         candidate_card_rank_key,
     )
-    from types import SimpleNamespace
 
     # Card with unknown status but all matched skills
     card_unknown = SimpleNamespace(
@@ -738,12 +731,13 @@ def test_changing_old_score_of_stale_candidate_does_not_change_ranking(client, d
 
 
 def test_ranking_keys_zero_effective_scores_for_all_non_current_statuses():
+    from types import SimpleNamespace
+
     from app.services.scoring import (
         CoverageTier,
         candidate_card_coverage_tier,
         candidate_card_rank_key,
     )
-    from types import SimpleNamespace
 
     statuses = ["stale", "unknown", "pending", "queued", "running", "failed", "not_evaluated"]
     job_skills = [SimpleNamespace(name="Python", required=True)]
@@ -859,9 +853,10 @@ def test_candidate_match_results_api_enforces_freshness(client, db_session):
 
 
 def test_evaluation_fingerprint_correctness():
+    from types import SimpleNamespace
+
     from app.services.evaluation import compute_evaluation_fingerprint
     from app.services.scoring import Weights
-    from types import SimpleNamespace
 
     weights = Weights(skills=40, experience=30, education=15, semantic=15)
     cand = SimpleNamespace(
@@ -1059,12 +1054,13 @@ def test_multiple_claims_associated_with_one_skill(client, db_session):
 
 
 def test_preferred_skill_gap_evidence_does_not_reduce_required_coverage_tier():
+    from types import SimpleNamespace
+
     from app.services.scoring import (
         CoverageTier,
         candidate_card_coverage_tier,
         candidate_card_rank_key,
     )
-    from types import SimpleNamespace
 
     # Job: Python (Required=True), Redis (Preferred=False), Kubernetes (Preferred=False)
     job_skills = [
