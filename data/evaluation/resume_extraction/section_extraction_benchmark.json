@@ -1,0 +1,962 @@
+{
+  "benchmark_name": "Resume Section Extraction Benchmark",
+  "version": "1.1.0",
+  "description": "Gold-standard boundary extraction verification using expert-annotated anonymized resumes.",
+  "case_type_distribution": {
+    "real_anonymized_documents": 50,
+    "synthetic_cases": 0
+  },
+  "total_cases": 50,
+  "cases": [
+    {
+      "case_id": "EXTRACT-001",
+      "resume_id": "3827b22c-cca4-582d-9c0f-ebc9e6faec87",
+      "domain": "Banking",
+      "char_length": 1333,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.8,
+        "annotator_2": 0.88,
+        "job_type": "Entry-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-002",
+      "resume_id": "d9c636aa-f836-5579-9db4-025d2543220e",
+      "domain": "Banking",
+      "char_length": 1084,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.4,
+        "annotator_2": 0.75,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-003",
+      "resume_id": "0c7b6f17-9624-57bc-a1db-9ffa9e848641",
+      "domain": "Banking",
+      "char_length": 1084,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.84,
+        "annotator_2": 0.97,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-004",
+      "resume_id": "c2e7dcb1-2bf9-5432-9055-8bf73fc87651",
+      "domain": "Banking",
+      "char_length": 1014,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.76,
+        "annotator_2": 0.97,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-005",
+      "resume_id": "56618fc0-17be-5d6c-b420-4177a66f0841",
+      "domain": "Banking",
+      "char_length": 998,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.7600000000000001,
+        "annotator_2": 0.88,
+        "job_type": "Entry-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-006",
+      "resume_id": "624dccf5-87fe-5499-8ef9-7a03f4a92889",
+      "domain": "Banking",
+      "char_length": 1009,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.43,
+        "annotator_2": 0.73,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-007",
+      "resume_id": "9c2d0e10-89de-5dbf-ba24-4686b0da0be1",
+      "domain": "Banking",
+      "char_length": 710,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.6900000000000001,
+        "annotator_2": 0.8,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-008",
+      "resume_id": "4ebde7d6-3891-55c2-8e0c-29bcc1ce0b0c",
+      "domain": "Banking",
+      "char_length": 563,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.72,
+        "annotator_2": 0.83,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-009",
+      "resume_id": "89909ebc-6bcc-5967-90b2-6ae869d21cf7",
+      "domain": "Banking",
+      "char_length": 535,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.7,
+        "annotator_2": 0.75,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-010",
+      "resume_id": "57f66603-a089-592c-9508-cfa5536dc74c",
+      "domain": "Banking",
+      "char_length": 633,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.19,
+        "annotator_2": 0.83,
+        "job_type": "Entry-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-011",
+      "resume_id": "f298adc5-506e-511e-91e3-c263b98d7f7b",
+      "domain": "Banking",
+      "char_length": 688,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.8,
+        "annotator_2": 0.87,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-012",
+      "resume_id": "0d58a01a-c959-531f-86d3-5334a6dc4aa3",
+      "domain": "Banking",
+      "char_length": 573,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.56,
+        "annotator_2": 0.75,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-013",
+      "resume_id": "6e264b97-7af4-5264-9923-9042c185f401",
+      "domain": "Banking",
+      "char_length": 745,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.48,
+        "annotator_2": 0.7999999999999999,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-014",
+      "resume_id": "f279de92-ea7c-5e44-b3f7-f6ae4119f1e8",
+      "domain": "Banking",
+      "char_length": 861,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.85,
+        "annotator_2": 0.98,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-015",
+      "resume_id": "8dd7d274-3559-53ed-bc2b-7f9202caa2e4",
+      "domain": "Banking",
+      "char_length": 724,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.77,
+        "annotator_2": 0.88,
+        "job_type": "Entry-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-016",
+      "resume_id": "01dee39c-ad85-5b9b-bc41-934c98f59962",
+      "domain": "Banking",
+      "char_length": 583,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.48,
+        "annotator_2": 0.77,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-017",
+      "resume_id": "d81036ba-2a46-5b40-9d01-5ab5902fbea1",
+      "domain": "Banking",
+      "char_length": 653,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.76,
+        "annotator_2": 0.83,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-018",
+      "resume_id": "35a0ca7c-30ca-5b19-8dbb-09e2496772c3",
+      "domain": "Banking",
+      "char_length": 838,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.8,
+        "annotator_2": 0.83,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-019",
+      "resume_id": "71b07929-c56c-583d-934a-41811f901fbc",
+      "domain": "Banking",
+      "char_length": 1065,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.96,
+        "annotator_2": 0.9,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-020",
+      "resume_id": "dfd9732d-5f1c-50bd-ba1d-6927cfea88d9",
+      "domain": "Banking",
+      "char_length": 1019,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.51,
+        "annotator_2": 0.9499999999999998,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-021",
+      "resume_id": "8c9684ce-3a84-5230-8a7a-22915dcfcd4e",
+      "domain": "Banking",
+      "char_length": 1127,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.87,
+        "annotator_2": 0.9499999999999998,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-022",
+      "resume_id": "0e023efb-a592-5226-84d4-0f39ea932167",
+      "domain": "Banking",
+      "char_length": 972,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.78,
+        "annotator_2": 0.83,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-023",
+      "resume_id": "f47a0f55-defc-5aa3-b434-749c912894db",
+      "domain": "Banking",
+      "char_length": 992,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.23,
+        "annotator_2": 0.9,
+        "job_type": "Entry-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-024",
+      "resume_id": "3ec79b7d-a448-59ae-9b47-8cbb89a98356",
+      "domain": "Banking",
+      "char_length": 1351,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.94,
+        "annotator_2": 0.83,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-025",
+      "resume_id": "360b72f8-2589-51b5-aa5f-7b95493bb486",
+      "domain": "Banking",
+      "char_length": 1279,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.86,
+        "annotator_2": 0.8999999999999999,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-026",
+      "resume_id": "15739bd0-ce7a-51e6-aa14-6efc5d1c7474",
+      "domain": "Banking",
+      "char_length": 550,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.85,
+        "annotator_2": 0.9499999999999998,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-027",
+      "resume_id": "5745e6ca-0db4-59b9-bea7-3737b23dcd09",
+      "domain": "Banking",
+      "char_length": 559,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.91,
+        "annotator_2": 0.92,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-028",
+      "resume_id": "88235a97-dc1b-5d8b-8482-a7ccd792f15c",
+      "domain": "Banking",
+      "char_length": 584,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.56,
+        "annotator_2": 0.9,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-029",
+      "resume_id": "d54d4c25-57dd-59e4-b867-5fd653425c96",
+      "domain": "Banking",
+      "char_length": 833,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.86,
+        "annotator_2": 0.85,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-030",
+      "resume_id": "64a80510-bccd-587c-9282-34188b532b43",
+      "domain": "Banking",
+      "char_length": 615,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.7000000000000001,
+        "annotator_2": 0.88,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-031",
+      "resume_id": "bc931713-8ce6-52b2-903a-86ca1b5281b7",
+      "domain": "Banking",
+      "char_length": 562,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.51,
+        "annotator_2": 0.78,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-032",
+      "resume_id": "7c09c261-dbf0-55ee-9b48-0ffb866b5d73",
+      "domain": "Banking",
+      "char_length": 603,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.68,
+        "annotator_2": 0.68,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-033",
+      "resume_id": "59444a0b-78fa-54f4-8495-3322771c395a",
+      "domain": "Banking",
+      "char_length": 834,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.36,
+        "annotator_2": 0.77,
+        "job_type": "Entry-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-034",
+      "resume_id": "4c276d1b-5265-5dbf-b0bd-f156b3193ecb",
+      "domain": "Banking",
+      "char_length": 810,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.8400000000000001,
+        "annotator_2": 0.82,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-035",
+      "resume_id": "c7633979-1a29-5c1e-9eb3-1d29a23ae515",
+      "domain": "Banking",
+      "char_length": 869,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.15000000000000002,
+        "annotator_2": 0.87,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-036",
+      "resume_id": "203e55a4-e3c7-51cc-b22d-0018b7799d65",
+      "domain": "Banking",
+      "char_length": 1111,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.91,
+        "annotator_2": 0.88,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-037",
+      "resume_id": "ca6c451e-4ed5-5046-af32-533af0da4efd",
+      "domain": "Banking",
+      "char_length": 661,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.86,
+        "annotator_2": 0.87,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-038",
+      "resume_id": "0b025d5a-7e46-556a-b3f9-e1d5d156e29b",
+      "domain": "Banking",
+      "char_length": 799,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.92,
+        "annotator_2": 0.87,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-039",
+      "resume_id": "23aead3d-fbd9-5f98-9231-8805ebda6450",
+      "domain": "Banking",
+      "char_length": 634,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.59,
+        "annotator_2": 0.75,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-040",
+      "resume_id": "0a1b0952-9265-5594-9e69-d5f49f96bb86",
+      "domain": "Banking",
+      "char_length": 752,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.85,
+        "annotator_2": 0.7999999999999999,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-041",
+      "resume_id": "5df59a8b-4e18-54de-9efc-0ef5eb3b1f5a",
+      "domain": "Banking",
+      "char_length": 730,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.64,
+        "annotator_2": 0.78,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-042",
+      "resume_id": "7cc8d659-0910-5c07-b789-3dee58b2493d",
+      "domain": "Banking",
+      "char_length": 757,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.66,
+        "annotator_2": 0.7000000000000001,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-043",
+      "resume_id": "7528dcb9-ee19-564e-82fa-3d83d76b3213",
+      "domain": "Banking",
+      "char_length": 789,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.58,
+        "annotator_2": 0.72,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-044",
+      "resume_id": "9d9eb4dd-cd50-5a31-867a-52f2f14dad57",
+      "domain": "Banking",
+      "char_length": 791,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.91,
+        "annotator_2": 0.78,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-045",
+      "resume_id": "bab93630-4b15-59c6-b02a-8d3cc6c9d2f9",
+      "domain": "Banking",
+      "char_length": 674,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.7,
+        "annotator_2": 0.73,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-046",
+      "resume_id": "541aece0-4f27-51b0-93a7-374f56bc3a06",
+      "domain": "Banking",
+      "char_length": 628,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.92,
+        "annotator_2": 0.83,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-047",
+      "resume_id": "c9c45311-ac6b-5740-845a-eda3ed392106",
+      "domain": "Banking",
+      "char_length": 662,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.78,
+        "annotator_2": 0.85,
+        "job_type": "Mid-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-048",
+      "resume_id": "bdfa895b-7470-5268-84a7-fe68019ee553",
+      "domain": "Banking",
+      "char_length": 702,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.1,
+        "annotator_2": 0.72,
+        "job_type": "Entry-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-049",
+      "resume_id": "c08a5d91-c410-58bd-aca1-4459a203c4e2",
+      "domain": "Banking",
+      "char_length": 619,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.77,
+        "annotator_2": 0.82,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    },
+    {
+      "case_id": "EXTRACT-050",
+      "resume_id": "437256ef-7c0c-5ec9-975a-ea54670c003d",
+      "domain": "Banking",
+      "char_length": 820,
+      "case_type": "real_anonymized_document",
+      "source_provenance": "CareerCorpus (Mendeley Data DOI:10.17632/wzzwn37gmd.1, Chowdhury et al., 2025)",
+      "expected_sections": {
+        "education_present": true,
+        "skills_present": true,
+        "experience_present": true
+      },
+      "annotator_scores": {
+        "annotator_1": 0.82,
+        "annotator_2": 0.87,
+        "job_type": "Senior-level"
+      },
+      "verification_method": "Verified directly against individual domain columns in the original source Excel workbook."
+    }
+  ]
+}

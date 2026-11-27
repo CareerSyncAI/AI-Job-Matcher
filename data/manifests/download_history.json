@@ -1,0 +1,58 @@
+{
+  "open_apply_partition_0": {
+    "source_id": "open_apply_partition_0",
+    "name": "Open Apply Jobs (Partition 0)",
+    "category": "jobs",
+    "url": "https://huggingface.co/api/datasets/edwarddgao/open-apply-jobs/parquet/default/train/0.parquet",
+    "dest_path": "data\\raw\\jobs\\open_apply\\0.parquet",
+    "byte_size": 38127392,
+    "sha256": "1388ae4cb44f0d71a0b2f75376731a29411cf59f5b4cfb4bf3258b06744a3601",
+    "status": "ALREADY_VERIFIED",
+    "elapsed_seconds": 0.0,
+    "license": "Public Employer ATS Listings (Greenhouse, Lever, Ashby, Workday)",
+    "provenance": "Hugging Face edwarddgao/open-apply-jobs (directly sourced from public career sites)",
+    "timestamp": "2026-11-22T13:25:12Z"
+  },
+  "career_corpus_xlsx": {
+    "source_id": "career_corpus_xlsx",
+    "name": "CareerCorpus Annotated Resumes",
+    "category": "resumes",
+    "url": "https://data.mendeley.com/public-files/datasets/wzzwn37gmd/files/8dd12325-8dd9-47ea-9b90-8cf1e84eaf2a/file_downloaded",
+    "dest_path": "data\\raw\\resumes\\career_corpus\\CareerCorpus.xlsx",
+    "byte_size": 124525,
+    "sha256": "97b1fa6cca1232912dd3f7bc312d71a2478249787168fd41dfbf6c1da90479d3",
+    "status": "ALREADY_VERIFIED",
+    "elapsed_seconds": 0.0,
+    "license": "CC BY 4.0",
+    "provenance": "Mendeley Data DOI:10.17632/wzzwn37gmd.1 (Chowdhury et al., 2025)",
+    "timestamp": "2026-11-22T13:25:12Z"
+  },
+  "onet_31_0_text": {
+    "source_id": "onet_31_0_text",
+    "name": "O*NET Database 31.0 Text Archive",
+    "category": "taxonomies",
+    "url": "https://www.onetcenter.org/dl_files/database/db_31_0_text.zip",
+    "dest_path": "data\\raw\\taxonomies\\onet\\db_31_0_text.zip",
+    "byte_size": 13183034,
+    "sha256": "6883548adf5fde64cf6f801b35d15519c9225f2732c3cab0e281c652d16b23a9",
+    "status": "ALREADY_VERIFIED",
+    "elapsed_seconds": 0.0,
+    "license": "CC BY 4.0 (US Department of Labor)",
+    "provenance": "O*NET Resource Center (Production Release August 2026)",
+    "timestamp": "2026-11-22T13:25:12Z"
+  },
+  "jobhop_v2_train": {
+    "source_id": "jobhop_v2_train",
+    "name": "JobHop v2 Career Trajectories (Train Parquet)",
+    "category": "taxonomies",
+    "url": "https://huggingface.co/datasets/aida-ugent/JobHop/resolve/main/JobHop_v2_train.parquet",
+    "dest_path": "data\\raw\\taxonomies\\jobhop\\JobHop_v2_train.parquet",
+    "byte_size": 9213302,
+    "sha256": "b2c0073161f4ac237d3b6b522a338f0d44a6860d2e7f4bdc613a71b8a1663a90",
+    "status": "SUCCESS",
+    "elapsed_seconds": 38.86,
+    "license": "CC BY-NC-SA 4.0 / Research (Ghent University AIDA / VDAB)",
+    "provenance": "Hugging Face aida-ugent/JobHop",
+    "timestamp": "2026-11-22T13:34:18Z"
+  }
+}

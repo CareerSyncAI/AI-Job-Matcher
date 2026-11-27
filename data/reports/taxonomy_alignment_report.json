@@ -1,0 +1,189 @@
+{
+  "report_name": "CareerSyncAI O*NET 31.0 Verified Taxonomy & Skill Coverage Report",
+  "timestamp": "2026-11-22T21:07:46.790977",
+  "taxonomy_reference": {
+    "database_version": "O*NET 31.0",
+    "total_soc_occupations": 1016,
+    "total_technology_skills": 8753,
+    "license": "CC-BY-4.0 (USDOL/ETA)"
+  },
+  "job_postings_alignment": {
+    "total_postings_evaluated": 49478,
+    "postings_aligned_to_soc": 7546,
+    "soc_alignment_rate_percent": 15.25,
+    "matching_methods_breakdown": {
+      "soc_title_alias_match": 7545,
+      "unmatched": 41932,
+      "heuristic_domain_match": 1
+    },
+    "distribution_by_major_group": {
+      "Computer and Mathematical Occupations": 5716,
+      "Management Occupations": 931,
+      "Business and Financial Operations": 453,
+      "Healthcare Practitioners and Technical": 366,
+      "Arts, Design, Entertainment, Sports, and Media": 80
+    },
+    "top_aligned_occupations": [
+      {
+        "soc": "15-1252.00 Software Developers",
+        "count": 3677,
+        "percentage": 7.43
+      },
+      {
+        "soc": "15-1253.00 Software Quality Assurance Analysts and Testers",
+        "count": 1008,
+        "percentage": 2.04
+      },
+      {
+        "soc": "11-9199.00 Managers, All Other",
+        "count": 783,
+        "percentage": 1.58
+      },
+      {
+        "soc": "29-1141.00 Registered Nurses",
+        "count": 365,
+        "percentage": 0.74
+      },
+      {
+        "soc": "15-1242.00 Database Administrators",
+        "count": 274,
+        "percentage": 0.55
+      },
+      {
+        "soc": "13-2011.00 Accountants and Auditors",
+        "count": 256,
+        "percentage": 0.52
+      },
+      {
+        "soc": "15-1244.00 Network and Computer Systems Administrators",
+        "count": 253,
+        "percentage": 0.51
+      },
+      {
+        "soc": "13-1071.00 Human Resources Specialists",
+        "count": 197,
+        "percentage": 0.4
+      },
+      {
+        "soc": "15-2051.01 Business Intelligence Analysts",
+        "count": 176,
+        "percentage": 0.36
+      },
+      {
+        "soc": "11-2021.00 Marketing Managers",
+        "count": 148,
+        "percentage": 0.3
+      },
+      {
+        "soc": "15-1212.00 Information Security Analysts",
+        "count": 146,
+        "percentage": 0.3
+      },
+      {
+        "soc": "15-1299.08 Computer Systems Engineers/Architects",
+        "count": 103,
+        "percentage": 0.21
+      }
+    ]
+  },
+  "candidate_profiles_alignment": {
+    "total_candidates_evaluated": 15000,
+    "candidates_aligned_to_soc": 4888,
+    "candidate_soc_alignment_rate_percent": 32.59,
+    "total_skill_tokens_evaluated": 49604,
+    "skills_matched_to_onet_tech": 4995,
+    "skill_match_rate_percent": 10.07,
+    "skill_matching_methods_breakdown": {
+      "exact_onet_match": 1353,
+      "alias_match": 2070,
+      "contextual_validated": 1572
+    },
+    "top_matched_onet_skills": [
+      {
+        "skill": "Quality Assurance Software",
+        "frequency": 1409
+      },
+      {
+        "skill": "C++",
+        "frequency": 1049
+      },
+      {
+        "skill": "JavaScript",
+        "frequency": 542
+      },
+      {
+        "skill": "Node.js",
+        "frequency": 532
+      },
+      {
+        "skill": "Python",
+        "frequency": 323
+      },
+      {
+        "skill": "PHP",
+        "frequency": 288
+      },
+      {
+        "skill": "C#",
+        "frequency": 273
+      },
+      {
+        "skill": "Go",
+        "frequency": 126
+      },
+      {
+        "skill": "Amazon Web Services (AWS)",
+        "frequency": 53
+      },
+      {
+        "skill": "TypeScript",
+        "frequency": 46
+      },
+      {
+        "skill": "User Interface Design",
+        "frequency": 39
+      },
+      {
+        "skill": "Information Technology",
+        "frequency": 35
+      },
+      {
+        "skill": "Artificial Intelligence",
+        "frequency": 33
+      },
+      {
+        "skill": "React",
+        "frequency": 32
+      },
+      {
+        "skill": "Kotlin",
+        "frequency": 30
+      },
+      {
+        "skill": "User Experience Design",
+        "frequency": 27
+      },
+      {
+        "skill": "Ruby",
+        "frequency": 25
+      },
+      {
+        "skill": "Scala",
+        "frequency": 24
+      },
+      {
+        "skill": "Solidity",
+        "frequency": 20
+      },
+      {
+        "skill": "Machine Learning",
+        "frequency": 13
+      }
+    ]
+  },
+  "annotated_resumes_alignment": {
+    "total_resumes_evaluated": 302,
+    "resumes_aligned_to_soc": 51,
+    "alignment_rate_percent": 16.89
+  }
+}

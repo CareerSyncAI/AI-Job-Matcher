@@ -1,0 +1,906 @@
+{
+  "timestamp": "2026-11-22T21:07:25.150129",
+  "total_flagged": 100,
+  "review_items": [
+    {
+      "primary_id": "558abc93-8a4d-58a0-a312-8b1e3f58e5cc",
+      "primary_title": "Principal Security Researcher",
+      "comparison_id": "ecef43b1-374c-59bf-abbc-2a0b408f1d1b",
+      "comparison_title": "Senior Security Researcher",
+      "company": "1password",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "03f9d5ff-28d2-5c42-84c3-83a59d64fa88",
+      "primary_title": "Staff Developer, Growth",
+      "comparison_id": "e678d178-c367-5f66-99fb-e14f9cf0d7e7",
+      "comparison_title": "Senior Developer, Growth",
+      "company": "1password",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ac6f24d6-8d69-5db8-8579-f3da53785ced",
+      "primary_title": "Account Executive, Commercial",
+      "comparison_id": "5de78a5a-094b-516f-b12e-1e91fce80242",
+      "comparison_title": "Senior Account Executive - Commercial",
+      "company": "1password",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ff03de3c-2e27-5d8f-a77d-f7616f74f1ce",
+      "primary_title": "Developer, Machine Identity",
+      "comparison_id": "5deddccd-25fc-5d72-ab67-8b45e72e0861",
+      "comparison_title": "Senior Developer, Machine Identity",
+      "company": "1password",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "67bebba4-0540-502d-91f2-b536ea8275ef",
+      "primary_title": "Manager, Business Development",
+      "comparison_id": "f65e4ebe-507f-5b70-8baf-281bcbabda58",
+      "comparison_title": "Senior Manager, Business Development",
+      "company": "1password",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "71e32d80-691e-5b28-b367-5fe9a71a6f48",
+      "primary_title": "Staff Software Engineer, Frontend",
+      "comparison_id": "3cc37fe6-a5c9-54fb-84be-50a9561c1bfd",
+      "comparison_title": "Senior Software Engineer, Frontend",
+      "company": "3y health",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c5e8a761-c912-52a4-b246-0011e5ff222d",
+      "primary_title": "Senior Electrical Engineer",
+      "comparison_id": "68d0769e-1e6a-5afa-8b32-dfbadf16fe25",
+      "comparison_title": "Lead Electrical Engineer",
+      "company": "9 mothers",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "4cd4b6a5-b3ba-5478-8d75-a8031b70667e",
+      "primary_title": "Senior Mechatronics Engineer",
+      "comparison_id": "eba586fd-4e82-5358-95f2-9156ec13aaca",
+      "comparison_title": "Lead Mechatronics Engineer",
+      "company": "9 mothers",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "0d7126d2-5427-50af-8b9e-9e1a08e0f0ad",
+      "primary_title": "Senior Robotics Engineer",
+      "comparison_id": "d1c33707-7987-5101-b77c-f3f483a23dab",
+      "comparison_title": "Lead Robotics Engineer",
+      "company": "9 mothers",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "02463833-3673-599f-b1bb-0d412ce291fa",
+      "primary_title": "Senior Fullstack Engineer",
+      "comparison_id": "7a482740-27fe-504c-ba95-b742999347f9",
+      "comparison_title": "Fullstack Engineer",
+      "company": "dispatch",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ae715c16-2873-56b2-ae13-326b2f22515c",
+      "primary_title": "Senior Solutions Engineer",
+      "comparison_id": "35a8773d-af15-56e8-96c0-8fe7a3a73f27",
+      "comparison_title": "Solutions Engineer",
+      "company": "leantech",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "77ad703a-5589-554a-99be-07b057a8a36b",
+      "primary_title": "Account Manager",
+      "comparison_id": "4cb492d4-ab88-5d1a-9579-16ecedf4fa40",
+      "comparison_title": "Senior Account Manager",
+      "company": "9fin",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "4b23010b-cdb5-5dc9-aff3-bde262095bf2",
+      "primary_title": "Backend Engineer",
+      "comparison_id": "b60e5242-abc8-5869-a796-244d24444e55",
+      "comparison_title": "Senior Backend Engineer",
+      "company": "9fin",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "3bc156ed-d3b4-53b3-900c-977948dfce81",
+      "primary_title": "Distressed Reporter",
+      "comparison_id": "5712979f-75b3-598f-b044-109f9c87eacc",
+      "comparison_title": "Senior Distressed Reporter",
+      "company": "9fin",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c9b5019e-872b-57b6-af88-67edbca50dd8",
+      "primary_title": "Staff Manufacturing Engineer",
+      "comparison_id": "12bd5eeb-1c84-50cb-9791-c97aa21fb899",
+      "comparison_title": "Senior Manufacturing Engineer",
+      "company": "nautilus biotechnology",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "bca72c16-b457-5f66-9b59-ef7e30631574",
+      "primary_title": "Autonomous Vehicle Test Engineer Intern",
+      "comparison_id": "291170d8-e6cb-5bc1-a9cd-cb3d78279363",
+      "comparison_title": "Autonomous Vehicle Test Engineer",
+      "company": "goventi",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "3150abc9-3ea8-505b-aa6e-08ce23b8e491",
+      "primary_title": "Autonomous Vehicle Service Engineer Intern",
+      "comparison_id": "52d17158-ae53-50f0-b3df-20542c0a9515",
+      "comparison_title": "Autonomous Vehicle Service Engineer",
+      "company": "goventi",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "bea7aabe-87cc-5509-b956-e1e9fa461067",
+      "primary_title": "Senior Control System Engineer (Autonomous Driving)",
+      "comparison_id": "ec23c824-b8a6-53a3-8e7f-d585a2d14d2e",
+      "comparison_title": "Control System Engineer (Autonomous Driving)",
+      "company": "42dot",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "fd62668c-b78a-54a5-a396-7772c0b76c8f",
+      "primary_title": "Audio DSP Engineer (\uc74c\uc131 \uc2e0\ud638\ucc98\ub9ac \ubc0f \uc751\uc6a9 \uc2dc\uc2a4\ud15c \uac1c\ubc1c)",
+      "comparison_id": "fb9b846d-dd6d-56c6-b7f4-c6419b7a1300",
+      "comparison_title": "Lead Audio DSP Engineer (\uc74c\uc131 \uc2e0\ud638\ucc98\ub9ac \ubc0f \uc751\uc6a9 \uc2dc\uc2a4\ud15c \uac1c\ubc1c)",
+      "company": "42dot",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "77a9ad8f-ebc8-53b3-bf69-d50958d6ec7b",
+      "primary_title": "Senior ML Platform Engineer (Autonomous Driving)",
+      "comparison_id": "b00c7ae5-d9be-5cd3-a9cb-31172e3cfeb0",
+      "comparison_title": "ML Platform Engineer (Autonomous Driving)",
+      "company": "42dot",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "692f8078-9598-58b6-9ac2-fdca35c8cdaf",
+      "primary_title": "Sr. HR Business Partner",
+      "comparison_id": "30775f15-c238-5571-b247-cd1bade038ff",
+      "comparison_title": "HR Business Partner",
+      "company": "42dot",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c370601c-08b0-5726-8cbf-8c916a48482f",
+      "primary_title": "Backend Engineer (SDV Operation Platform)",
+      "comparison_id": "cc1d2196-8fe1-5bd4-9348-bebff10cd9ac",
+      "comparison_title": "Senior Backend Engineer (SDV Operation Platform)",
+      "company": "42dot",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "f7e2d287-77d2-5ba3-8376-ec0bcdf86a43",
+      "primary_title": "Process Engineer",
+      "comparison_id": "e9559d36-33cd-53cb-ae27-1ef9a8b917b5",
+      "comparison_title": "Senior Process Engineer",
+      "company": "substrate",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "dd6b1210-faf0-5d7e-9e42-4685d814be7d",
+      "primary_title": "Staff Python Software Engineer",
+      "comparison_id": "0b75cdfa-37b7-5b68-8d8c-9f9a0d2821b5",
+      "comparison_title": "Senior Python Software Engineer",
+      "company": "abound",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8ca9ca84-e61b-5ffd-a007-67d37c55357c",
+      "primary_title": "Senior Software Engineer",
+      "comparison_id": "513abb90-4b5b-5267-a196-3b70967f1278",
+      "comparison_title": "Lead Software Engineer",
+      "company": "abound",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "9f548062-4547-527c-b0fd-8312613bed04",
+      "primary_title": "Associate Director of Sales",
+      "comparison_id": "a507c1cf-4998-50a5-88f8-549f342e6d28",
+      "comparison_title": "Director of Sales",
+      "company": "access",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8e512ad6-e908-549f-99e3-3df0c3283586",
+      "primary_title": "Senior Product Security Engineer",
+      "comparison_id": "efefe467-1260-505b-a5da-64463159a99b",
+      "comparison_title": "Staff Product Security Engineer",
+      "company": "tools for humanity",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8e512ad6-e908-549f-99e3-3df0c3283586",
+      "primary_title": "Senior Product Security Engineer",
+      "comparison_id": "2b376b6c-1e8a-548a-99fa-a6fe2de9ad34",
+      "comparison_title": "Staff Product Security Engineer",
+      "company": "tools for humanity",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "1f1ee334-19e6-59fe-a372-42928389f82e",
+      "primary_title": "Software Engineer",
+      "comparison_id": "26fc4706-4b52-5659-ad3c-888e551a8ce8",
+      "comparison_title": "Senior Software Engineer",
+      "company": "adaptivesecurity",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "1f1ee334-19e6-59fe-a372-42928389f82e",
+      "primary_title": "Software Engineer",
+      "comparison_id": "def39670-1daa-5902-9a0e-1cac445d7ff1",
+      "comparison_title": "Lead Software Engineer",
+      "company": "adaptivesecurity",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "a6c52ffd-44b4-56d3-b0a5-236b1f01819a",
+      "primary_title": "Senior Software Engineer",
+      "comparison_id": "002a6df4-3548-54be-987c-122517024f26",
+      "comparison_title": "Software Engineer",
+      "company": "abby care",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c2b7f1c4-c8e7-50c3-867b-5ee0c0e2e069",
+      "primary_title": "Senior Staff Software Engineer, Perception",
+      "comparison_id": "426db79d-7a43-54bb-9d94-c1940754338e",
+      "comparison_title": "Senior Software Engineer, Perception",
+      "company": "aerovect",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "5b82e525-2857-55ea-9b60-a271c0428b60",
+      "primary_title": "Social Media Manager",
+      "comparison_id": "d61a57a3-1b4d-56c5-9992-af4b99220e36",
+      "comparison_title": "Junior Social Media Manager",
+      "company": "agent",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "3fa95935-31e0-5487-9298-5188722437b3",
+      "primary_title": "Staff AI Engineer",
+      "comparison_id": "758d8289-366f-52fa-a0b5-3dbfb525e686",
+      "comparison_title": "Senior AI Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "3fa95935-31e0-5487-9298-5188722437b3",
+      "primary_title": "Staff AI Engineer",
+      "comparison_id": "eec37121-7da5-5a9f-906f-d686f8224a0d",
+      "comparison_title": "AI Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "d94d5b11-eb58-5901-b9e0-16c6810aa1d0",
+      "primary_title": "Account Executive, SME & Growth (Spend)",
+      "comparison_id": "a044225d-e682-5017-866f-1611973a9a8c",
+      "comparison_title": "Senior Account Executive, SME & Growth (Spend)",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "99fae80c-4752-55f9-8563-1d2cb3e154d2",
+      "primary_title": "Senior Software Engineer, Backend - Onboarding",
+      "comparison_id": "de6de0b5-c739-5446-a8e5-47c5551df9a9",
+      "comparison_title": "Staff Software Engineer, Backend - Onboarding",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "f960d48d-fb83-5ecb-a197-94b7690dc01b",
+      "primary_title": "Principal Software Engineer, Edge Team",
+      "comparison_id": "ca5c9530-e7a3-5825-a804-70521ec45587",
+      "comparison_title": "Senior Software Engineer, Edge Team",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "314d7b6b-434b-5377-8f4b-650c951b6891",
+      "primary_title": "Staff Software Engineer, Lending",
+      "comparison_id": "5f8715c4-2206-53d4-ae56-9ea869c4c7e3",
+      "comparison_title": "Senior Software Engineer, Lending",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c8504ffe-d46d-58cc-b112-45809d29bba6",
+      "primary_title": "Senior Data Scientist, Growth Analytics",
+      "comparison_id": "d3d43dfa-fcd6-559c-bf4e-2ca0a9883dac",
+      "comparison_title": "Staff Data Scientist, Growth Analytics",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "e1b25e9d-a2c0-5385-9243-661e29d1cbf0",
+      "primary_title": "Senior Frontend Engineer, AI",
+      "comparison_id": "22fa4b54-42ef-5d8e-9ca4-6697b2f9eb4c",
+      "comparison_title": "Staff Frontend Engineer, AI",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "04fed601-1d21-5dfa-aeb0-69788ab35371",
+      "primary_title": "Senior Data Scientist, Algorithm - Growth",
+      "comparison_id": "8816fc2b-1e94-5474-afc6-8b0c11b99d4f",
+      "comparison_title": "Data Scientist, Algorithm (Growth)",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c8504ffe-d46d-58cc-b112-45809d29bba6",
+      "primary_title": "Senior Data Scientist, Growth Analytics",
+      "comparison_id": "0dc7bf54-5d7e-5578-80dc-73a53ae988a9",
+      "comparison_title": "Staff Data Scientist, Growth Analytics",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "04fed601-1d21-5dfa-aeb0-69788ab35371",
+      "primary_title": "Senior Data Scientist, Algorithm - Growth",
+      "comparison_id": "210574ff-1223-57dd-a5bd-a2f27b245aaa",
+      "comparison_title": "Staff Data Scientist, Algorithm - Growth",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "b57a8ea5-c61e-5ab1-8c12-d26541c88906",
+      "primary_title": "Senior Software Engineer (Backend), Growth",
+      "comparison_id": "4845bff0-12f8-5134-86f0-1495668138b2",
+      "comparison_title": "Staff Software Engineer (Backend), Growth",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "cb47625f-11c9-5828-a3c6-142f9d1a1d1e",
+      "primary_title": "Talent Acquisition Partner",
+      "comparison_id": "947a613f-0feb-5e74-9795-92a1b91bfd12",
+      "comparison_title": "Senior Talent Acquisition Partner",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "778cc64c-dc52-512c-a642-c446f3555244",
+      "primary_title": "Analyst, Customer Support",
+      "comparison_id": "bf42f52b-2786-54c7-86c4-60b3d80ea3fc",
+      "comparison_title": "Senior Analyst, Customer Support",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8edc388f-772e-5123-8217-1bff4edda6ac",
+      "primary_title": "Staff Corporate Security Engineer",
+      "comparison_id": "53b2754e-5247-506f-a514-4e8c4f3d3e11",
+      "comparison_title": "Senior Corporate Security Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "b8eeb26b-969d-5574-976c-bc0b1583ddfd",
+      "primary_title": "Senior Software Engineer, Search Platform",
+      "comparison_id": "8395a24e-6d87-5175-84e4-ba178b3fa31a",
+      "comparison_title": "Staff Software Engineer, Search Platform",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "4b335811-89df-5e90-814a-b9a4712d1d1a",
+      "primary_title": "Staff Data Scientist, GTM",
+      "comparison_id": "dc15cc2e-14a8-583e-bbb3-fb5a16ec6bb9",
+      "comparison_title": "Data Scientist, GTM",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "4b335811-89df-5e90-814a-b9a4712d1d1a",
+      "primary_title": "Staff Data Scientist, GTM",
+      "comparison_id": "c1c836b4-5632-5bfb-a40a-d94a1908c4c1",
+      "comparison_title": "Senior Data Scientist, GTM",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "947a613f-0feb-5e74-9795-92a1b91bfd12",
+      "primary_title": "Senior Talent Acquisition Partner",
+      "comparison_id": "fb249813-cf97-5c18-9ea4-b58f71037e5d",
+      "comparison_title": "Talent Acquisition Partner",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "b57a8ea5-c61e-5ab1-8c12-d26541c88906",
+      "primary_title": "Senior Software Engineer (Backend), Growth",
+      "comparison_id": "93e3b28c-5ba7-56cb-b4a3-3afff9e9505d",
+      "comparison_title": "Senior/Staff Software Engineer (Backend), Growth",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8cdeaa4d-128e-5fea-9734-035280e064dd",
+      "primary_title": "Staff Data Scientist, Analytics (Product)",
+      "comparison_id": "6020c7fd-1a6b-5c26-8aa6-9cf8aafae461",
+      "comparison_title": "Senior Data Scientist, Analytics (Product)",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "264756c3-b689-5ce6-aef6-f893b6a644c2",
+      "primary_title": "Senior Data Scientist, GTM Analytics",
+      "comparison_id": "3c936fc7-4756-56db-be2c-1bad55cc2dfe",
+      "comparison_title": "Staff Data Scientist, GTM Analytics",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "56743aac-3aff-51f5-ab5c-a7f1ca5acf5b",
+      "primary_title": "Staff Data Scientist, Sales Analytics",
+      "comparison_id": "ad2b47e8-9444-5555-b482-9bbeb915f7fb",
+      "comparison_title": "Senior Data Scientist, Sales Analytics",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8dc08f45-689b-5ba0-93be-451e57080728",
+      "primary_title": "Staff Data Scientist, Revenue",
+      "comparison_id": "5943cb21-1269-5434-8082-7c86e415d82d",
+      "comparison_title": "Senior Data Scientist, Revenue",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "947a613f-0feb-5e74-9795-92a1b91bfd12",
+      "primary_title": "Senior Talent Acquisition Partner",
+      "comparison_id": "47cfaabc-1c0f-5c75-976d-f913f4856475",
+      "comparison_title": "Talent Acquisition Partner",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "947a613f-0feb-5e74-9795-92a1b91bfd12",
+      "primary_title": "Senior Talent Acquisition Partner",
+      "comparison_id": "336485fb-0bdf-5564-8bc6-33a256557173",
+      "comparison_title": "Talent Acquisition Partner",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "947a613f-0feb-5e74-9795-92a1b91bfd12",
+      "primary_title": "Senior Talent Acquisition Partner",
+      "comparison_id": "3a683441-a54b-56af-9dac-8b5900716902",
+      "comparison_title": "Talent Acquisition Partner",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "fff72827-80b5-539d-844b-e68444d6099b",
+      "primary_title": "Staff/Senior Backend Engineer, Billing",
+      "comparison_id": "940a0efa-dc4a-583f-bbec-0829f3efd405",
+      "comparison_title": "Senior Backend Engineer, Billing",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "53b2754e-5247-506f-a514-4e8c4f3d3e11",
+      "primary_title": "Senior Corporate Security Engineer",
+      "comparison_id": "c4516c0e-e53a-59f5-84ac-791aaa1bc1fe",
+      "comparison_title": "Staff Corporate Security Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8ca4de9c-9d62-5444-8417-ae2a2b8058c2",
+      "primary_title": "Senior Technical Account Manager",
+      "comparison_id": "670ef9c3-14a8-5e32-9fc8-e1c9a1c6c0be",
+      "comparison_title": "Staff/ Senior Technical Account Manager",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "55dbac41-e1c7-5d10-aad0-0c23086df79a",
+      "primary_title": "Associate Director, Global Growth, Lifecycle",
+      "comparison_id": "812c4ef0-4f02-5816-90b9-2de84e4a9978",
+      "comparison_title": "Director, Global Growth, Lifecycle",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "bf42f52b-2786-54c7-86c4-60b3d80ea3fc",
+      "primary_title": "Senior Analyst, Customer Support",
+      "comparison_id": "35826e55-fd20-5495-b687-97565862c7ff",
+      "comparison_title": "Analyst, Customer Support",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8edc388f-772e-5123-8217-1bff4edda6ac",
+      "primary_title": "Staff Corporate Security Engineer",
+      "comparison_id": "fa2ba8c8-2dd8-5b17-85ad-62214f9b8c5a",
+      "comparison_title": "Senior Corporate Security Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "9c0c9400-1db9-5cdb-92c6-6661bea32ad6",
+      "primary_title": "Senior Manager, Operations Strategy",
+      "comparison_id": "3c432e3e-053c-5858-8250-501e876e648e",
+      "comparison_title": "Manager, Operations Strategy",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "f6a6f612-d072-5be9-a7ed-43071a5002bf",
+      "primary_title": "Senior Software Engineer, Scale",
+      "comparison_id": "ac7857f9-46c7-5ecd-91e6-02543c3d1d21",
+      "comparison_title": "Staff Software Engineer, Scale",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "8edc388f-772e-5123-8217-1bff4edda6ac",
+      "primary_title": "Staff Corporate Security Engineer",
+      "comparison_id": "22743fc5-0115-5494-9c54-066510472304",
+      "comparison_title": "Senior Corporate Security Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "5c7d6fcc-e484-5c3b-a822-5bd2a25cbc5b",
+      "primary_title": "Lead Counsel, Data Privacy",
+      "comparison_id": "361cd4c5-216c-5580-9adf-ab420d95d97e",
+      "comparison_title": "Senior Counsel, Data Privacy",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ac7857f9-46c7-5ecd-91e6-02543c3d1d21",
+      "primary_title": "Staff Software Engineer, Scale",
+      "comparison_id": "7b8f4e1a-4651-5cb3-9250-781d1c314638",
+      "comparison_title": "Senior Software Engineer, Scale",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "f6a6f612-d072-5be9-a7ed-43071a5002bf",
+      "primary_title": "Senior Software Engineer, Scale",
+      "comparison_id": "6119d6d5-42fb-50f9-893f-e2934bc95fbd",
+      "comparison_title": "Staff Software Engineer, Scale",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "b57a8ea5-c61e-5ab1-8c12-d26541c88906",
+      "primary_title": "Senior Software Engineer (Backend), Growth",
+      "comparison_id": "9e01068b-e732-5735-ba93-0893bd892294",
+      "comparison_title": "Staff Software Engineer, Backend - Growth",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "361cd4c5-216c-5580-9adf-ab420d95d97e",
+      "primary_title": "Senior Counsel, Data Privacy",
+      "comparison_id": "27f77f05-6b50-5f03-bea1-a99b2da84b25",
+      "comparison_title": "Lead Counsel, Data Privacy",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "5c7d6fcc-e484-5c3b-a822-5bd2a25cbc5b",
+      "primary_title": "Lead Counsel, Data Privacy",
+      "comparison_id": "fec62e4e-09b8-5013-82eb-d5f6ffb0d657",
+      "comparison_title": "Senior Counsel, Data Privacy",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c2f23deb-40f9-5eb1-bd0f-819481472756",
+      "primary_title": "Senior Manager, Partnerships Strategy",
+      "comparison_id": "b48c2ce7-05fc-5d82-8fdb-e6d8b1bbe6a5",
+      "comparison_title": "Manager, Partnerships Strategy",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "f5f71684-6688-5746-a063-4de301ff3052",
+      "primary_title": "Senior Data Engineer",
+      "comparison_id": "87dc8e97-04d0-5a9e-a313-56bc83e9ae78",
+      "comparison_title": "Staff Data Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "f5165d6d-416a-5e52-a710-717df370f897",
+      "primary_title": "Senior Software Engineer, Lending Platform",
+      "comparison_id": "4e2e4abc-6ab0-5fe7-b82a-7d2b363e2774",
+      "comparison_title": "Staff Software Engineer, Lending Platform",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "4ea5ccc3-4b79-5486-b2de-a4ac177025c2",
+      "primary_title": "Staff Software Engineer, Productivity",
+      "comparison_id": "0bab91dd-74b1-5d78-a23e-8a69f65d93e5",
+      "comparison_title": "Senior Software Engineer, Productivity",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "5c7d6fcc-e484-5c3b-a822-5bd2a25cbc5b",
+      "primary_title": "Lead Counsel, Data Privacy",
+      "comparison_id": "63cfb36a-2f22-58a7-8bad-c00da0b99f6d",
+      "comparison_title": "Counsel, Data Privacy",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ef1b0594-ba40-5891-b2dd-7a546a709139",
+      "primary_title": "Finance Manager",
+      "comparison_id": "cce35a73-8a08-5277-beb3-c2911c5fd6cc",
+      "comparison_title": "Senior Finance Manager",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "d027fe5c-a203-5607-9762-7be5e9f4d03c",
+      "primary_title": "Manager, Risk Operations",
+      "comparison_id": "dd57193f-994a-5a95-9d12-3ce7f8e4a626",
+      "comparison_title": "Senior Manager, Risk Operations",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ddd95545-4a3d-5af2-9072-4bfb71bfb1e5",
+      "primary_title": "Senior Frontend Engineer, Scale",
+      "comparison_id": "4471068b-b845-5f5d-8578-89ee4eeee38b",
+      "comparison_title": "Frontend Engineer, Scale",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "11652a09-3204-5de9-bb7e-b8f2c3b7672b",
+      "primary_title": "Payroll Partner",
+      "comparison_id": "80b981e8-4349-54c3-9554-39a8e7d94eec",
+      "comparison_title": "Senior Payroll Partner",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "f6a6f612-d072-5be9-a7ed-43071a5002bf",
+      "primary_title": "Senior Software Engineer, Scale",
+      "comparison_id": "aa6f8ce3-02c1-540e-8675-a54c84480b55",
+      "comparison_title": "Software Engineer, Scale",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "213f9d73-7efd-5e5d-bfbe-341eae6c11b3",
+      "primary_title": "Senior Product Manager, Spend",
+      "comparison_id": "6ae65f30-a6a4-5f4b-a0fe-469185dc03ae",
+      "comparison_title": "Staff Product Manager, Spend",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "213f9d73-7efd-5e5d-bfbe-341eae6c11b3",
+      "primary_title": "Senior Product Manager, Spend",
+      "comparison_id": "f2e75ff1-c491-5897-b03e-6fc273d38075",
+      "comparison_title": "Staff Product Manager, Spend",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "758d8289-366f-52fa-a0b5-3dbfb525e686",
+      "primary_title": "Senior AI Engineer",
+      "comparison_id": "34fc11c0-c6ad-56c2-a71d-2b8683163c7c",
+      "comparison_title": "Staff AI Engineer",
+      "company": "airwallex",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ba82f897-ab63-5513-b883-b0c6190c76ec",
+      "primary_title": "\ud83c\udf10 Care Ops",
+      "comparison_id": "bf3b8a57-6f65-5086-bf18-009147c27518",
+      "comparison_title": "\ud83c\udf10 Senior Care Ops",
+      "company": "alan",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "6582844a-21c6-5091-9aea-12fd742cfb87",
+      "primary_title": "Senior Product Designer",
+      "comparison_id": "66193b4b-d1ca-54f9-8abb-c16dd9dcc8e7",
+      "comparison_title": "Staff Product Designer",
+      "company": "abridge",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "89677ef5-9326-5cac-8f8c-6c618c592b9a",
+      "primary_title": "Manager, Enterprise Security",
+      "comparison_id": "9cb0cf49-f3b0-514f-a5e3-ddeb5c1715d9",
+      "comparison_title": "Senior Manager, Enterprise Security",
+      "company": "abridge",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "e3cd69d7-7c21-5c62-a77a-1c52a87920df",
+      "primary_title": "Staff Software Engineer",
+      "comparison_id": "3b86f2a9-74db-5935-b557-8dccf775863a",
+      "comparison_title": "Senior Software Engineer",
+      "company": "altimate",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "9126227c-61ad-5de4-a38a-5f84b20a111e",
+      "primary_title": "Senior Software Engineer",
+      "comparison_id": "86ce671b-6b89-5470-84d8-3ee4301f9a7d",
+      "comparison_title": "Software Engineer",
+      "company": "anatomy financial",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "c8fc0e3a-986f-517a-914f-6dd86323a6ac",
+      "primary_title": "Senior Applied Research Scientist - Foundation Models",
+      "comparison_id": "099c2a19-0648-5581-aba8-1411adc39cf7",
+      "comparison_title": "Applied Research Scientist - Foundation Models",
+      "company": "ambient ai",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "639aeffc-6751-5088-8ed0-62bdf4e1a2ec",
+      "primary_title": "Senior Product Manager",
+      "comparison_id": "ae54abe5-eda3-5656-9a2d-08e5457e1167",
+      "comparison_title": "Product Manager",
+      "company": "ambient ai",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "3e98c609-d240-5f0a-a401-e3aba36a7e2a",
+      "primary_title": "Sr. Software Engineer, Fullstack",
+      "comparison_id": "c1c02bd2-985e-5d12-b6c1-12c3defa38b8",
+      "comparison_title": "Software Engineer, Fullstack",
+      "company": "ambient ai",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "fa19980c-5507-5daa-ad3e-2dabbb0d1b22",
+      "primary_title": "Staff Software Engineer, Product",
+      "comparison_id": "fc7e89f1-edad-502d-98e1-a74abd621f14",
+      "comparison_title": "Senior Software Engineer, Product",
+      "company": "ambiencehealthcare",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "460fdd71-9bf8-5387-8e53-3b2dd2ff18f2",
+      "primary_title": "Staff Software Engineer - Backend",
+      "comparison_id": "aa76e37e-8321-5ccb-baca-00ef6ccf09d5",
+      "comparison_title": "Software Engineer - Backend",
+      "company": "anon",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "ae7f27a3-64c8-587b-b62f-b6f734850b93",
+      "primary_title": "Senior Full-Stack Engineer",
+      "comparison_id": "83ca6435-b303-5b20-80a7-55ce51e51b4f",
+      "comparison_title": "Staff Full-Stack Engineer",
+      "company": "amigo",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    },
+    {
+      "primary_id": "1d2fffe5-804a-5533-95c1-e829929eb5ac",
+      "primary_title": "Staff Full-Stack Engineer",
+      "comparison_id": "c63f937b-9125-541d-8fcf-e0318ffb2155",
+      "comparison_title": "Senior Full-Stack Engineer",
+      "company": "april",
+      "reason": "seniority_difference_preserved",
+      "decision": "kept_separate"
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "report_name": "CareerSyncAI Dataset Processing Coverage & Availability Report",
+  "timestamp": "2026-11-22T15:55:18.076945+00:00",
+  "methodology": "Categories are strictly partitioned by record type; heterogeneous records are evaluated within independent domain subtotals.",
+  "category_subtotals": {
+    "job_postings": {
+      "available": 8181078,
+      "processed": 50000,
+      "remaining": 8131078,
+      "coverage_pct": 0.61
+    },
+    "candidate_profiles": {
+      "available": 210250,
+      "processed": 15000,
+      "remaining": 195250,
+      "coverage_pct": 7.13
+    },
+    "annotated_resumes": {
+      "available": 302,
+      "processed": 302,
+      "remaining": 0,
+      "coverage_pct": 100.0
+    },
+    "career_trajectories": {
+      "available": 1594827,
+      "processed": 25000,
+      "remaining": 1569827,
+      "coverage_pct": 1.57
+    },
+    "occupations_taxonomy": {
+      "available": 1016,
+      "processed": 1016,
+      "remaining": 0,
+      "coverage_pct": 100.0
+    },
+    "technology_skills_taxonomy": {
+      "available": 31821,
+      "processed": 31821,
+      "remaining": 0,
+      "coverage_pct": 100.0
+    }
+  },
+  "datasets": {
+    "stapply_jobs": {
+      "name": "Stapply Open Job Data (Master Aggregated Archive)",
+      "category": "job_postings",
+      "record_type": "job_posting",
+      "total_available_rows": 8001916,
+      "processed_rows": 30000,
+      "remaining_unprocessed_rows": 7971916,
+      "coverage_percent": 0.37,
+      "status": "processed",
+      "license_id": "Commercial-Clearance-Required-Employer-Content",
+      "commercial_status": "Scraper open-source; job text copyright of hiring employers. Commercial clearance required."
+    },
+    "open_apply_jobs": {
+      "name": "Open Apply Jobs (Partition 0)",
+      "category": "job_postings",
+      "record_type": "job_posting",
+      "total_available_rows": 37265,
+      "processed_rows": 5000,
+      "remaining_unprocessed_rows": 32265,
+      "coverage_percent": 13.42,
+      "status": "processed",
+      "license_id": "MIT-Packaging-Employer-Text",
+      "commercial_status": "Packaging MIT; job descriptions copyright of hiring employers."
+    },
+    "djinni_jobs": {
+      "name": "Djinni English Job Descriptions",
+      "category": "job_postings",
+      "record_type": "job_posting",
+      "total_available_rows": 141897,
+      "processed_rows": 15000,
+      "remaining_unprocessed_rows": 126897,
+      "coverage_percent": 10.57,
+      "status": "processed",
+      "license_id": "MIT",
+      "commercial_status": "MIT License (Lang-UK / ACL 2024 UNLP collection)."
+    },
+    "djinni_candidates": {
+      "name": "Djinni English Candidate Profiles",
+      "category": "candidate_profiles",
+      "record_type": "candidate_profile",
+      "total_available_rows": 210250,
+      "processed_rows": 15000,
+      "remaining_unprocessed_rows": 195250,
+      "coverage_percent": 7.13,
+      "status": "processed",
+      "license_id": "MIT",
+      "commercial_status": "MIT License (anonymized profiles)."
+    },
+    "career_corpus": {
+      "name": "CareerCorpus Anonymized Resumes",
+      "category": "annotated_resumes",
+      "record_type": "annotated_resume",
+      "total_available_rows": 302,
+      "processed_rows": 302,
+      "remaining_unprocessed_rows": 0,
+      "coverage_percent": 100.0,
+      "status": "processed",
+      "license_id": "CC-BY-4.0",
+      "commercial_status": "CC BY 4.0 (Chowdhury et al., 2025, Mendeley Data)."
+    },
+    "jobhop_trajectories": {
+      "name": "JobHop v2 Career Trajectories",
+      "category": "career_trajectories",
+      "record_type": "career_trajectory",
+      "total_available_rows": 1594827,
+      "processed_rows": 25000,
+      "remaining_unprocessed_rows": 1569827,
+      "coverage_percent": 1.57,
+      "status": "processed",
+      "license_id": "CC-BY-4.0",
+      "commercial_status": "CC BY 4.0 (Ghent University AIDA / IEEE BigData 2025)."
+    },
+    "onet_occupations": {
+      "name": "O*NET 31.0 Standard Occupational Classification (SOC)",
+      "category": "occupations_taxonomy",
+      "record_type": "soc_occupation",
+      "total_available_rows": 1016,
+      "processed_rows": 1016,
+      "remaining_unprocessed_rows": 0,
+      "coverage_percent": 100.0,
+      "status": "processed",
+      "license_id": "CC-BY-4.0",
+      "commercial_status": "CC BY 4.0 (USDOL/ETA trademark attribution required)."
+    },
+    "onet_technology_skills": {
+      "name": "O*NET 31.0 Software & Technology Skills Table",
+      "category": "technology_skills_taxonomy",
+      "record_type": "technology_skill",
+      "total_available_rows": 31821,
+      "processed_rows": 31821,
+      "remaining_unprocessed_rows": 0,
+      "coverage_percent": 100.0,
+      "status": "processed",
+      "license_id": "CC-BY-4.0",
+      "commercial_status": "CC BY 4.0 (USDOL/ETA trademark attribution required)."
+    }
+  }
+}

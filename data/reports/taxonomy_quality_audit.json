@@ -1,0 +1,196 @@
+{
+  "timestamp": "2026-11-22T21:07:46.792812",
+  "methodology": "Verified token boundaries, canonical alias mapping, and contextual proof for ambiguous tokens (R, Go, C, IT).",
+  "representative_verified_job_matches": [
+    {
+      "original_title": "AI Platform Engineer",
+      "soc_code": "15-1252.00",
+      "canonical_title": "Software Developers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "UX/UI Designer \u2014 AI Application",
+      "soc_code": "27-1021.00",
+      "canonical_title": "Commercial and Industrial Designers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Security Engineer, GRC Automation",
+      "soc_code": "15-1212.00",
+      "canonical_title": "Information Security Analysts",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Security Engineer, Incident Response",
+      "soc_code": "15-1212.00",
+      "canonical_title": "Information Security Analysts",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Security Engineer, Threat Intelligence",
+      "soc_code": "15-1212.00",
+      "canonical_title": "Information Security Analysts",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Security Engineer, Corporate Security",
+      "soc_code": "15-1212.00",
+      "canonical_title": "Information Security Analysts",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Partner Marketing Manager, Alliances",
+      "soc_code": "11-2021.00",
+      "canonical_title": "Marketing Managers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Product Designer, EPM",
+      "soc_code": "27-1021.00",
+      "canonical_title": "Commercial and Industrial Designers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Product Designer, EPM",
+      "soc_code": "27-1021.00",
+      "canonical_title": "Commercial and Industrial Designers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Senior Revenue Accountant",
+      "soc_code": "13-2011.00",
+      "canonical_title": "Accountants and Auditors",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Staff Product Manager, Identity & Access Management",
+      "soc_code": "11-9199.00",
+      "canonical_title": "Managers, All Other",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Staff Software Engineer, Frontend",
+      "soc_code": "15-1252.00",
+      "canonical_title": "Software Developers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Staff Software Engineer, Fullstack",
+      "soc_code": "15-1252.00",
+      "canonical_title": "Software Developers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Staff Software Engineer, Backend",
+      "soc_code": "15-1252.00",
+      "canonical_title": "Software Developers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    },
+    {
+      "original_title": "Staff Software Engineer, Frontend",
+      "soc_code": "15-1252.00",
+      "canonical_title": "Software Developers",
+      "method": "soc_title_alias_match",
+      "confidence": 0.9
+    }
+  ],
+  "representative_questionable_matches": [
+    {
+      "original_title": "Physicians and Surgeons, All Other",
+      "matched_soc": "29-1249.00 Surgeons, All Other",
+      "confidence": 0.65,
+      "reason": "approximate_heuristic_match"
+    }
+  ],
+  "rejected_false_positive_samples": [
+    {
+      "token": "ui",
+      "surrounding_context": "Design 2D artist, graphic designer, ui designer",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "d",
+      "surrounding_context": "Artist 2 d artist, UI/UX designer",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "Ux",
+      "surrounding_context": "Design 3D Artist, UI/Ux design, doing landings in HTML, CSS",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "ux",
+      "surrounding_context": "Artist 3d designer, ui/ux, graphic designer",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "ui",
+      "surrounding_context": "Artist 3d designer, ui/ux, graphic designer",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "HR",
+      "surrounding_context": "HR 9+ years of experience as admin manager, IT sourcer/assis",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "PM",
+      "surrounding_context": "Sales Accountant/Business assistant/PM",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "PM",
+      "surrounding_context": "Other Account coordinator | DM \\ PM associate | Operations M",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "PM",
+      "surrounding_context": "Sales Account Manager, Customer Succes, Customer service, Ju",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "PM",
+      "surrounding_context": "Sales Account manager, Customer Success Manager, Junior PM",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "HR",
+      "surrounding_context": "Other Account manager, HR  BP, Business development manager",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "HR",
+      "surrounding_context": "Project Manager Account Manager, HR Manager",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "HR",
+      "surrounding_context": "HR Administration",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "PM",
+      "surrounding_context": "Project Manager Administrative Assistant, Executive Assistan",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    },
+    {
+      "token": "HR",
+      "surrounding_context": "HR Administrative director",
+      "rejection_reason": "ambiguous_short_token_lacking_tech_context"
+    }
+  ]
+}
