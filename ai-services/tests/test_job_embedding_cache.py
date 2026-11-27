@@ -141,4 +141,3 @@ def test_match_keeps_candidate_embeddings_uncached_and_scores_unchanged():
     # Candidate chunks are encoded for each request; shared job chunks only once.
     assert len(model.calls) == 7
     assert len(matcher._job_embedding_cache) == 2
-
