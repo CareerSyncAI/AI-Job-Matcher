@@ -299,6 +299,62 @@ def test_skill_evidence_declared_skill_and_boundaries():
     assert classify_skill_evidence("Go", [], "I am ongoing a project.")[0] == "not_detected"
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I have no experience with FastAPI. Built a FastAPI project last year.",
+        "Built a FastAPI project last year. I have no experience with FastAPI.",
+    ],
+)
+def test_skill_evidence_conflicting_mentions_are_order_independent(text):
+    status, _, verification_type, _ = classify_skill_evidence("FastAPI", [], text)
+    assert (status, verification_type) == ("insufficient_information", "conflicting_mentions")
+
+
+def test_skill_evidence_historical_gap_followed_by_current_demonstration():
+    text = "Previously I had no experience with FastAPI; since then I built a FastAPI service."
+    status, _, verification_type, _ = classify_skill_evidence("FastAPI", [], text)
+    assert (status, verification_type) == ("supported", "demonstrated_after_historical_gap")
+
+
+def test_skill_evidence_declared_skill_cannot_override_explicit_negation():
+    status, _, verification_type, _ = classify_skill_evidence(
+        "FastAPI", ["FastAPI"], "No experience with FastAPI."
+    )
+    assert (status, verification_type) == (
+        "insufficient_information",
+        "conflicting_declaration_and_negation",
+    )
+
+
+def test_skill_evidence_context_does_not_bleed_between_skills_or_quotes():
+    text = "I am learning Kubernetes, but built a FastAPI service for the project named 'Search'."
+    status, _, verification_type, _ = classify_skill_evidence("FastAPI", [], text)
+    assert (status, verification_type) == ("supported", "demonstrated_context")
+    learning_status, _, learning_type, _ = classify_skill_evidence("Kubernetes", [], text)
+    assert (learning_status, learning_type) == ("insufficient_information", "learning_intent")
+
+
+@pytest.mark.parametrize(
+    ("requirement", "text"),
+    [
+        (".NET", "Built an ASP.NET application."),
+        ("C++", "Developed a C++17 compiler tool."),
+        ("C#", "Maintained a C#12 service."),
+    ],
+)
+def test_skill_evidence_accepts_common_punctuation_aliases(requirement, text):
+    status, _, verification_type, _ = classify_skill_evidence(requirement, [], text)
+    assert (status, verification_type) == ("supported", "demonstrated_context")
+
+
+def test_skill_evidence_rejects_third_party_claim_and_handles_long_malformed_text():
+    third_party = classify_skill_evidence("FastAPI", [], "The company built a FastAPI platform.")
+    assert third_party[0:3:2] == ("insufficient_information", "third_party_experience")
+    malformed = ("x\t\u0000 " * 50000) + " No experience with FastAPI."
+    assert classify_skill_evidence("FastAPI", [], malformed)[0] == "not_detected"
+
+
 def test_baseline_matcher_deduplicates_declared_skill_stuffing():
     matcher = BaselineSemanticMatcher()
     job = {"title": "Backend Engineer", "required_skills": ["Python", "FastAPI"]}
