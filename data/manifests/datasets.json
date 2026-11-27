@@ -1,0 +1,198 @@
+{
+  "catalog_version": "2.0.0",
+  "last_updated": "2026-11-22T15:55:16.224131+00:00",
+  "datasets": [
+    {
+      "dataset_id": "stapply_jobs_raw",
+      "name": "Stapply Open Job Data (Master Aggregated Archive)",
+      "tier": "raw",
+      "file_path": "C:\\Users\\Hit\\Desktop\\SGP 5TH Sem\\all.parquet",
+      "file_size_bytes": 3962193829,
+      "sha256": "29783c1fa6bb326a977618d3f5ab0dc30d96eac91dbb7bdb7b8c0f77ecbf993e",
+      "record_count": 8001916,
+      "source_url": "https://data.stapply.ai/",
+      "provenance": "Aggregated live postings across 64 ATS platforms (Greenhouse, Lever, Ashby, Workday, etc.)",
+      "licence_id": "Commercial-Clearance-Required-Employer-Content",
+      "licence_note": "Scraper tooling open-source; underlying job text copyright of respective employers. Commercial clearance required."
+    },
+    {
+      "dataset_id": "stapply_jobs_normalized",
+      "name": "Stapply Normalized Job Postings (Active Slice)",
+      "tier": "processed",
+      "file_path": "data\\processed\\jobs\\stapply_normalized.parquet",
+      "file_size_bytes": 44190717,
+      "sha256": "95a7f4395f459dc40c458c9892ba862b803c8164a191223b61672389f5d0e9fc",
+      "record_count": 30000,
+      "source_dataset_id": "stapply_jobs_raw",
+      "licence_id": "Commercial-Clearance-Required-Employer-Content"
+    },
+    {
+      "dataset_id": "open_apply_jobs_raw",
+      "name": "Open Apply Jobs (Partition 0)",
+      "tier": "raw",
+      "file_path": "data\\raw\\jobs\\open_apply\\0.parquet",
+      "file_size_bytes": 38127392,
+      "sha256": "1388ae4cb44f0d71a0b2f75376731a29411cf59f5b4cfb4bf3258b06744a3601",
+      "record_count": 37265,
+      "source_url": "https://huggingface.co/datasets/edwarddgao/open-apply-jobs",
+      "provenance": "Direct employer ATS endpoints (Greenhouse, Lever, Ashby, Workday)",
+      "licence_id": "MIT-Packaging-Employer-Text",
+      "licence_note": "Dataset packaging and scrapers under MIT; underlying job text belongs to respective hiring employers."
+    },
+    {
+      "dataset_id": "open_apply_jobs_normalized",
+      "name": "Open Apply Jobs (Canonical Normalized Schema)",
+      "tier": "processed",
+      "file_path": "data\\processed\\jobs\\open_apply_normalized.parquet",
+      "file_size_bytes": 9481652,
+      "sha256": "f44365679423b65a0c6e7629d2435c8238adc9d84f37114137995c44c3247cf6",
+      "record_count": 5000,
+      "source_dataset_id": "open_apply_jobs_raw",
+      "licence_id": "MIT-Packaging-Employer-Text"
+    },
+    {
+      "dataset_id": "djinni_jobs_raw",
+      "name": "Djinni English Job Descriptions (Raw)",
+      "tier": "raw",
+      "file_path": "data\\raw\\jobs\\djinni\\djinni_jobs_en.parquet",
+      "file_size_bytes": 145859589,
+      "sha256": "71dddaf0d9660f34ddf946953b67f54f1e7d60e22dcf9a4b8139b6378b18aab9",
+      "record_count": 141897,
+      "source_url": "https://huggingface.co/datasets/lang-uk/recruitment-dataset-job-descriptions-english",
+      "provenance": "Lang-UK / ACL 2024 UNLP collection (Djinni.co)",
+      "licence_id": "MIT"
+    },
+    {
+      "dataset_id": "djinni_jobs_normalized",
+      "name": "Djinni Jobs (Canonical Normalized Schema)",
+      "tier": "processed",
+      "file_path": "data\\processed\\jobs\\djinni_jobs_normalized.parquet",
+      "file_size_bytes": 16400922,
+      "sha256": "fb7aaaddf57b20cf24478261a0ed80a6fc0fe9df0b60b60be1acc152c6c35a35",
+      "record_count": 15000,
+      "source_dataset_id": "djinni_jobs_raw",
+      "licence_id": "MIT"
+    },
+    {
+      "dataset_id": "djinni_candidates_raw",
+      "name": "Djinni English Candidate Profiles (Raw)",
+      "tier": "raw",
+      "file_path": "data\\raw\\resumes\\djinni\\djinni_candidates_en.parquet",
+      "file_size_bytes": 237415736,
+      "sha256": "a7b1378e0b231507c377659bf2c80fa4ba60c4e31e1107b13425d103879ecc3b",
+      "record_count": 210250,
+      "source_url": "https://huggingface.co/datasets/lang-uk/recruitment-dataset-candidate-profiles-english",
+      "provenance": "Lang-UK / ACL 2024 UNLP collection (anonymized profiles)",
+      "licence_id": "MIT"
+    },
+    {
+      "dataset_id": "djinni_candidate_profiles_normalized",
+      "name": "Djinni Candidate Profiles (Normalized Schema)",
+      "tier": "processed",
+      "record_type": "candidate_profile",
+      "file_path": "data\\processed\\resumes\\djinni_candidate_profiles.parquet",
+      "file_size_bytes": 9076569,
+      "sha256": "febf738b23e9a04cd0badc82bb0b26d66ebb9cfdf84e658b4bc8f7d9af9a2213",
+      "record_count": 15000,
+      "source_dataset_id": "djinni_candidates_raw",
+      "licence_id": "MIT"
+    },
+    {
+      "dataset_id": "consolidated_jobs_master",
+      "name": "CareerSyncAI Consolidated Jobs Master (Deduplicated)",
+      "tier": "processed",
+      "file_path": "data\\processed\\jobs\\consolidated_jobs_master.parquet",
+      "file_size_bytes": 69653005,
+      "sha256": "99bd4a85087c19e79c0be2aa1b1c2c036fdbe524b525db938576de2e6295c1a2",
+      "record_count": 49478,
+      "source_datasets": [
+        "stapply_jobs_normalized",
+        "open_apply_jobs_normalized",
+        "djinni_jobs_normalized"
+      ],
+      "licence_id": "Commercial-Clearance-Required-Employer-Content"
+    },
+    {
+      "dataset_id": "career_corpus_raw",
+      "name": "CareerCorpus Anonymized Resume Benchmark (Excel)",
+      "tier": "raw",
+      "file_path": "data\\raw\\resumes\\career_corpus\\CareerCorpus.xlsx",
+      "file_size_bytes": 124525,
+      "sha256": "97b1fa6cca1232912dd3f7bc312d71a2478249787168fd41dfbf6c1da90479d3",
+      "record_count": 302,
+      "source_url": "https://data.mendeley.com/datasets/wzzwn37gmd/1",
+      "doi": "10.17632/wzzwn37gmd.1",
+      "provenance": "Mendeley Data / Expert annotators (6 occupational categories)",
+      "licence_id": "CC-BY-4.0"
+    },
+    {
+      "dataset_id": "career_corpus_normalized",
+      "name": "CareerCorpus Normalized Resumes (JSONL)",
+      "tier": "processed",
+      "record_type": "annotated_resume",
+      "file_path": "data\\processed\\resumes\\career_corpus_normalized.jsonl",
+      "file_size_bytes": 645516,
+      "sha256": "eb32aa7750575c78f6481251887e3b2c006573a499d6da98e77915a7ff5e4674",
+      "record_count": 302,
+      "source_dataset_id": "career_corpus_raw",
+      "licence_id": "CC-BY-4.0"
+    },
+    {
+      "dataset_id": "onet_31_0_raw",
+      "name": "O*NET Database 31.0 Text Archive",
+      "tier": "raw",
+      "file_path": "data\\raw\\taxonomies\\onet\\db_31_0_text.zip",
+      "file_size_bytes": 13183034,
+      "sha256": "6883548adf5fde64cf6f801b35d15519c9225f2732c3cab0e281c652d16b23a9",
+      "record_count": 46,
+      "source_url": "https://www.onetcenter.org/database.html",
+      "provenance": "U.S. Department of Labor / Employment and Training Administration",
+      "licence_id": "CC-BY-4.0"
+    },
+    {
+      "dataset_id": "onet_occupations_processed",
+      "name": "O*NET Standard Occupational Classification Lookup",
+      "tier": "processed",
+      "file_path": "data\\processed\\occupations\\occupations.parquet",
+      "file_size_bytes": 136446,
+      "sha256": "dc91c00a4f1960b3eb91741b92afe3cc6d874ed9b48f2fb9d1f4a6bb66bf8c23",
+      "record_count": 1016,
+      "licence_id": "CC-BY-4.0"
+    },
+    {
+      "dataset_id": "onet_technology_skills_processed",
+      "name": "O*NET Software & In-Demand Technology Skills Lookup",
+      "tier": "processed",
+      "file_path": "data\\processed\\occupations\\technology_skills.parquet",
+      "file_size_bytes": 278493,
+      "sha256": "bfad22011b4a0f5856be1774a76b77107ff135997d0e34b16f60852f42a68a1d",
+      "record_count": 31821,
+      "licence_id": "CC-BY-4.0"
+    },
+    {
+      "dataset_id": "jobhop_v2_train",
+      "name": "JobHop v2 Career Trajectories (Train Parquet)",
+      "tier": "raw",
+      "file_path": "data\\raw\\taxonomies\\jobhop\\JobHop_v2_train.parquet",
+      "file_size_bytes": 9213302,
+      "sha256": "b2c0073161f4ac237d3b6b522a338f0d44a6860d2e7f4bdc613a71b8a1663a90",
+      "record_count": 1594827,
+      "source_url": "https://huggingface.co/datasets/aida-ugent/JobHop",
+      "provenance": "Ghent University AIDA / VDAB public employment service pseudonymized career histories",
+      "licence_id": "CC-BY-4.0",
+      "licence_resolution_evidence": "Authoritative Hugging Face dataset card YAML metadata defines 'license: cc-by-4.0' under IEEE BigData 2025 release."
+    },
+    {
+      "dataset_id": "jobhop_career_trajectories_normalized",
+      "name": "JobHop Career Trajectories (Normalized)",
+      "tier": "processed",
+      "record_type": "career_trajectory",
+      "file_path": "data\\processed\\occupations\\jobhop_career_trajectories.parquet",
+      "file_size_bytes": 1062263,
+      "sha256": "d394a804f97bb961d1bc2e04b338d4d17ece87b2f080befe39ae8e55fdf2a96d",
+      "record_count": 25000,
+      "source_dataset_id": "jobhop_v2_train",
+      "licence_id": "CC-BY-4.0"
+    }
+  ]
+}

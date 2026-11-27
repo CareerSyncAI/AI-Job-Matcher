@@ -19,6 +19,7 @@ from app.schemas.resumes import (
     ATSIssueSchema,
     ResumeResponse,
 )
+from app.services.application_status import record_application_status_change
 from app.services.ats_analyzer import ats_analyzer
 from app.services.audit import record_audit_event
 from app.services.education_extractor import extract_education_from_text
@@ -26,20 +27,140 @@ from app.services.evaluation import EvaluationService
 from app.services.experience_extractor import extract_experience_years_from_text
 from app.services.jobs import JobService
 from app.services.resumes import ResumeService
-from app.services.text_extraction import DocumentSecurityError, extract_text_from_file
+from app.services.text_extraction import (
+    DocumentSecurityError,
+    ScannedDocumentError,
+    extract_text_from_file,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/jobs/{job_id}/resumes", tags=["resume-ingestion"])
 
+DISALLOWED_NAME_WORDS: frozenset[str] = frozenset({
+    # Section headers and document labels
+    "resume", "cv", "curriculum", "vitae", "contact", "info", "information",
+    "summary", "profile", "overview", "objective", "career", "professional",
+    "executive", "experience", "employment", "history", "work", "education",
+    "academic", "skills", "technical", "competencies", "qualifications",
+    "projects", "certifications", "certificates", "awards", "honors",
+    "achievements", "publications", "patents", "languages", "interests",
+    "activities", "volunteer", "references", "page", "confidential",
+    "portfolio", "github", "linkedin", "website", "email", "phone",
+    "address", "location", "city", "state", "country", "street",
+    # Roles & Job Titles
+    "software", "engineer", "engineering", "developer", "development",
+    "programmer", "coder", "architect", "architecture", "designer",
+    "design", "manager", "management", "director", "lead", "leader",
+    "leadership", "specialist", "consultant", "analyst", "analytics",
+    "scientist", "science", "administrator", "admin", "coordinator",
+    "officer", "associate", "intern", "internship",
+    "student", "fresher", "graduate", "undergraduate", "candidate",
+    "applicant", "frontend", "front-end", "backend", "back-end",
+    "fullstack", "full-stack", "full", "stack", "devops", "cloud",
+    "data", "mobile", "ios", "android", "web", "qa", "quality",
+    "assurance", "tester", "testing", "security", "infosec",
+    "system", "systems", "network", "database", "scrum", "master",
+    "product", "project", "program", "solutions", "operations",
+    "support", "technician", "representative",
+    # Modifiers & generic terms
+    "senior", "junior", "principal", "staff", "chief", "head",
+    "entry", "level", "mid", "experienced", "certified", "licensed",
+    "department", "division", "team", "group", "company", "corporation",
+    "inc", "llc", "ltd", "university", "college", "school", "institute",
+})
+
+
+def _format_name_word(w: str) -> str:
+    """Format an individual name component preserving casing like O'Connor or Jean-Luc."""
+    if "-" in w:
+        return "-".join(_format_name_word(p) for p in w.split("-"))
+    if "'" in w:
+        return "'".join(_format_name_word(p) for p in w.split("'"))
+    if w.isupper():
+        return w.capitalize()
+    return w[:1].upper() + w[1:]
+
 
 def _extract_name_from_filename(filename: str) -> str:
-    """Best-effort candidate name from the resume filename."""
+    """Extract a plausible candidate name from filename, falling back to 'Applicant' conservatively."""
+    if not filename:
+        return "Applicant"
     stem = Path(filename).stem
-    name = re.sub(r"[_\-\.]+", " ", stem)
-    name = re.sub(r"\b(resume|cv|curriculum|vitae|v\d+|final|new|updated)\b", "", name, flags=re.IGNORECASE)
-    name = " ".join(w.capitalize() for w in name.split() if w)
-    return name or "Applicant"
+    cleaned = re.sub(r"[_\-\.]+", " ", stem)
+    cleaned = re.sub(
+        r"\b(v\d+|\d+|resume|cv|curriculum|vitae|final|new|updated|latest|draft|copy|scan|doc|docx|pdf|upload|file)\b",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    words = [w for w in cleaned.split() if w]
+
+    # Filter out disallowed tokens, numbers, and short noise
+    filtered = [
+        w for w in words
+        if w.lower() not in DISALLOWED_NAME_WORDS
+        and re.match(r"^[A-Za-z']+$", w)
+        and len(w) >= 2
+    ]
+
+    # Require 2 to 3 valid name parts for a plausible filename-derived identity
+    if 2 <= len(filtered) <= 3:
+        candidate_name = " ".join(_format_name_word(w) for w in filtered)
+        if 3 <= len(candidate_name) <= 35:
+            return candidate_name
+
+    return "Applicant"
+
+
+def _extract_name_from_resume_text(text: str, fallback_filename: str) -> str:
+    """Extract candidate name from header of resume text, falling back to filename conservatively."""
+    if text:
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        for line in lines[:8]:
+            # Skip contact and reference metadata lines
+            if "@" in line or "http" in line or "www." in line or re.search(r"\+?\d[\d\s\-()]{7,}", line):
+                continue
+
+            cleaned_line = line
+            # Handle explicit label markers like "Name: Jane Doe" or "Applicant Name: John Smith"
+            labeled_match = re.match(
+                r"^(?:name|candidate(?:\s+name)?|applicant(?:\s+name)?)\s*[:\-]\s*(.+)$",
+                line,
+                re.IGNORECASE,
+            )
+            if labeled_match:
+                cleaned_line = labeled_match.group(1).strip()
+            else:
+                resume_of_match = re.match(
+                    r"^(?:resume|curriculum\s+vitae|cv)\s+(?:of\s+)?(.+)$",
+                    line,
+                    re.IGNORECASE,
+                )
+                if resume_of_match:
+                    cleaned_line = resume_of_match.group(1).strip()
+
+            line_lower = cleaned_line.lower().strip(" :-\t")
+            if any(line_lower.startswith(h) for h in [
+                "resume", "curriculum vitae", "cv", "contact", "summary", "profile",
+                "experience", "education", "skills", "objective", "projects", "certifications",
+                "professional summary", "technical skills", "work experience",
+            ]):
+                continue
+
+            words = cleaned_line.split()
+            # Plausible candidate name: 2 to 4 words
+            if 2 <= len(words) <= 4:
+                if all(re.match(r"^[A-Za-z.\-']+$", w) for w in words):
+                    # Verify no component matches a disallowed section or title word
+                    clean_words = [re.sub(r"[.\-']", "", w).lower() for w in words]
+                    if any(w in DISALLOWED_NAME_WORDS for w in clean_words):
+                        continue
+                    candidate_name = " ".join(_format_name_word(w) for w in words)
+                    if 3 <= len(candidate_name) <= 40:
+                        return candidate_name
+
+    return _extract_name_from_filename(fallback_filename)
 
 
 def _find_or_create_candidate(
@@ -91,7 +212,7 @@ def _find_or_create_candidate(
             else:
                 return existing
 
-    display_name = _extract_name_from_filename(filename)
+    display_name = _extract_name_from_resume_text(extracted_text, filename)
     edu_records = extract_education_from_text(extracted_text) if extracted_text else []
     highest_degree = edu_records[0].get("degree_level") if edu_records else None
     exp_years = extract_experience_years_from_text(extracted_text) if extracted_text else None
@@ -157,7 +278,7 @@ async def upload_resume(
 
     # Step 2: Dispatch processing after successful transaction commit
     if settings.enable_worker:
-        ResumeService.enqueue_worker(resume.id)
+        ResumeService.enqueue_worker(resume.id, db=db)
     else:
         timeout_sec = settings.resume_extraction_timeout_seconds
         try:
@@ -225,6 +346,13 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
 
         try:
             extracted_text = extract_text_from_file(file_path, resume.mime_type, raise_security_exceptions=True)
+        except ScannedDocumentError as scan_err:
+            logger.warning("Resume %s rejected as scanned image document: %s", resume.id, scan_err)
+            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            resume.needs_attention_reason = AttentionReason.SCANNED_DOCUMENT
+            resume.extracted_text = ""
+            db.commit()
+            return
         except DocumentSecurityError as sec_err:
             logger.warning("Resume %s rejected by document security policy: %s", resume.id, sec_err)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
@@ -280,6 +408,13 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
             )
             db.add(application)
             db.flush()
+            record_application_status_change(
+                db,
+                application,
+                from_status=None,
+                to_status=application.status,
+                changed_by_user_id=None,
+            )
         else:
             application = existing_app
             application.resume_id = resume.id

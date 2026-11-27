@@ -54,6 +54,7 @@ class PDFParser:
         """Extract clean text, page count, and diagnostic metadata from a PDF stream."""
         warnings: list[str] = []
         extracted_pages: list[str] = []
+        has_images = False
 
         if HAS_PDFPLUMBER and pdfplumber is not None:
             try:
@@ -65,6 +66,8 @@ class PDFParser:
                     if page_count == 0:
                         warnings.append("Document contains 0 pages.")
                     for p_num, page in enumerate(pdf.pages, start=1):
+                        if getattr(page, "images", None) and len(page.images) > 0:
+                            has_images = True
                         # Extract text using layout preservation
                         text = page.extract_text(layout=True)
                         if not text:
@@ -90,6 +93,8 @@ class PDFParser:
                 if page_count > self.max_pages:
                     raise PDFPageLimitExceeded(page_count, self.max_pages)
                 for _p_num, page in enumerate(reader.pages, start=1):
+                    if getattr(page, "images", None) and len(page.images) > 0:
+                        has_images = True
                     p_text = page.extract_text() or ""
                     extracted_pages.append(p_text)
             except PDFPageLimitExceeded:
@@ -101,12 +106,17 @@ class PDFParser:
         full_raw_text = "\n\n".join(extracted_pages)
         normalized_text = self._normalize_text(full_raw_text)
 
+        is_scanned = bool(len(extracted_pages) > 0 and has_images and not normalized_text.strip())
+        if is_scanned:
+            warnings.append("Document appears to be a scanned image-only PDF with no text layer.")
+
         return {
             "text": normalized_text,
             "page_count": len(extracted_pages),
             "engine_used": self.engine,
             "warnings": warnings,
-            "char_count": len(normalized_text)
+            "char_count": len(normalized_text),
+            "is_scanned": is_scanned,
         }
 
     def _normalize_text(self, text: str) -> str:
@@ -115,6 +125,8 @@ class PDFParser:
         text = text.replace("ﬁ", "fi").replace("ﬂ", "fl").replace("’", "'").replace("“", '"').replace("”", '"')
         # Replace non-breaking spaces
         text = text.replace("\xa0", " ")
+        # De-hyphenate line wraps across lines (e.g. "experi-\nence" -> "experience")
+        text = re.sub(r"(\b[A-Za-z]{2,})-\s*\n\s*([A-Za-z]{2,}\b)", r"\1\2", text)
         # Collapse excessive blank lines
         text = re.sub(r"\n{3,}", "\n\n", text)
         return text.strip()

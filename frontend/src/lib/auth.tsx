@@ -18,8 +18,9 @@ export interface User {
   email: string;
   role: UserRole;
   is_active: boolean;
-  full_name?: string;
-  organization_name?: string;
+  name?: string | null;
+  full_name?: string | null;
+  organization_name?: string | null;
 }
 
 interface AuthContextType {
@@ -46,6 +47,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper to enrich base auth user with profile name and organization
+  const enrichUserWithProfile = async (baseUser: User, token?: string): Promise<User> => {
+    try {
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+      const res = await (config ? axios.get(`${API_BASE_URL}/auth/profile`, config) : api.get("/auth/profile"));
+      if (res.data) {
+        return {
+          ...baseUser,
+          name: res.data.name || res.data.full_name || baseUser.name || null,
+          full_name: res.data.name || res.data.full_name || baseUser.full_name || null,
+          organization_name: res.data.organization_name || baseUser.organization_name || null,
+        };
+      }
+    } catch {
+      // Profile endpoint failure fallback
+    }
+    return baseUser;
+  };
+
   // Restore session on mount via httpOnly cookie refresh directly
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +78,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         );
         if (!cancelled && res.data?.access_token) {
           setAccessToken(res.data.access_token);
-          setUser(res.data.user);
+          const enriched = await enrichUserWithProfile(res.data.user, res.data.access_token);
+          if (!cancelled) {
+            setUser(enriched);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -80,7 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const res = await api.post("/auth/login", { email, password });
     setAccessToken(res.data.access_token);
-    setUser(res.data.user);
+    const enriched = await enrichUserWithProfile(res.data.user);
+    setUser(enriched);
     if (typeof window !== "undefined") {
       if (rememberMe) {
         localStorage.setItem("careersync_remember_me", "true");
@@ -109,7 +133,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // Auto-login after registration
       const res = await api.post("/auth/login", { email, password });
       setAccessToken(res.data.access_token);
-      setUser(res.data.user);
+      if (fullName && fullName.trim()) {
+        try {
+          await api.put("/auth/profile", {
+            name: fullName.trim(),
+            full_name: fullName.trim(),
+          });
+        } catch {
+          // Ignore initial name sync error
+        }
+      }
+      const enriched = await enrichUserWithProfile(res.data.user);
+      setUser(enriched);
     },
     []
   );
@@ -117,7 +152,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshUser = useCallback(async () => {
     try {
       const res = await api.get("/auth/me");
-      setUser(res.data);
+      if (res.data) {
+        const enriched = await enrichUserWithProfile(res.data);
+        setUser(enriched);
+      }
     } catch (err) {
       console.warn("Failed to refresh user:", err);
     }

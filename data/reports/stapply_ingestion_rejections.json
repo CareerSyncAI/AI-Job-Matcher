@@ -1,0 +1,10 @@
+{
+  "source": "stapply",
+  "normalized_count": 30000,
+  "rejections": {
+    "missing_title": 0,
+    "empty_or_short_description": 14,
+    "stale_listing": 4157,
+    "non_english": 2
+  }
+}

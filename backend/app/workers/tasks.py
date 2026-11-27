@@ -2,6 +2,7 @@ import logging
 from uuid import UUID
 
 import httpx
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
@@ -17,6 +18,33 @@ except ImportError:
 from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
+
+
+def _mark_unexpected_processing_failure(db: Session, resume_id: UUID) -> None:
+    """Prevent unexpected worker errors from leaving resumes stuck in PROCESSING."""
+    try:
+        resume = db.get(Resume, resume_id)
+        if resume and resume.processing_status == ProcessingStatus.PROCESSING:
+            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+            db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Could not persist worker failure state for resume %s", resume_id)
+
+
+def _set_resume_processing_result(resume: Resume, parsed_text: str, evaluation_failed: bool) -> None:
+    """Apply the same success criteria as inline processing."""
+    if evaluation_failed:
+        resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+        resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+    elif parsed_text:
+        resume.processing_status = ProcessingStatus.COMPLETED
+        resume.needs_attention_reason = None
+    else:
+        resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+        if not resume.needs_attention_reason:
+            resume.needs_attention_reason = AttentionReason.PARSE_FAILED
 
 
 @celery_app.task(
@@ -79,6 +107,8 @@ def process_resume(self, resume_id: str, db=None) -> None:
 
             if resp.status_code == 200:
                 data = resp.json()
+                if data.get("is_scanned"):
+                    resume.needs_attention_reason = AttentionReason.SCANNED_DOCUMENT
                 sections = data.get("sections", {})
                 parsed_text = "\n\n".join(s for s in sections.values() if s.strip()) if sections else ""
                 resume.extracted_text = parsed_text
@@ -136,6 +166,7 @@ def process_resume(self, resume_id: str, db=None) -> None:
                 logger.warning("AI entity extraction call failed: %s", exc)
 
         # 3. Create or find Application and evaluate if attached to an ingestion job
+        evaluation_failed = False
         if resume.ingestion_job_id and resume.candidate_id and parsed_text:
             from app.models.entities import Application, Job
             from app.models.enums import ApplicationStatus
@@ -160,6 +191,15 @@ def process_resume(self, resume_id: str, db=None) -> None:
                     )
                     db.add(app_record)
                     db.flush()
+                    from app.services.application_status import record_application_status_change
+
+                    record_application_status_change(
+                        db,
+                        app_record,
+                        from_status=None,
+                        to_status=app_record.status,
+                        changed_by_user_id=None,
+                    )
                 else:
                     app_record = existing_app
                     app_record.resume_id = resume.id
@@ -173,16 +213,11 @@ def process_resume(self, resume_id: str, db=None) -> None:
                         recruiter_id=job.recruiter_id,
                     )
                 except Exception as eval_err:
+                    evaluation_failed = True
                     logger.warning("Worker evaluation failed for application %s: %s", app_record.id, eval_err)
 
-        # Mark completed or needs attention based on worker extraction outcome
-        if parsed_text:
-            resume.processing_status = ProcessingStatus.COMPLETED
-            resume.needs_attention_reason = None
-        else:
-            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
-            if not resume.needs_attention_reason:
-                resume.needs_attention_reason = AttentionReason.PARSE_FAILED
+        # Match inline processing: a failed evaluation is not a completed workflow.
+        _set_resume_processing_result(resume, parsed_text, evaluation_failed)
 
         db.commit()
 
@@ -201,6 +236,7 @@ def process_resume(self, resume_id: str, db=None) -> None:
     except Exception as err:
         logger.exception("Unexpected error in resume processing worker: %s", err)
         db.rollback()
+        _mark_unexpected_processing_failure(db, resume_uuid)
     finally:
         if close_db:
             db.close()

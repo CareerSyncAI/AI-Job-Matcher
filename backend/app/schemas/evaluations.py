@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from app.models.enums import (
     EvaluatedSkillStatus,
@@ -64,12 +64,46 @@ class EvaluationRunSchema(APIModel):
     match_result: MatchResultSchema | None = None
 
 
+def sanitize_character_offsets(
+    character_start: int | None,
+    character_end: int | None,
+    text_length: int | None = None,
+) -> tuple[int | None, int | None]:
+    """Sanitizes character offsets against structural and text-length bounds.
+
+    Returns (None, None) if:
+    - Either start or end is None (incomplete pair)
+    - start < 0 (negative offset)
+    - end < start (inverted offset)
+    - text_length is provided and (end > text_length or start > text_length)
+    Otherwise returns (character_start, character_end).
+    """
+    if character_start is None or character_end is None:
+        return None, None
+    if character_start < 0 or character_end < character_start:
+        return None, None
+    if text_length is not None and (character_end > text_length or character_start > text_length):
+        return None, None
+    return character_start, character_end
+
+
 class CandidateEvidenceItem(APIModel):
     requirement: str
     claim: str
     sourceText: str | None = None
     type: str  # "matched" | "transferable" | "not_detected" | "not_provided" | "gap"
     details: str | None = None
+    required: bool | None = None
+    source_section: str | None = None
+    character_start: int | None = None
+    character_end: int | None = None
+
+    @model_validator(mode="after")
+    def validate_character_offsets(self) -> "CandidateEvidenceItem":
+        self.character_start, self.character_end = sanitize_character_offsets(
+            self.character_start, self.character_end
+        )
+        return self
 
 
 class CandidateCardDTO(APIModel):
@@ -93,7 +127,7 @@ class CandidateCardDTO(APIModel):
     matchedSkills: list[str] = Field(default_factory=list)
     transferableSkills: list[str] = Field(default_factory=list)
     missingSkills: list[str] = Field(default_factory=list)
-    status: str = "screened"  # "screened" | "shortlisted" | "interviewing" | "rejected"
+    status: str = "new"  # ApplicationStatus value exposed by the ATS pipeline.
     evidence: list[CandidateEvidenceItem] = Field(default_factory=list)
     recruiterNotes: str | None = None
     evaluation_status: str = "not_evaluated"  # "current" | "stale" | "pending" | "failed" | "not_evaluated"

@@ -17,7 +17,7 @@ The frontend follows the **Hybrid Glassmorphism Design System** documented in [`
 ## 🚀 Key Features & Portals
 
 ### 🏢 Recruiter Portal
-- **Talent Pipeline (Kanban)**: Live drag-and-drop or column-based applicant management (`Applied`, `Reviewing`, `Shortlisted`, `Interviewing`, `Offered`, `Rejected`) with instant backend synchronization.
+- **Talent Pipeline (Kanban)**: Recruiters progress authorized applications through Applied, Reviewed, Shortlisted, Interviewing, Offered, Hired, or Rejected stages; each valid change is saved with timestamped history.
 - **Candidate Evaluation Cards**: Detailed match score breakdowns showing exact verbatim evidence, hard skill overlaps, transferable competencies, and verified experience intervals.
 - **Uncertainty-First Tiers**: Clear visual distinction between confirmed skill gaps and unconfirmed/unmentioned skills (`not_detected`).
 - **Requisition Management**: Secure job creation with internal scoring weight controls (strictly hidden from candidates).
@@ -25,7 +25,7 @@ The frontend follows the **Hybrid Glassmorphism Design System** documented in [`
 ### 👤 Candidate Portal
 - **Target Role Compatibility**: Interactive role matching displaying transparent gap analysis and transferable skill suggestions.
 - **ATS Resume Studio**: Real-time resume inspection highlighting parse quality, structural readability, and keyword density.
-- **Application Tracker**: Live tracking of submitted applications with direct status updates from the recruiter's ATS pipeline.
+- **Application Tracker**: Candidates can view current status and timestamped status history from the recruiter's ATS pipeline.
 
 ---
 

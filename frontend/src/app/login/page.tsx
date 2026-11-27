@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
+import { Modal } from "@/components/Modal";
 import {
   CareerSyncBrand,
   IconUser,
@@ -14,8 +15,6 @@ import {
   IconEye,
   IconEyeOff,
   IconCheckCircle,
-  IconKey,
-  IconX,
   IconSun,
   IconMoon,
 } from "@/components/Icons";
@@ -69,11 +68,7 @@ export default function LoginPage() {
       await login(email.trim().toLowerCase(), password, rememberMe);
       router.replace("/dashboard");
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Login failed. Please check your credentials.");
-      }
+      setError(getApiErrorMessage(err, "Login failed. Please check your credentials."));
     } finally {
       setSubmitting(false);
     }
@@ -88,14 +83,12 @@ export default function LoginPage() {
     setForgotError(null);
     setForgotSubmitting(true);
     try {
-      const res = await api.post("/auth/forgot-password", { email: forgotEmail.trim().toLowerCase() });
-      setForgotSuccess(res.data.message || "Reset link dispatched.");
+      await api.post("/auth/forgot-password", { email: forgotEmail.trim().toLowerCase() });
+      setForgotSuccess(
+        "If an account exists for this address, password reset instructions have been logged. In this local development environment, external emails are not configured; please update your password from your account profile or contact support."
+      );
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setForgotError(err.message);
-      } else {
-        setForgotError("Failed to dispatch reset link.");
-      }
+      setForgotError(getApiErrorMessage(err, "Failed to submit password reset request."));
     } finally {
       setForgotSubmitting(false);
     }
@@ -264,18 +257,24 @@ export default function LoginPage() {
       </div>
 
       {/* Forgot Password Modal */}
-      {forgotModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <IconKey size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-white">Reset Password</h3>
-                  <p className="text-xs text-slate-400">Enter your email to recover access</p>
-                </div>
+      <Modal
+        isOpen={forgotModalOpen}
+        onClose={() => {
+          setForgotModalOpen(false);
+          setForgotSuccess(null);
+          setForgotError(null);
+        }}
+        title="Reset Password"
+        description="Enter your email to recover access"
+        maxWidth="max-w-md"
+        className="bg-slate-900 border-slate-800 text-white"
+      >
+        <div className="space-y-4 pt-1">
+          {forgotSuccess ? (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium flex items-start gap-2.5">
+                <IconCheckCircle size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">{forgotSuccess}</p>
               </div>
               <button
                 type="button"
@@ -284,79 +283,58 @@ export default function LoginPage() {
                   setForgotSuccess(null);
                   setForgotError(null);
                 }}
-                className="text-slate-400 hover:text-white p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-slate-800 transition cursor-pointer"
-                aria-label="Close dialog"
+                className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs rounded-xl transition cursor-pointer"
               >
-                <IconX size={18} />
+                Return to Login
               </button>
             </div>
-
-            {forgotSuccess ? (
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium flex items-start gap-2.5">
-                  <IconCheckCircle size={18} className="text-emerald-400 shrink-0 mt-0.5" />
-                  <p className="leading-relaxed">{forgotSuccess}</p>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              {forgotError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-2">
+                  <IconAlertTriangle size={15} className="text-rose-400 shrink-0" />
+                  <p>{forgotError}</p>
                 </div>
+              )}
+              <div className="space-y-1.5">
+                <label htmlFor="forgot-email" className="block text-xs font-medium text-slate-300">Account Email</label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
+                />
+                <p className="text-xs text-slate-400">
+                  Enter your registered email address to request account recovery verification.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     setForgotModalOpen(false);
-                    setForgotSuccess(null);
                     setForgotError(null);
                   }}
-                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs rounded-xl transition cursor-pointer"
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs rounded-xl transition cursor-pointer"
                 >
-                  Return to Login
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotSubmitting}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-600/20"
+                >
+                  {forgotSubmitting ? "Sending..." : "Send Instructions"}
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                {forgotError && (
-                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-2">
-                    <IconAlertTriangle size={15} className="text-rose-400 shrink-0" />
-                    <p>{forgotError}</p>
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  <label htmlFor="forgot-email" className="block text-xs font-medium text-slate-300">Account Email</label>
-                  <input
-                    id="forgot-email"
-                    type="email"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="name@company.com"
-                    required
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition placeholder:text-slate-600"
-                  />
-                  <p className="text-xs text-slate-400">
-                    A secure password reset link or instructions will be dispatched to this address.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForgotModalOpen(false);
-                      setForgotError(null);
-                    }}
-                    className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs rounded-xl transition cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={forgotSubmitting}
-                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-600/20"
-                  >
-                    {forgotSubmitting ? "Sending..." : "Send Instructions"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+            </form>
+          )}
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

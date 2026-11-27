@@ -277,8 +277,9 @@ def change_password(
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> MessageResponse:
-    # Safe generic response preventing email enumeration
-    return MessageResponse(
-        message=f"If an account is associated with {payload.email}, a secure password reset link has been dispatched."
+def forgot_password(payload: ForgotPasswordRequest) -> MessageResponse:
+    """Report that recovery is unavailable until a complete delivery flow is configured."""
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Password recovery is not configured. Change your password from your account profile or contact support.",
     )

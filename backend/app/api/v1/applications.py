@@ -3,7 +3,7 @@ import logging
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_recruiter_profile, require_roles
@@ -37,19 +37,28 @@ from app.schemas.applications import (
 from app.schemas.evaluations import (
     CandidateCardDTO,
     CandidateEvidenceItem,
+    sanitize_character_offsets,
     CandidateMatchResultsDTO,
     EvaluationRunSchema,
 )
 from app.schemas.resumes import ResumeResponse
+from app.services.application_status import (
+    can_transition_application_status,
+    record_application_status_change,
+)
 from app.services.audit import record_audit_event
 from app.services.education_extractor import extract_education_from_text
-from app.services.evaluation import EvaluationService
+from app.services.evaluation import (
+    EvaluationService,
+    compute_evaluation_fingerprint,
+    extract_canonical_skill_from_claim_text,
+)
 from app.services.experience_extractor import extract_experience_years_from_text
 from app.services.jobs import JobService
 from app.services.resumes import ResumeService
-from app.services.scoring import CoverageTier
+from app.services.scoring import CoverageTier, Weights, candidate_card_rank_key
 from app.services.taxonomy import taxonomy
-from app.services.text_extraction import DocumentSecurityError, extract_text_from_file
+from app.services.text_extraction import DocumentSecurityError, ScannedDocumentError, extract_text_from_file
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +80,7 @@ def _application_response(application: Application) -> ApplicationResponse:
         resume_id=application.resume_id,
         status=application.status,
         applied_at=application.applied_at,
+        status_history=application.status_history,
     )
 
 
@@ -121,6 +131,13 @@ def apply_to_job(
     application = Application(job_id=job_id, candidate_id=candidate.id, resume_id=resume.id)
     db.add(application)
     db.flush()
+    record_application_status_change(
+        db,
+        application,
+        from_status=None,
+        to_status=application.status,
+        changed_by_user_id=current_user.id,
+    )
 
     # Trigger evaluation immediately upon application creation with savepoint protection
     try:
@@ -207,6 +224,13 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
 
         try:
             extracted_text = extract_text_from_file(file_path, resume.mime_type, raise_security_exceptions=True)
+        except ScannedDocumentError as scan_err:
+            logger.warning("Profile resume %s rejected as scanned image document: %s", resume.id, scan_err)
+            resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+            resume.needs_attention_reason = AttentionReason.SCANNED_DOCUMENT
+            resume.extracted_text = ""
+            db.commit()
+            return
         except DocumentSecurityError as sec_err:
             logger.warning("Profile resume %s rejected by document security policy: %s", resume.id, sec_err)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
@@ -307,7 +331,7 @@ async def upload_profile_resume(
     assert resume is not None
 
     if settings.enable_worker:
-        ResumeService.enqueue_worker(resume.id)
+        ResumeService.enqueue_worker(resume.id, db=db)
     else:
         timeout_sec = settings.resume_extraction_timeout_seconds
         try:
@@ -381,6 +405,7 @@ def list_my_applications(
 )
 def candidate_match_results(
     application_id: UUID,
+    run_id: UUID | None = Query(default=None, description="Optional evaluation run ID to inspect historical results"),
     current_user: User = Depends(require_roles(UserRole.CANDIDATE)),
     db: Session = Depends(get_db),
 ) -> CandidateMatchResultsDTO:
@@ -389,6 +414,7 @@ def candidate_match_results(
         db.query(Application)
         .options(
             selectinload(Application.job).selectinload(Job.recruiter),
+            selectinload(Application.job).selectinload(Job.skills),
             selectinload(Application.evaluation_runs)
             .selectinload(EvaluationRun.match_result)
             .selectinload(MatchResult.evaluated_skills),
@@ -402,17 +428,115 @@ def candidate_match_results(
     if not application:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found.")
 
-    completed_runs = sorted(
-        (
-            run
-            for run in application.evaluation_runs
-            if run.status is EvaluationStatus.COMPLETED and run.match_result
-        ),
-        key=lambda run: (run.completed_at or run.created_at, str(run.id)),
+    all_runs = sorted(
+        application.evaluation_runs,
+        key=lambda r: (r.created_at or datetime.min, str(r.id)),
         reverse=True,
     )
-    run = completed_runs[0] if completed_runs else None
-    result = run.match_result if run else None
+
+    if run_id is not None:
+        selected_run = next((r for r in all_runs if r.id == run_id), None)
+        if not selected_run:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evaluation run not found.")
+    else:
+        selected_run = all_runs[0] if all_runs else None
+
+    if not selected_run:
+        evaluation_status = "unavailable"
+        run = None
+        result = None
+    elif selected_run.status in (EvaluationStatus.QUEUED, EvaluationStatus.RUNNING):
+        evaluation_status = "pending"
+        run = None
+        result = None
+    elif selected_run.status == EvaluationStatus.FAILED:
+        evaluation_status = "failed"
+        run = selected_run
+        result = None
+    elif selected_run.status == EvaluationStatus.COMPLETED and selected_run.match_result:
+        if run_id is None:
+            # Compare stored configuration fingerprint against current job and candidate configuration
+            current_config_hash: str | None = None
+            try:
+                job = application.job
+                weights = Weights(
+                    skills=float(job.skills_weight),
+                    experience=float(job.experience_weight),
+                    education=float(job.education_weight),
+                    semantic=float(job.semantic_weight),
+                )
+                current_config_hash = compute_evaluation_fingerprint(
+                    job=job,
+                    candidate=application.candidate,
+                    resume=application.resume,
+                    weights=weights,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Fingerprint calculation failed in match results for application %s: %s",
+                    application.id,
+                    exc,
+                )
+
+            if (
+                selected_run.configuration_hash is not None
+                and current_config_hash is not None
+                and selected_run.configuration_hash == current_config_hash
+            ):
+                evaluation_status = "completed"
+                run = selected_run
+                result = run.match_result
+            else:
+                # If candidate profile fields in DB were cleared/null, check if resume-extracted candidate matches
+                is_fresh_match = False
+                if (
+                    selected_run.configuration_hash is not None
+                    and application.candidate
+                    and application.resume
+                    and application.resume.extracted_text
+                ):
+                    try:
+                        from types import SimpleNamespace
+                        detected_skills = taxonomy.extract_skills_from_text(application.resume.extracted_text)
+                        edu = dict(application.candidate.education) if isinstance(application.candidate.education, dict) else {}
+                        if not edu.get("skills"):
+                            edu["skills"] = [s["canonical_name"] for s in detected_skills]
+                        cand_proxy = SimpleNamespace(
+                            name=application.candidate.name,
+                            headline=application.candidate.headline,
+                            total_experience_years=application.candidate.total_experience_years,
+                            education=edu,
+                        )
+                        proxy_hash = compute_evaluation_fingerprint(
+                            job=job,
+                            candidate=cand_proxy,  # type: ignore[arg-type]
+                            resume=application.resume,
+                            weights=weights,
+                        )
+                        if proxy_hash == selected_run.configuration_hash:
+                            is_fresh_match = True
+                    except Exception:
+                        pass
+
+                if is_fresh_match:
+                    evaluation_status = "completed"
+                    run = selected_run
+                    result = run.match_result
+                else:
+                    # Configuration differs: return stale status and do not present old result as current
+                    evaluation_status = "stale"
+                    run = None
+                    result = None
+        else:
+            # Explicit historical run access: preserve historical run results
+            evaluation_status = "completed"
+            run = selected_run
+            result = run.match_result
+    else:
+        evaluation_status = "unavailable"
+        run = None
+        result = None
+
     attribution = (
         result.ranking_attribution
         if result and isinstance(result.ranking_attribution, dict)
@@ -430,21 +554,71 @@ def candidate_match_results(
     matched = matched if isinstance(matched, list) else []
     missing = missing if isinstance(missing, list) else []
     transferable = transferable if isinstance(transferable, list) else []
+
     claims = result.evidence_claims if result else []
     evidence_types = {
         "skill_match": "matched",
         "transferable_skill": "transferable",
         "not_detected": "not_detected",
     }
-    evidence = [
-        CandidateEvidenceItem(
-            requirement=claim.claim_type.replace("_", " ").title(),
-            claim=claim.claim_text,
-            sourceText=claim.source_snippet,
-            type=evidence_types[claim.claim_type],
+    evidence = []
+    job_skills = application.job.skills if application.job else []
+    job_skill_names = [js.name for js in job_skills]
+    resume_len = (
+        len(application.resume.extracted_text)
+        if (application.resume and application.resume.extracted_text)
+        else None
+    )
+    for claim in claims:
+        if claim.claim_type not in evidence_types:
+            continue
+        ev_type = evidence_types[claim.claim_type]
+
+        # Resolve specific skill requirement name and required vs preferred status unambiguously
+        matched_skill_name = next(
+            (s.name for s in skills if s.evidence_ref and s.evidence_ref == str(claim.id)),
+            None,
         )
-        for claim in claims if claim.claim_type in evidence_types
-    ]
+        if not matched_skill_name:
+            matched_skill_name = extract_canonical_skill_from_claim_text(claim.claim_text, job_skill_names)
+
+        matched_job_skill = next(
+            (js for js in job_skills if js.name.casefold() == (matched_skill_name or "").casefold()),
+            None,
+        )
+
+        if matched_job_skill:
+            req_name = matched_job_skill.name
+            is_req = matched_job_skill.required
+        else:
+            req_name = matched_skill_name or claim.claim_type.replace("_", " ").title()
+            is_req = None
+
+        # Source section attribution: do not claim "skills" if not verified
+        sec = claim.source_section
+        if not sec or sec.lower() in ("skills", "unknown"):
+            sec = "unknown"
+
+        c_start, c_end = sanitize_character_offsets(
+            claim.character_start,
+            claim.character_end,
+            text_length=resume_len,
+        )
+
+        evidence.append(
+            CandidateEvidenceItem(
+                requirement=req_name,
+                claim=claim.claim_text,
+                sourceText=claim.source_snippet,
+                type=ev_type,
+                details=claim.source_snippet,
+                required=is_req,
+                source_section=sec,
+                character_start=c_start,
+                character_end=c_end,
+            )
+        )
+
     candidate_profile = application.candidate
     experience = education = None
     recommendations = []
@@ -468,20 +642,20 @@ def candidate_match_results(
         for skill in missing:
             if any(
                 claim.claim_type == "not_detected"
-                and skill.casefold() in claim.claim_text.casefold()
+                and (
+                    next((s.name for s in skills if s.evidence_ref and s.evidence_ref == str(claim.id)), None) == skill
+                    or extract_canonical_skill_from_claim_text(claim.claim_text, [skill]) == skill
+                )
                 for claim in claims
             ):
                 recommendations.append(
                     f"Consider adding relevant {skill} experience or evidence to your resume if you have it."
                 )
-    evaluation_status = "completed" if result else (
-        "pending"
-        if any(
-            run.status in (EvaluationStatus.QUEUED, EvaluationStatus.RUNNING)
-            for run in application.evaluation_runs
-        )
-        else "unavailable"
-    )
+
+    evaluated_at = None
+    if run:
+        evaluated_at = run.completed_at or run.created_at
+
     return CandidateMatchResultsDTO(
         application_id=application.id,
         application_status=application.status.value,
@@ -494,7 +668,7 @@ def candidate_match_results(
         ),
         overall_match_score=result.overall_score if result else None,
         evaluation_status=evaluation_status,
-        evaluated_at=run.completed_at if run else None,
+        evaluated_at=evaluated_at,
         matched_skills=matched,
         missing_skills=missing,
         transferable_skills=transferable,
@@ -513,11 +687,28 @@ def update_application_status(
     recruiter: RecruiterProfile = Depends(get_recruiter_profile),
     db: Session = Depends(get_db),
 ) -> ApplicationResponse:
-    application = db.get(Application, application_id)
+    application = (
+        db.query(Application)
+        .filter(Application.id == application_id)
+        .with_for_update()
+        .one_or_none()
+    )
     if not application:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found.")
     JobService.owned_job(db, job_id=application.job_id, recruiter_id=recruiter.id)
-    application.status = payload.status
+    if not can_transition_application_status(application.status, payload.status):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Application cannot move from '{application.status.value}' to '{payload.status.value}'.",
+        )
+    previous_status = application.status
+    record_application_status_change(
+        db,
+        application,
+        from_status=previous_status,
+        to_status=payload.status,
+        changed_by_user_id=recruiter.user_id,
+    )
     record_audit_event(
         db,
         action="application_status_changed",
@@ -567,7 +758,7 @@ def list_job_candidates(
     db: Session = Depends(get_db),
 ) -> list[CandidateCardDTO]:
     """Get candidate application cards for a job, ranked by deterministic score and coverage tier."""
-    JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
+    job = JobService.owned_job(db, job_id=job_id, recruiter_id=recruiter.id)
     applications = (
         db.query(Application)
         .options(
@@ -583,30 +774,7 @@ def list_job_candidates(
         for app in applications
     ]
 
-    def card_rank_key(card: CandidateCardDTO):
-        has_gap = any(ev.type == "gap" for ev in card.evidence)
-        has_insufficient = (
-            any(ev.type in ("not_detected", "not_provided") for ev in card.evidence)
-            or len(card.missingSkills) > 0
-        )
-        if has_gap:
-            tier_val = CoverageTier.REQUIRED_GAP.value  # 3
-        elif has_insufficient:
-            tier_val = CoverageTier.INSUFFICIENT_REQUIRED_EVIDENCE.value  # 2
-        else:
-            tier_val = CoverageTier.NO_COMPUTABLE_REQUIRED_GAPS.value  # 1
-
-        return (
-            tier_val,
-            -card.matchScore,
-            -card.skillScore,
-            -card.experienceScore,
-            -card.educationScore,
-            -card.semanticScore,
-            str(card.id),
-        )
-
-    cards.sort(key=card_rank_key)
+    cards.sort(key=lambda card: candidate_card_rank_key(card, job.skills))
     return cards
 
 

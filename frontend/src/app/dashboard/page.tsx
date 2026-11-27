@@ -53,6 +53,7 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [openJobs, setOpenJobs] = useState<RealJob[]>([]);
+  const [totalOpenJobsCount, setTotalOpenJobsCount] = useState<number>(0);
   const [myApplications, setMyApplications] = useState<RealApplication[]>([]);
   const [recruiterJobs, setRecruiterJobs] = useState<RealJob[]>([]);
   const [topCandidates, setTopCandidates] = useState<RealCandidateCard[]>([]);
@@ -71,6 +72,7 @@ export default function DashboardPage() {
           ]);
           if (isMounted) {
             if (jobsRes.status === "fulfilled" && Array.isArray(jobsRes.value.data)) {
+              setTotalOpenJobsCount(jobsRes.value.data.length);
               setOpenJobs(jobsRes.value.data.slice(0, 5));
             }
             if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value.data)) {
@@ -123,11 +125,11 @@ export default function DashboardPage() {
               {isCandidate ? "Candidate Workspace" : "Recruiter Command Center"}
             </span>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{user?.full_name || user?.email?.split("@")[0] || "User"}</span>
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">{user?.name || user?.full_name || user?.email?.split("@")[0] || "User"}</span>
             </h1>
             <p className="text-slate-300 text-sm mt-1 max-w-xl">
               {isCandidate
-                ? `You have ${myApplications.length} active applications and ${openJobs.length} verified live requisitions ready for discovery.`
+                ? `You have ${myApplications.length} active applications and ${totalOpenJobsCount} verified live requisitions ready for discovery.`
                 : `Managing ${recruiterJobs.length} requisitions with ${totalApplicants} evaluated candidate applications across your ATS pipeline.`}
             </p>
           </div>
@@ -189,7 +191,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-4 flex items-baseline justify-between">
                 <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
-                  {openJobs.length}
+                  {totalOpenJobsCount}
                 </span>
                 <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Live</span>
               </div>
@@ -229,7 +231,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-4 flex items-baseline justify-between">
                 <span className={`text-2xl font-bold transition leading-none ${isDark ? "text-slate-100 group-hover:text-emerald-400" : "text-slate-900 group-hover:text-emerald-700"}`}>
-                  {myApplications.filter((a) => a.status === "under_review" || a.status === "shortlisted").length}
+                  {myApplications.filter((a) => ["under_review", "shortlisted", "interviewing", "offered"].includes(a.status)).length}
                 </span>
                 <span className={`text-xs font-medium leading-none ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>In Pipeline</span>
               </div>

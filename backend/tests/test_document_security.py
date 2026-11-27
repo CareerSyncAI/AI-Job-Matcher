@@ -6,36 +6,62 @@ from uuid import UUID
 
 import pytest
 
+from app.api.v1.resumes import _extract_name_from_filename, _extract_name_from_resume_text
 from app.core.config import get_settings
 from app.models.entities import Application, EvaluationRun, Resume
 from app.models.enums import AttentionReason, ProcessingStatus
 from app.services.text_extraction import (
     DOCXSecurityError,
     PDFPageLimitExceededError,
+    ScannedDocumentError,
     _extract_docx,
     _extract_pdf,
+    _normalize,
     extract_text_from_file,
+    is_scanned_pdf,
     validate_docx_archive,
 )
 
 
-def _create_synthetic_pdf(page_count: int, text: str = "") -> bytes:
+def _create_synthetic_pdf(page_count: int, text: str = "", has_image: bool = False) -> bytes:
     """Generate a valid, standards-compliant multi-page PDF in pure Python bytes."""
     objs = [b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"]
     kids = " ".join(f"{i + 3} 0 R" for i in range(page_count))
     objs.append(f"2 0 obj\n<< /Type /Pages /Kids [{kids}] /Count {page_count} >>\nendobj\n".encode("ascii"))
     font_num = page_count + 3
     content_num = page_count + 4
+    image_num = page_count + 5
+
+    image_stream = b"\xff\x00\x00\x00\xff\x00\x00\x00\xff\xff\xff\xff"
+    image_obj = (
+        f"{image_num} 0 obj\n"
+        f"<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Length {len(image_stream)} >>\n"
+        f"stream\n"
+    ).encode("ascii") + image_stream + b"\nendstream\nendobj\n"
+
+    res_parts = [f"/Font << /F1 {font_num} 0 R >>"]
+    if has_image:
+        res_parts.append(f"/XObject << /Im1 {image_num} 0 R >>")
+    resources = f"<< {' '.join(res_parts)} >>"
+
+    contents_lines = []
+    if has_image:
+        contents_lines.append("q 50 0 0 50 100 100 cm /Im1 Do Q")
     if text:
-        content_stream = f"BT /F1 12 Tf 72 712 Td ({text}) Tj ET".encode("ascii")
+        contents_lines.append(f"BT /F1 12 Tf 72 712 Td ({text}) Tj ET")
+
+    if contents_lines:
+        content_stream = "\n".join(contents_lines).encode("ascii")
         stream_len = len(content_stream)
         objs.append(
-            f"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 {font_num} 0 R >> >> /Contents {content_num} 0 R >>\nendobj\n".encode("ascii")
+            f"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources {resources} /Contents {content_num} 0 R >>\nendobj\n".encode("ascii")
         )
         for i in range(1, page_count):
             objs.append(f"{i + 3} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n".encode("ascii"))
         objs.append(f"{font_num} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n".encode("ascii"))
         objs.append(f"{content_num} 0 obj\n<< /Length {stream_len} >>\nstream\n".encode("ascii") + content_stream + b"\nendstream\nendobj\n")
+        if has_image:
+            objs.append(image_obj)
     else:
         for i in range(page_count):
             objs.append(f"{i + 3} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n".encode("ascii"))
@@ -443,3 +469,281 @@ def test_late_thread_cannot_overwrite_timed_out_status(client, db_session):
     db_session.refresh(resume)
     assert resume.processing_status == ProcessingStatus.NEEDS_ATTENTION
     assert resume.needs_attention_reason == AttentionReason.PARSE_FAILED
+
+
+# ── Text Normalization Regression Tests ────────────────────────────────────
+
+
+def test_normalize_repairs_split_words_across_linebreaks():
+    """Repair words split across line breaks by hyphens."""
+    raw = (
+        "Demonstrated experi-\nence as a senior deve-\n"
+        "loper, leading the imple-\nmentation of modern software sys-\ntems."
+    )
+    normalized = _normalize(raw)
+    assert "experience" in normalized
+    assert "developer" in normalized
+    assert "implementation" in normalized
+    assert "systems" in normalized
+    assert "experi-" not in normalized
+    assert "deve-" not in normalized
+
+
+def test_normalize_preserves_legitimate_hyphenated_compounds():
+    """Preserve legitimate compound words across line breaks without dropping hyphens."""
+    raw = (
+        "Engineered cross-\nfunctional solutions with built-\nin security.\n"
+        "Delivered full-\nstack and front-\nend architecture with end-to-\nend testing.\n"
+        "Built client-\nside and server-\nside services with real-\ntime capabilities.\n"
+        "Architected cloud-\nnative, multi-\ntenant systems that are user-\nfriendly."
+    )
+    normalized = _normalize(raw)
+    assert "cross-functional" in normalized
+    assert "built-in" in normalized
+    assert "full-stack" in normalized
+    assert "front-end" in normalized
+    assert "end-to-end" in normalized
+    assert "client-side" in normalized
+    assert "server-side" in normalized
+    assert "real-time" in normalized
+    assert "cloud-native" in normalized
+    assert "multi-tenant" in normalized
+    assert "user-friendly" in normalized
+
+
+def test_normalize_preserves_single_words_with_prefixes():
+    """Rejoin split single words that have recognized prefixes."""
+    raw = (
+        "Designed micro-\nservices and managed cloud infra-\nstructure.\n"
+        "Optimized relational data-\nbase performance and CI/CD pipe-\nlines."
+    )
+    normalized = _normalize(raw)
+    assert "microservices" in normalized
+    assert "infrastructure" in normalized
+    assert "database" in normalized
+    assert "pipelines" in normalized
+
+
+def test_normalize_preserves_urls_dates_and_technical_terms():
+    """Preserve URLs, dates, and technical punctuation intact."""
+    raw = (
+        "Portfolio: https://github.com/alex-dev/cloud-native-tools\n"
+        "Experience: 2020-\n2023 at Example Corp.\n"
+        "Tenure: Jan 2021 -\n Present.\n"
+        "Proficient in C++, C#, .NET, Node.js, Vue.js, CI/CD, and TCP/IP."
+    )
+    normalized = _normalize(raw)
+    assert "https://github.com/alex-dev/cloud-native-tools" in normalized
+    assert "2020 - 2023" in normalized
+    assert "Jan 2021 - Present" in normalized
+    assert "C++" in normalized
+    assert "C#" in normalized
+    assert ".NET" in normalized
+    assert "Node.js" in normalized
+    assert "Vue.js" in normalized
+    assert "CI/CD" in normalized
+    assert "TCP/IP" in normalized
+
+
+def test_normalize_does_not_join_unrelated_words():
+    """Avoid joining unrelated words separated by dashes or line breaks."""
+    raw = (
+        "Acme Corp - \nSenior Engineer\n"
+        "Key Deliverable - \nReduced operational latency by 30%.\n"
+        "John Doe\nSoftware Engineer"
+    )
+    normalized = _normalize(raw)
+    assert "Acme Corp - Senior Engineer" in normalized
+    assert "Key Deliverable - Reduced operational latency" in normalized
+    assert "John Doe\nSoftware Engineer" in normalized
+
+
+def test_normalize_collapses_excessive_whitespace_and_broken_lines():
+    """Collapse excessive horizontal spacing, excessive newlines, and repair sentence line wraps."""
+    raw = (
+        "Experienced software engineer with 5+ years of\n"
+        "experience building distributed backend systems.\n\n\n\n\n"
+        "Core Skills:    Python          FastAPI         PostgreSQL"
+    )
+    normalized = _normalize(raw)
+    assert "with 5+ years of experience building distributed backend systems." in normalized
+    assert "Core Skills: Python FastAPI PostgreSQL" in normalized
+    assert "\n\n\n" not in normalized
+
+
+# ── Candidate Name Extraction Regression Tests ─────────────────────────────
+
+
+def test_extract_name_from_resume_text_header_success():
+    """Prefer plausible names located in the header of resume text."""
+    text1 = "Alex Rivera\nalex.rivera@example.com | (555) 123-4567\nSenior Software Engineer"
+    assert _extract_name_from_resume_text(text1, "resume.pdf") == "Alex Rivera"
+
+    text2 = "JANE DOE\nFull Stack Developer\njane.doe@example.com"
+    assert _extract_name_from_resume_text(text2, "cv.docx") == "Jane Doe"
+
+    text3 = "Curriculum Vitae\nMaria Garcia\nmaria@example.com"
+    assert _extract_name_from_resume_text(text3, "resume.pdf") == "Maria Garcia"
+
+    text4 = "Name: Robert Chen\nEmail: robert@example.com"
+    assert _extract_name_from_resume_text(text4, "document.pdf") == "Robert Chen"
+
+    text5 = "Applicant Name - Sarah O'Connor\nPhone: 555-9876"
+    assert _extract_name_from_resume_text(text5, "upload.pdf") == "Sarah O'Connor"
+
+
+def test_extract_name_from_resume_text_skips_job_titles_and_sections():
+    """Never extract section headers, document titles, or job titles as candidate names."""
+    # Case 1: Header starts with a job title
+    title_text = (
+        "SOFTWARE ENGINEER\n"
+        "SUMMARY\n"
+        "Experienced software developer with Python expertise.\n"
+        "SKILLS\nPython, Docker"
+    )
+    # Must NOT extract "Software Engineer" or "Summary"; falls back to filename if valid
+    assert _extract_name_from_resume_text(title_text, "alex_smith_resume.pdf") == "Alex Smith"
+    # If filename is also a job title, fallback conservatively to Applicant
+    assert _extract_name_from_resume_text(title_text, "software_engineer.pdf") == "Applicant"
+
+    # Case 2: Header starts with sections
+    sections_text = (
+        "RESUME\n"
+        "PROFESSIONAL EXPERIENCE\n"
+        "Developer at Acme\n"
+        "EDUCATION\n"
+        "B.S. Computer Science"
+    )
+    assert _extract_name_from_resume_text(sections_text, "devops_engineer.docx") == "Applicant"
+
+
+def test_extract_name_from_filename_conservative():
+    """Conservative name extraction from filename, rejecting titles and versions."""
+    # Genuine candidate names in filename
+    assert _extract_name_from_filename("alex_rivera_resume.pdf") == "Alex Rivera"
+    assert _extract_name_from_filename("john_doe_v2_final.docx") == "John Doe"
+    assert _extract_name_from_filename("sarah_jane_smith_cv.pdf") == "Sarah Jane Smith"
+
+    # Generic or role-based filenames must be rejected
+    assert _extract_name_from_filename("software_engineer_resume.pdf") == "Applicant"
+    assert _extract_name_from_filename("devops_final.pdf") == "Applicant"
+    assert _extract_name_from_filename("resume.pdf") == "Applicant"
+    assert _extract_name_from_filename("cv_2024.docx") == "Applicant"
+    assert _extract_name_from_filename("full_stack_developer.pdf") == "Applicant"
+    assert _extract_name_from_filename("scan_001.pdf") == "Applicant"
+    assert _extract_name_from_filename("") == "Applicant"
+
+
+# ── Scanned PDF Classification Tests ───────────────────────────────────────
+
+
+def test_scanned_pdf_with_image_and_no_text_raises_scanned_document_error(tmp_path):
+    """Detect image-only PDF with no text layer as a scanned document."""
+    pdf_bytes = _create_synthetic_pdf(1, text="", has_image=True)
+    pdf_path = tmp_path / "scanned_image_only.pdf"
+    pdf_path.write_bytes(pdf_bytes)
+
+    assert is_scanned_pdf(pdf_path) is True
+
+    with pytest.raises(ScannedDocumentError) as exc_info:
+        _extract_pdf(pdf_path)
+    assert "scanned document" in str(exc_info.value).lower()
+    assert "ocr" not in str(exc_info.value).lower()
+
+
+def test_scanned_pdf_with_near_empty_text_raises_scanned_document_error(tmp_path):
+    """Detect PDF with images and only stray characters (e.g. page number) as scanned."""
+    pdf_bytes = _create_synthetic_pdf(1, text="1", has_image=True)
+    pdf_path = tmp_path / "scanned_page_num_only.pdf"
+    pdf_path.write_bytes(pdf_bytes)
+
+    assert is_scanned_pdf(pdf_path) is True
+
+    with pytest.raises(ScannedDocumentError):
+        _extract_pdf(pdf_path)
+
+
+def test_pdf_with_image_and_substantial_text_does_not_raise_scanned_error(tmp_path):
+    """A valid text PDF with a logo or decorative image is NOT classified as scanned."""
+    full_text = (
+        "Alex Rivera is a Senior Backend Engineer with extensive experience in "
+        "Python, Docker, FastAPI, PostgreSQL, and distributed cloud microservices architecture."
+    )
+    pdf_bytes = _create_synthetic_pdf(1, text=full_text, has_image=True)
+    pdf_path = tmp_path / "text_with_logo.pdf"
+    pdf_path.write_bytes(pdf_bytes)
+
+    assert is_scanned_pdf(pdf_path) is False
+
+    extracted = _extract_pdf(pdf_path)
+    assert "Alex Rivera" in extracted
+    assert "Python" in extracted
+
+
+def test_blank_pdf_without_images_returns_empty_string_not_scanned_error(tmp_path):
+    """A blank PDF without images is treated as empty text (PARSE_FAILED), not scanned."""
+    pdf_bytes = _create_synthetic_pdf(1, text="", has_image=False)
+    pdf_path = tmp_path / "blank.pdf"
+    pdf_path.write_bytes(pdf_bytes)
+
+    assert is_scanned_pdf(pdf_path) is False
+    extracted = _extract_pdf(pdf_path)
+    assert extracted == ""
+
+
+def test_upload_scanned_pdf_sets_needs_attention_scanned_document(client, db_session):
+    """Integration: Uploading a scanned PDF sets needs_attention_reason to SCANNED_DOCUMENT."""
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "rec.scan@example.com", "password": "Password123456!", "role": "recruiter", "organization_name": "ScanOrg"},
+    )
+    rec_tok = client.post("/api/v1/auth/login", json={"email": "rec.scan@example.com", "password": "Password123456!"}).json()["access_token"]
+    rec_h = {"Authorization": f"Bearer {rec_tok}"}
+
+    job_res = client.post(
+        "/api/v1/jobs",
+        headers=rec_h,
+        json={"title": "Cloud Architect", "description": "Cloud job", "status": "open"},
+    )
+    job_id = job_res.json()["id"]
+
+    scanned_bytes = _create_synthetic_pdf(1, text="", has_image=True)
+    upload_res = client.post(
+        f"/api/v1/jobs/{job_id}/resumes",
+        headers=rec_h,
+        files={"file": ("scanned_resume.pdf", scanned_bytes, "application/pdf")},
+    )
+    assert upload_res.status_code == 202
+    data = upload_res.json()
+    assert data["processing_status"] == "needs_attention"
+    assert data["needs_attention_reason"] == "scanned_document"
+
+    resume = db_session.query(Resume).filter(Resume.id == UUID(data["id"])).one()
+    assert resume.processing_status == ProcessingStatus.NEEDS_ATTENTION
+    assert resume.needs_attention_reason == AttentionReason.SCANNED_DOCUMENT
+    assert resume.extracted_text == ""
+
+
+def test_upload_profile_scanned_pdf_sets_needs_attention_scanned_document(client, db_session):
+    """Integration: Candidate uploading a scanned profile resume sets SCANNED_DOCUMENT."""
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "cand.scan@example.com", "password": "Password123456!", "role": "candidate"},
+    )
+    cand_tok = client.post("/api/v1/auth/login", json={"email": "cand.scan@example.com", "password": "Password123456!"}).json()["access_token"]
+    cand_h = {"Authorization": f"Bearer {cand_tok}"}
+
+    scanned_bytes = _create_synthetic_pdf(1, text="", has_image=True)
+    upload_res = client.post(
+        "/api/v1/profile/resumes",
+        headers=cand_h,
+        files={"file": ("profile_scanned.pdf", scanned_bytes, "application/pdf")},
+    )
+    assert upload_res.status_code == 202
+    data = upload_res.json()
+    assert data["processing_status"] == "needs_attention"
+    assert data["needs_attention_reason"] == "scanned_document"
+
+    resume = db_session.query(Resume).filter(Resume.id == UUID(data["id"])).one()
+    assert resume.processing_status == ProcessingStatus.NEEDS_ATTENTION
+    assert resume.needs_attention_reason == AttentionReason.SCANNED_DOCUMENT

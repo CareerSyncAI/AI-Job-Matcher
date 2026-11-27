@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.entities import Resume
-from app.models.enums import ProcessingStatus
+from app.models.enums import AttentionReason, ProcessingStatus
 from app.services.storage import read_validated_upload, store_upload
 
 
@@ -59,17 +59,31 @@ class ResumeService:
         return resume
 
     @staticmethod
-    def enqueue_worker(resume_id: UUID) -> None:
+    def enqueue_worker(resume_id: UUID, *, db: Session) -> bool:
         """Dispatch Celery task strictly after database transaction commit."""
-        if get_settings().enable_worker:
-            from app.workers.tasks import process_resume
+        if not get_settings().enable_worker:
+            return False
+
+        from app.workers.tasks import process_resume
+
+        try:
+            process_resume.delay(str(resume_id))  # pyright: ignore[reportFunctionMemberAccess]
+            return True
+        except Exception as exc:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error("Failed to enqueue resume %s for worker execution: %s", resume_id, exc)
             try:
-                process_resume.delay(str(resume_id))  # pyright: ignore[reportFunctionMemberAccess]
-            except Exception as exc:
-                import logging
-                logging.getLogger(__name__).error(
-                    "Failed to enqueue resume %s for worker execution: %s", resume_id, exc
-                )
+                resume = db.get(Resume, resume_id)
+                if resume and resume.processing_status is ProcessingStatus.QUEUED:
+                    resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
+                    resume.needs_attention_reason = AttentionReason.ANALYSIS_FAILED
+                    db.commit()
+            except Exception:
+                db.rollback()
+                logger.exception("Could not persist worker enqueue failure for resume %s", resume_id)
+            return False
 
     @staticmethod
     async def ingest_for_job(db: Session, *, job_id, upload: UploadFile) -> Resume:

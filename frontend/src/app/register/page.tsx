@@ -4,6 +4,7 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, UserRole } from "@/lib/auth";
+import { getApiErrorMessage } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 import {
   CareerSyncBrand,
@@ -56,15 +57,12 @@ function RegisterForm() {
         email.trim().toLowerCase(),
         password,
         role,
+        undefined,
         role === "recruiter" ? organizationName.trim() : undefined
       );
       router.replace("/dashboard");
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Registration failed. Please try again.");
-      }
+      setError(getApiErrorMessage(err, "Registration failed. Please try again."));
     } finally {
       setSubmitting(false);
     }

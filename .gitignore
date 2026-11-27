@@ -44,6 +44,7 @@ ai-services/models/cache/
 ai-services/.venv/
 ai-services/.pytest_cache/
 data/raw/
+data/processed/
 *.onnx
 *.pt
 *.bin
@@ -59,6 +60,5 @@ career-sync-storage/*.doc
 career-sync-storage/*.pdf
 frontend_backup/
 scratch/
-
-
-
+scripts/scratch_*.py
+scripts/*.tmp

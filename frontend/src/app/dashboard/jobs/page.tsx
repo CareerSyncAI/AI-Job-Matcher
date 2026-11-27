@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 import {
   IconSearch,
@@ -39,6 +39,7 @@ export default function JobsPage() {
 
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedArrangement, setSelectedArrangement] = useState("all");
@@ -62,8 +63,10 @@ export default function JobsPage() {
         if (isMounted) {
           if (jobsRes.status === "fulfilled" && Array.isArray(jobsRes.value.data)) {
             setJobs(jobsRes.value.data);
+            setFetchError(null);
           } else {
             setJobs([]);
+            setFetchError("Unable to retrieve open job requisitions from the server.");
           }
 
           if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value.data)) {
@@ -78,6 +81,9 @@ export default function JobsPage() {
         }
       } catch (err) {
         console.warn("Error fetching jobs or applications:", err);
+        if (isMounted) {
+          setFetchError("Unable to connect to the jobs directory.");
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -141,13 +147,7 @@ export default function JobsPage() {
     } catch (err: unknown) {
       const errResponse = (err as { response?: { status?: number; data?: { detail?: unknown } } })?.response;
       const statusCode = errResponse?.status;
-      const rawDetail = errResponse?.data?.detail;
-      const detailStr =
-        typeof rawDetail === "string"
-          ? rawDetail
-          : Array.isArray(rawDetail)
-          ? rawDetail.map((d: { msg?: string }) => d.msg || JSON.stringify(d)).join(", ")
-          : "";
+      const serverMsg = getApiErrorMessage(err, "");
 
       if (statusCode === 409) {
         setAppliedJobs((prev) => ({ ...prev, [jobId]: true }));
@@ -156,9 +156,21 @@ export default function JobsPage() {
           text: `You have already applied to "${jobTitle}".`,
           showResumeLink: false,
         });
+      } else if (statusCode === 404) {
+        setStatusMessage({
+          type: "error",
+          text: "This job opening is no longer active or accepting applications.",
+          showResumeLink: false,
+        });
+      } else if (statusCode === 422) {
+        setStatusMessage({
+          type: "error",
+          text: serverMsg || "Your uploaded resume requires attention before applying. Please check Resume Studio.",
+          showResumeLink: true,
+        });
       } else if (
         statusCode === 400 &&
-        detailStr.toLowerCase().includes("resume")
+        serverMsg.toLowerCase().includes("resume")
       ) {
         setStatusMessage({
           type: "error",
@@ -168,14 +180,14 @@ export default function JobsPage() {
       } else if (statusCode === 403) {
         setStatusMessage({
           type: "error",
-          text: detailStr || "Only candidate accounts can apply to job requisitions.",
+          text: serverMsg || "Only candidate accounts can apply to job requisitions.",
           showResumeLink: false,
         });
       } else {
         setStatusMessage({
           type: "error",
-          text: detailStr || "Failed to submit application. Please upload your resume in Resume Studio first.",
-          showResumeLink: detailStr.toLowerCase().includes("resume") || !detailStr,
+          text: serverMsg || "Failed to submit application. Please upload your resume in Resume Studio first.",
+          showResumeLink: serverMsg.toLowerCase().includes("resume") || !serverMsg,
         });
       }
     } finally {
@@ -362,8 +374,8 @@ export default function JobsPage() {
                 : "bg-slate-50 border-slate-200 text-slate-900"
             }`}
           >
-            <option value="match">Highest Match Score</option>
             <option value="recent">Most Recent</option>
+            <option value="match" disabled>Match Score (Available after Applying)</option>
           </select>
         </div>
 
@@ -423,6 +435,23 @@ export default function JobsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : fetchError ? (
+          /* API Failure State */
+          <div className="p-12 text-center text-rose-400 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-400">
+              <IconAlertTriangle size={22} />
+            </div>
+            <p className="text-base font-bold text-slate-200">Failed to Load Opportunities</p>
+            <p className="text-xs text-rose-300 max-w-sm mx-auto">
+              {fetchError}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition cursor-pointer"
+            >
+              Retry Connection
+            </button>
           </div>
         ) : filteredJobs.length === 0 ? (
           /* Empty Search State */

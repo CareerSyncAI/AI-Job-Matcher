@@ -963,7 +963,7 @@ def test_apply_to_job_handles_evaluation_failure_cleanly(client, monkeypatch):
         db.close()
 
 
-def test_prompt_7_recruiter_journey_e2e(client):
+def test_prompt_7_recruiter_journey_e2e(client, db_session):
     """
     Prompt 7 — Recruiter Journey:
     1. Recruiter registers and logs in.
@@ -1064,6 +1064,35 @@ def test_prompt_7_recruiter_journey_e2e(client):
     # 6. Update application stage and add note
     app_id = top_cand["application_id"]
     cand_id = top_cand["id"]
+    invalid_jump = client.patch(
+        f"/api/v1/applications/{app_id}/status",
+        headers=rec_h,
+        json={"status": "offered"},
+    )
+    assert invalid_jump.status_code == 409
+
+    # A different recruiter cannot manage this application's job.
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "p7.other.recruiter@example.com", "password": "Password123456!", "role": "recruiter"},
+    )
+    other_tok = client.post(
+        "/api/v1/auth/login",
+        json={"email": "p7.other.recruiter@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    unauthorized_update = client.patch(
+        f"/api/v1/applications/{app_id}/status",
+        headers={"Authorization": f"Bearer {other_tok}"},
+        json={"status": "shortlisted"},
+    )
+    assert unauthorized_update.status_code == 404
+
+    review_res = client.patch(
+        f"/api/v1/applications/{app_id}/status",
+        headers=rec_h,
+        json={"status": "under_review"},
+    )
+    assert review_res.status_code == 200
     patch_res = client.patch(
         f"/api/v1/applications/{app_id}/status",
         headers=rec_h,
@@ -1071,6 +1100,10 @@ def test_prompt_7_recruiter_journey_e2e(client):
     )
     assert patch_res.status_code == 200
     assert patch_res.json()["status"] == "shortlisted"
+    history = patch_res.json()["status_history"]
+    assert [event["to_status"] for event in history][-3:] == ["new", "under_review", "shortlisted"]
+    assert history[-1]["from_status"] == "under_review"
+    assert history[-1]["changed_at"]
 
     note_res = client.post(
         f"/api/v1/applications/{app_id}/notes",
@@ -1086,6 +1119,20 @@ def test_prompt_7_recruiter_journey_e2e(client):
     assert detail["status"] == "shortlisted"
     assert "Scheduled for technical interview" in detail["recruiterNotes"]
     assert detail["matchScore"] == top_cand["matchScore"]
+
+    from uuid import UUID
+
+    from app.models.entities import Application, ApplicationStatusHistory
+
+    persisted_application = db_session.get(Application, UUID(app_id))
+    persisted_history = (
+        db_session.query(ApplicationStatusHistory)
+        .filter(ApplicationStatusHistory.application_id == UUID(app_id))
+        .order_by(ApplicationStatusHistory.changed_at)
+        .all()
+    )
+    assert persisted_application.status.value == "shortlisted"
+    assert [event.to_status.value for event in persisted_history][-3:] == ["new", "under_review", "shortlisted"]
 
 
 def test_prompt_7_candidate_journey_e2e(client, db_session):
@@ -1172,7 +1219,7 @@ def test_prompt_7_candidate_journey_e2e(client, db_session):
     open_jobs = browse_res.json()
     assert any(j["id"] == job_id for j in open_jobs)
 
-    # 6. Candidate applies using stored resume (auto-evaluates to under_review)
+    # 6. Candidate applies using stored resume; evaluation leaves recruiter status as Applied.
     apply_res = client.post(
         f"/api/v1/jobs/{job_id}/applications",
         headers=cand_h,
@@ -1181,7 +1228,15 @@ def test_prompt_7_candidate_journey_e2e(client, db_session):
     assert apply_res.status_code == 201
     app_data = apply_res.json()
     assert app_data["job_id"] == job_id
-    assert app_data["status"] == "under_review"
+    assert app_data["status"] == "new"
+    assert [event["to_status"] for event in app_data["status_history"]] == ["new"]
+
+    candidate_status_update = client.patch(
+        f"/api/v1/applications/{app_data['id']}/status",
+        headers=cand_h,
+        json={"status": "shortlisted"},
+    )
+    assert candidate_status_update.status_code == 403
 
     # 7. Edge Case: Duplicate application to same job -> 409 Conflict
     dup_apply = client.post(
@@ -1198,7 +1253,8 @@ def test_prompt_7_candidate_journey_e2e(client, db_session):
     apps_list = my_apps.json()
     assert len(apps_list) == 1
     assert apps_list[0]["job_id"] == job_id
-    assert apps_list[0]["status"] == "under_review"
+    assert apps_list[0]["status"] == "new"
+    assert apps_list[0]["status_history"] == app_data["status_history"]
 
     # 9. Edge Case: Candidate applies with resume in NEEDS_ATTENTION state -> 422
     from uuid import UUID
@@ -1299,6 +1355,181 @@ def test_prompt_7_authorization_and_privacy_boundaries(client):
 
     r2_view = client.get(f"/api/v1/jobs/{job_r1_id}", headers=r2_h).json()
     assert r2_view["evaluation_weights"]["skills"] == 0
+
+
+def test_production_candidate_list_ranking_correctness(client, db_session):
+    """Production route test: GET /api/v1/jobs/{job_id}/candidates.
+
+    Verifies:
+    1. Direct required-skill evidence ranks above transferable evidence.
+    2. Candidates missing only preferred skills remain in Tier 1.
+    3. Candidates missing required skills fall to Tier 2.
+    4. Unevaluated candidates fall to Tier 2 (never receive Tier 1).
+    5. Zero score candidates handle cleanly without errors.
+    6. Candidates with equivalent coverage tier order by overall score.
+    """
+    from app.models.entities import (
+        Application,
+        EvaluationRun,
+        EvidenceClaim,
+    )
+    from app.models.enums import EvaluationStatus
+
+    # 1. Register Recruiter and create a job with required & preferred skills
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "rank-recruiter@example.com",
+            "password": "Password123456!",
+            "role": "recruiter",
+            "organization_name": "Ranking Corp",
+        },
+    )
+    recruiter_token = client.post(
+        "/api/v1/auth/login",
+        json={"email": "rank-recruiter@example.com", "password": "Password123456!"},
+    ).json()["access_token"]
+    recruiter_headers = {"Authorization": f"Bearer {recruiter_token}"}
+
+    job = client.post(
+        "/api/v1/jobs",
+        headers=recruiter_headers,
+        json={
+            "title": "Backend Ranking Requisition",
+            "description": "API Engineer",
+            "employment_type": "Full-time",
+            "work_arrangement": "Remote",
+            "skills": [
+                {"name": "Python", "required": True},
+                {"name": "FastAPI", "required": True},
+                {"name": "Kubernetes", "required": False},
+            ],
+            "status": "open",
+        },
+    ).json()
+    job_id = job["id"]
+
+    def register_and_apply(email: str, resume_text: str) -> dict:
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "Password123456!", "role": "candidate"},
+        )
+        token = client.post(
+            "/api/v1/auth/login",
+            json={"email": email, "password": "Password123456!"},
+        ).json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        res_bytes = _create_docx_resume_bytes(resume_text)
+        upload = client.post(
+            "/api/v1/profile/resumes",
+            headers=headers,
+            files={
+                "file": (
+                    "resume.docx",
+                    res_bytes,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                )
+            },
+        )
+        app_res = client.post(
+            f"/api/v1/jobs/{job_id}/applications",
+            headers=headers,
+            json={"resume_id": upload.json()["id"]},
+        )
+        return {"app": app_res.json(), "headers": headers}
+
+    # Cand 1: Direct required + preferred (Python + FastAPI + Kubernetes) -> Tier 1, High Score (~90+)
+    c1_info = register_and_apply(
+        "cand1-direct-all@example.com",
+        "Python, FastAPI, and Kubernetes specialist architecting distributed cloud systems.",
+    )
+    c1_app_id = c1_info["app"]["id"]
+
+    # Cand 2: Direct required only, missing preferred (Python + FastAPI) -> Tier 1, Medium Score (~80)
+    c2_info = register_and_apply(
+        "cand2-direct-req-only@example.com",
+        "Python and FastAPI web developer building clean REST APIs.",
+    )
+    c2_app_id = c2_info["app"]["id"]
+
+    # Cand 3: Transferable required (Python + Django [transferable to FastAPI]) -> Tier 2
+    c3_info = register_and_apply(
+        "cand3-transferable@example.com",
+        "Python and Django developer creating web services.",
+    )
+    c3_app_id = c3_info["app"]["id"]
+
+    # Cand 4: Missing required skill (Python only) -> Tier 2, Lower Score
+    c4_info = register_and_apply(
+        "cand4-missing-req@example.com",
+        "Python scripting and automation engineer.",
+    )
+    c4_app_id = c4_info["app"]["id"]
+
+    from uuid import UUID
+
+    # Cand 5: Unevaluated / zero score
+    c5_info = register_and_apply(
+        "cand5-unevaluated@example.com",
+        "Junior general developer with basic programming knowledge.",
+    )
+    c5_app_id = c5_info["app"]["id"]
+    # Simulate unevaluated state by clearing evaluation runs for candidate 5
+    c5_runs = db_session.query(EvaluationRun).filter_by(application_id=UUID(c5_app_id)).all()
+    for run in c5_runs:
+        db_session.delete(run)
+    db_session.commit()
+
+    # Cand 6: Required gap (explicit hard gap on experience)
+    c6_info = register_and_apply(
+        "cand6-hard-gap@example.com",
+        "Software engineer with basic tools.",
+    )
+    c6_app_id = c6_info["app"]["id"]
+    c6_run = (
+        db_session.query(EvaluationRun)
+        .filter_by(application_id=UUID(c6_app_id), status=EvaluationStatus.COMPLETED)
+        .first()
+    )
+    if c6_run and c6_run.match_result:
+        db_session.add(
+            EvidenceClaim(
+                match_result_id=c6_run.match_result.id,
+                claim_type="experience_gap",
+                claim_text="Candidate does not meet minimum required tenure",
+            )
+        )
+        db_session.commit()
+
+    # Fetch production candidate list
+    res = client.get(f"/api/v1/jobs/{job_id}/candidates", headers=recruiter_headers)
+    assert res.status_code == 200
+    candidates = res.json()
+    assert len(candidates) == 6
+
+    ranked_app_ids = [c["application_id"] for c in candidates]
+
+    # Verify 1 & 2: Candidates missing only preferred skills (c2) remain in Tier 1.
+    # Both c1 and c2 are Tier 1; c1 has higher overall score than c2.
+    assert ranked_app_ids[0] == c1_app_id
+    assert ranked_app_ids[1] == c2_app_id
+    assert candidates[0]["matchScore"] > candidates[1]["matchScore"]
+
+    # Verify 3: Direct required evidence (c1, c2 in Tier 1) ranks above transferable required evidence (c3 in Tier 2)
+    assert ranked_app_ids[2] == c3_app_id
+    assert "FastAPI" in candidates[2]["transferableSkills"] or "Django" in candidates[2]["transferableSkills"]
+
+    # Verify 4: Transferable required (c3) ranks above missing required skill (c4 in Tier 2)
+    assert ranked_app_ids[3] == c4_app_id
+    assert candidates[2]["matchScore"] > candidates[3]["matchScore"]
+
+    # Verify 5: Unevaluated candidate (c5) never receives Tier 1; ranks at bottom of Tier 2 with score 0
+    assert ranked_app_ids[4] == c5_app_id
+    assert candidates[4]["evaluation_status"] == "not_evaluated"
+    assert candidates[4]["matchScore"] == 0.0
+
+    # Verify 6: Hard gap candidate (c6) ranks in Tier 3 at the bottom
+    assert ranked_app_ids[5] == c6_app_id
 
 
 

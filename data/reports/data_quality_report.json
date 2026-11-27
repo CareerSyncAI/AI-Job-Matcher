@@ -1,0 +1,155 @@
+{
+  "validation_timestamp": "2026-11-22T21:07:30.215032",
+  "summary": {
+    "jobs_status": "passed",
+    "resumes_status": "partial",
+    "taxonomies_status": "passed",
+    "candidates_status": "passed",
+    "trajectories_status": "partial"
+  },
+  "jobs": {
+    "status": "passed",
+    "total_records": 49478,
+    "valid_records": 49478,
+    "invalid_records": 0,
+    "unique_identifiers": 49478,
+    "id_uniqueness_rate_percent": 100.0,
+    "validation_errors_sample": [],
+    "null_percentages": {
+      "job_id": 0.0,
+      "source_id": 0.0,
+      "source_name": 0.0,
+      "original_title": 0.0,
+      "normalized_title": 0.0,
+      "company": 0.0,
+      "location": 0.0,
+      "country": 0.0,
+      "employment_type": 0.0,
+      "experience_requirements": 0.0,
+      "education_requirements": 0.0,
+      "required_skills": 0.0,
+      "preferred_skills": 0.0,
+      "salary_min": 60.96,
+      "salary_max": 60.96,
+      "currency": 60.96,
+      "description": 0.0,
+      "responsibilities": 0.0,
+      "qualifications": 0.0,
+      "source_url": 0.0,
+      "published_date": 0.0,
+      "collected_at": 0.0,
+      "licence_reference": 0.0,
+      "source_origin": 0.0
+    },
+    "metrics": {
+      "salary_coverage_percent": 39.04,
+      "location_coverage_percent": 99.09,
+      "description_length": {
+        "min": 51,
+        "max": 24337,
+        "mean": 3629.5,
+        "median": 3274.0
+      },
+      "top_companies": {
+        "airwallex": 620,
+        "Luxoft": 572,
+        "GlobalLogic": 466,
+        "Independent Living Systems": 434,
+        "VitalCore Health Strategies": 384,
+        "Collage Rehabilitation Partners": 333,
+        "Hudson Regional Hospital": 267,
+        "Unity Health": 250,
+        "airapps": 240,
+        "Securitas Technology": 228
+      }
+    }
+  },
+  "resumes": {
+    "status": "partial",
+    "total_records": 302,
+    "valid_records": 302,
+    "invalid_records": 0,
+    "unique_identifiers": 301,
+    "validation_errors_sample": [],
+    "record_type_verified": "annotated_resume",
+    "domain_distribution": {
+      "Banking": 50,
+      "Finance": 50,
+      "ACCOUNTANT": 51,
+      "TEACHER": 50,
+      "Apparel": 50,
+      "Research Assistant": 51
+    },
+    "text_length": {
+      "min": 373,
+      "max": 1867,
+      "mean": 927.3,
+      "median": 865.0
+    }
+  },
+  "taxonomies": {
+    "status": "passed",
+    "occupations_count": 1016,
+    "technology_skills_count": 31821
+  },
+  "candidates": {
+    "status": "passed",
+    "total_records": 15000,
+    "valid_records": 15000,
+    "invalid_records": 0,
+    "unique_identifiers": 15000,
+    "id_uniqueness_rate_percent": 100.0,
+    "validation_errors_sample": [],
+    "record_type_verified": "candidate_profile",
+    "null_percentages": {
+      "candidate_id": 0.0,
+      "source_dataset": 0.0,
+      "position_title": 0.0,
+      "normalized_title": 0.0,
+      "primary_keyword": 0.0,
+      "english_level": 0.0,
+      "experience_years": 0.0,
+      "highlights": 0.0,
+      "looking_for": 0.0,
+      "cv_summary": 0.0,
+      "cv_lang": 0.0,
+      "record_type": 0.0,
+      "metadata": 0.0
+    },
+    "metrics": {
+      "average_experience_years": 4.1,
+      "min_experience_years": 0.0,
+      "max_experience_years": 11.0,
+      "english_levels_distribution": {
+        "fluent": 3503,
+        "intermediate": 4190,
+        "upper": 5759,
+        "basic": 372,
+        "pre": 1132,
+        "no_english": 10,
+        "nan": 34
+      }
+    }
+  },
+  "career_trajectories": {
+    "status": "partial",
+    "total_records": 25000,
+    "valid_records": 25000,
+    "invalid_records": 0,
+    "unique_trajectory_ids": 24186,
+    "unique_persons": 4388,
+    "record_type_verified": "career_trajectory",
+    "unique_esco_codes": 1927,
+    "validation_errors_sample": [],
+    "null_percentages": {
+      "trajectory_id": 0.0,
+      "source_dataset": 0.0,
+      "person_id": 0.0,
+      "matched_esco_code": 0.0,
+      "start_date": 0.0,
+      "end_date": 0.0,
+      "university_level": 0.0,
+      "record_type": 0.0
+    }
+  }
+}

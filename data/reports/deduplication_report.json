@@ -1,0 +1,520 @@
+{
+  "timestamp": "2026-11-22T21:07:14.170368",
+  "input_records_total": 5000,
+  "input_records_by_source": {
+    "single_source": 5000
+  },
+  "unique_master_jobs": 4954,
+  "duplicates_removed_total": 46,
+  "duplication_rate_percent": 0.92,
+  "breakdown": {
+    "exact_url_duplicates": 25,
+    "exact_entity_duplicates": 13,
+    "high_confidence_duplicates": 8,
+    "cross_source_duplicates": 0,
+    "duplicate_clusters_count": 43,
+    "possible_duplicates_flagged_for_review": 100
+  },
+  "clusters_sample": [
+    {
+      "cluster_id": 107,
+      "cluster_size": 2,
+      "primary_id": "6167d93f-c69c-58a1-8de1-03e24af78053",
+      "primary_source": "single_source",
+      "title": "BCBA Practice Owner - Launch and Grow your practice",
+      "seniority": "mid",
+      "company": "3y-health",
+      "location": "Remote",
+      "merge_reason": "exact_company_title_location_content",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "8b61e3f2-4ff0-5609-bd63-08262160fa9b",
+          "source_id": "ashby:3y-health:2f48046b-4e02-4981-bd1c-d4b606c61480",
+          "url": "https://jobs.ashbyhq.com/3y-health/2f48046b-4e02-4981-bd1c-d4b606c61480"
+        }
+      ]
+    },
+    {
+      "cluster_id": 238,
+      "cluster_size": 2,
+      "primary_id": "bbc897e8-513d-54f7-ab70-19e453608465",
+      "primary_source": "single_source",
+      "title": "Senior Turbomachinery Engineer",
+      "seniority": "senior",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "5bf19ae6-a849-5cc2-97b6-fef8d9410c26",
+          "source_id": "ashby:antares:d2d66759-9e2c-45c2-9d0a-f04d67d94935",
+          "url": "https://jobs.ashbyhq.com/antares/d2d66759-9e2c-45c2-9d0a-f04d67d94935"
+        }
+      ]
+    },
+    {
+      "cluster_id": 239,
+      "cluster_size": 2,
+      "primary_id": "fc129fc1-3fac-50e2-bb8b-d8b1fcc00750",
+      "primary_source": "single_source",
+      "title": "General Application for Engineers",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "18159b4a-aa8d-528f-8f2f-5607d9067382",
+          "source_id": "ashby:antares:c59ae7b1-1d93-434f-96d0-6f480a943d8f",
+          "url": "https://jobs.ashbyhq.com/antares/c59ae7b1-1d93-434f-96d0-6f480a943d8f"
+        }
+      ]
+    },
+    {
+      "cluster_id": 240,
+      "cluster_size": 2,
+      "primary_id": "e2b9ec7b-039a-5fb9-b945-b13f09526e3c",
+      "primary_source": "single_source",
+      "title": "R&D Technician I",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "e017a08d-88ce-560f-82fe-883580e1381f",
+          "source_id": "ashby:antares:fbc79a47-845b-4071-ad72-7cc71f7c28fc",
+          "url": "https://jobs.ashbyhq.com/antares/fbc79a47-845b-4071-ad72-7cc71f7c28fc"
+        }
+      ]
+    },
+    {
+      "cluster_id": 241,
+      "cluster_size": 2,
+      "primary_id": "0a496c01-06a9-5b72-8d3f-a6d09872eea2",
+      "primary_source": "single_source",
+      "title": "Manufacturing Engineer",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "897ccaf2-b705-5f44-a4be-252c6f5ad1c6",
+          "source_id": "ashby:antares:c652b4b6-6f14-4370-bcf9-6feb63ed4ff7",
+          "url": "https://jobs.ashbyhq.com/antares/c652b4b6-6f14-4370-bcf9-6feb63ed4ff7"
+        }
+      ]
+    },
+    {
+      "cluster_id": 242,
+      "cluster_size": 2,
+      "primary_id": "82cf2e26-f429-5d59-875e-ac2d36f8a8d4",
+      "primary_source": "single_source",
+      "title": "R&D Machinist",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "c1a51e53-fe9e-50d6-a094-465add2a78aa",
+          "source_id": "ashby:antares:1da79789-b162-4bc2-9a07-6206a4aa84ef",
+          "url": "https://jobs.ashbyhq.com/antares/1da79789-b162-4bc2-9a07-6206a4aa84ef"
+        }
+      ]
+    },
+    {
+      "cluster_id": 243,
+      "cluster_size": 2,
+      "primary_id": "24bfc6a7-e898-5032-941c-cf3f89865739",
+      "primary_source": "single_source",
+      "title": "Mission Engineer",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "d0ba913c-62ed-5c5a-b8c5-2112a36b71d1",
+          "source_id": "ashby:antares:561ed849-c132-4bd8-9621-78686fddc9c7",
+          "url": "https://jobs.ashbyhq.com/antares/561ed849-c132-4bd8-9621-78686fddc9c7"
+        }
+      ]
+    },
+    {
+      "cluster_id": 244,
+      "cluster_size": 2,
+      "primary_id": "282fe81f-d761-53d6-bdf2-3355cc67d8aa",
+      "primary_source": "single_source",
+      "title": "Senior Technical Recruiter - Hardware",
+      "seniority": "senior",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "88f1a473-26da-5c3d-82a1-e1bf94ef16d5",
+          "source_id": "ashby:antares:bff8c050-3bbc-41f4-8ce4-c20ff5e86aa5",
+          "url": "https://jobs.ashbyhq.com/antares/bff8c050-3bbc-41f4-8ce4-c20ff5e86aa5"
+        }
+      ]
+    },
+    {
+      "cluster_id": 245,
+      "cluster_size": 2,
+      "primary_id": "1fb49f70-0804-5eb0-a519-e1ffd74dcac0",
+      "primary_source": "single_source",
+      "title": "Licensing / Safety Basis Engineer",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Idaho Falls, Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "216a84a8-cc2b-5986-a844-98a930c56376",
+          "source_id": "ashby:antares:6897d6aa-b89b-464d-b663-cefc1dabfdb1",
+          "url": "https://jobs.ashbyhq.com/antares/6897d6aa-b89b-464d-b663-cefc1dabfdb1"
+        }
+      ]
+    },
+    {
+      "cluster_id": 246,
+      "cluster_size": 2,
+      "primary_id": "679e1bdd-ec6c-5502-a78b-91b75de92f11",
+      "primary_source": "single_source",
+      "title": "Materials Engineer II",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "e1d91a43-f614-5e63-b02f-34a81210c331",
+          "source_id": "ashby:antares:85a5992d-1754-4744-ab7b-b049c83ebb2f",
+          "url": "https://jobs.ashbyhq.com/antares/85a5992d-1754-4744-ab7b-b049c83ebb2f"
+        }
+      ]
+    },
+    {
+      "cluster_id": 247,
+      "cluster_size": 2,
+      "primary_id": "111515b3-51d1-53af-8ca6-d706fbb5e37b",
+      "primary_source": "single_source",
+      "title": "Structural Analyst",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "c23c6119-cd04-5d79-80c2-809966a5b4ab",
+          "source_id": "ashby:antares:f41274a4-f000-4e53-be5b-aaff5f3d6ad8",
+          "url": "https://jobs.ashbyhq.com/antares/f41274a4-f000-4e53-be5b-aaff5f3d6ad8"
+        }
+      ]
+    },
+    {
+      "cluster_id": 248,
+      "cluster_size": 2,
+      "primary_id": "b465b1b7-499c-5f11-ab83-bd70b00cc5a6",
+      "primary_source": "single_source",
+      "title": "Build Quality Engineer II",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "59e239fa-f246-5199-824b-d3927cf39a14",
+          "source_id": "ashby:antares:4f60a751-5d31-43f0-8bdf-8dd376ee3546",
+          "url": "https://jobs.ashbyhq.com/antares/4f60a751-5d31-43f0-8bdf-8dd376ee3546"
+        }
+      ]
+    },
+    {
+      "cluster_id": 249,
+      "cluster_size": 2,
+      "primary_id": "9bf8e308-fad2-5509-b032-460bbf7889fd",
+      "primary_source": "single_source",
+      "title": "Environmental Health & Safety (EHS) Lead",
+      "seniority": "lead_staff",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "39b1fbf5-eda0-5266-a3d1-5b5388c010de",
+          "source_id": "ashby:antares:4a03153d-b020-456f-9a4a-ab168effd0b5",
+          "url": "https://jobs.ashbyhq.com/antares/4a03153d-b020-456f-9a4a-ab168effd0b5"
+        }
+      ]
+    },
+    {
+      "cluster_id": 250,
+      "cluster_size": 2,
+      "primary_id": "3a538411-5231-5cf6-ac84-dd20831c8849",
+      "primary_source": "single_source",
+      "title": "Test Technician",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "661f7743-2751-5ac7-8abe-9d37cbb2f8e9",
+          "source_id": "ashby:antares:94867400-5946-4e3e-832d-541fb88b7289",
+          "url": "https://jobs.ashbyhq.com/antares/94867400-5946-4e3e-832d-541fb88b7289"
+        }
+      ]
+    },
+    {
+      "cluster_id": 251,
+      "cluster_size": 2,
+      "primary_id": "ff58ab96-ed5f-51dd-b5d6-e018b634dc00",
+      "primary_source": "single_source",
+      "title": "Test Engineer I",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "86e25bd4-7a99-5abc-af56-24d9b329f45f",
+          "source_id": "ashby:antares:adf08a7d-9f56-47eb-9db6-1d0d8b6afed5",
+          "url": "https://jobs.ashbyhq.com/antares/adf08a7d-9f56-47eb-9db6-1d0d8b6afed5"
+        }
+      ]
+    },
+    {
+      "cluster_id": 252,
+      "cluster_size": 2,
+      "primary_id": "812a22c4-d5e3-50e5-b3f3-a57f54b259af",
+      "primary_source": "single_source",
+      "title": "Senior Mechanical Design Engineer - Cover Gas Systems",
+      "seniority": "senior",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "46429a0c-609a-549e-82a9-e2e6e31d90c0",
+          "source_id": "ashby:antares:ea3ca392-b52e-434d-8e5f-74816fc899b6",
+          "url": "https://jobs.ashbyhq.com/antares/ea3ca392-b52e-434d-8e5f-74816fc899b6"
+        }
+      ]
+    },
+    {
+      "cluster_id": 253,
+      "cluster_size": 2,
+      "primary_id": "eb6f69f6-bf7b-519a-a00d-7fb09601ee6f",
+      "primary_source": "single_source",
+      "title": "Senior Quality Inspector",
+      "seniority": "senior",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "80266c63-96ef-5046-adce-381fa5386210",
+          "source_id": "ashby:antares:444d283e-a1a6-4c53-a5bd-b325b3ad85ce",
+          "url": "https://jobs.ashbyhq.com/antares/444d283e-a1a6-4c53-a5bd-b325b3ad85ce"
+        }
+      ]
+    },
+    {
+      "cluster_id": 254,
+      "cluster_size": 2,
+      "primary_id": "cc97d60e-1de0-524b-b330-8cc505bbfce5",
+      "primary_source": "single_source",
+      "title": "Radiation Shielding Engineer",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles, Idaho Falls",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "57cfd0f1-1f1f-52de-9747-5fbe68be49cd",
+          "source_id": "ashby:antares:be6fbc08-bf6c-43b4-b29e-f6e026636614",
+          "url": "https://jobs.ashbyhq.com/antares/be6fbc08-bf6c-43b4-b29e-f6e026636614"
+        }
+      ]
+    },
+    {
+      "cluster_id": 255,
+      "cluster_size": 2,
+      "primary_id": "215301f9-9720-5bfd-b277-d4446d717630",
+      "primary_source": "single_source",
+      "title": "Government Affairs Manager",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "DC",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "5167a850-429d-5f30-9390-20f86e350763",
+          "source_id": "ashby:antares:1be6d0cb-161a-4558-ba6e-788beba1f14f",
+          "url": "https://jobs.ashbyhq.com/antares/1be6d0cb-161a-4558-ba6e-788beba1f14f"
+        }
+      ]
+    },
+    {
+      "cluster_id": 256,
+      "cluster_size": 2,
+      "primary_id": "892c48a9-b75b-5853-81cd-d1960f957070",
+      "primary_source": "single_source",
+      "title": "CAD Drafter",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "ae394f1b-1d94-58e3-9fe9-2ebcee4487a6",
+          "source_id": "ashby:antares:aac1d501-9d18-4b92-a18f-9e59b258dd3b",
+          "url": "https://jobs.ashbyhq.com/antares/aac1d501-9d18-4b92-a18f-9e59b258dd3b"
+        }
+      ]
+    },
+    {
+      "cluster_id": 257,
+      "cluster_size": 2,
+      "primary_id": "3f690a4e-8c98-5346-9e34-ab210a3b628f",
+      "primary_source": "single_source",
+      "title": "Manager, Manufacturing Engineering",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "77a453ea-5c50-57ae-9c19-71c83fffa959",
+          "source_id": "ashby:antares:81e4f9ac-de8f-44a3-ad52-433ec6b64c7d",
+          "url": "https://jobs.ashbyhq.com/antares/81e4f9ac-de8f-44a3-ad52-433ec6b64c7d"
+        }
+      ]
+    },
+    {
+      "cluster_id": 258,
+      "cluster_size": 2,
+      "primary_id": "f6e94088-53bc-539b-af66-84213a7cfe3b",
+      "primary_source": "single_source",
+      "title": "Supply Chain Engineer II / Sr. Supply Chain Engineer",
+      "seniority": "senior",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "49e8369f-3298-5eb8-ad46-d7ab38348219",
+          "source_id": "ashby:antares:8f9f6cd6-cb0f-412e-8bf7-e82fc9c24ff7",
+          "url": "https://jobs.ashbyhq.com/antares/8f9f6cd6-cb0f-412e-8bf7-e82fc9c24ff7"
+        }
+      ]
+    },
+    {
+      "cluster_id": 259,
+      "cluster_size": 2,
+      "primary_id": "0ecc6c1f-8f39-5848-ab77-86c55e7abcfe",
+      "primary_source": "single_source",
+      "title": "Supply Chain Manager",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "e7aaf014-8f93-5cfa-80f1-7e56b7d57299",
+          "source_id": "ashby:antares:9aa877cc-d36c-4c04-9c69-9de412d91480",
+          "url": "https://jobs.ashbyhq.com/antares/9aa877cc-d36c-4c04-9c69-9de412d91480"
+        }
+      ]
+    },
+    {
+      "cluster_id": 260,
+      "cluster_size": 2,
+      "primary_id": "cd6e1edc-0b9a-53d3-be48-4efac950c734",
+      "primary_source": "single_source",
+      "title": "Senior Electrical & Integration Engineer - Space",
+      "seniority": "senior",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "62357bb6-2e71-525d-8822-456196504c52",
+          "source_id": "ashby:antares:eafa07ac-c43b-4555-97aa-11197ae725ec",
+          "url": "https://jobs.ashbyhq.com/antares/eafa07ac-c43b-4555-97aa-11197ae725ec"
+        }
+      ]
+    },
+    {
+      "cluster_id": 261,
+      "cluster_size": 2,
+      "primary_id": "695fd4af-8af1-5dbd-8319-27ea1690fa48",
+      "primary_source": "single_source",
+      "title": "Spacecraft Design Engineer - Space Nuclear",
+      "seniority": "mid",
+      "company": "Antares",
+      "location": "Los Angeles",
+      "merge_reason": "exact_canonical_url",
+      "duplicate_count": 1,
+      "alternate_sources": [
+        {
+          "source": "single_source",
+          "job_id": "69b6d2f7-d89e-5c16-b1cd-974cb703b021",
+          "source_id": "ashby:antares:a3940970-590e-4959-98f4-44aad60aedd1",
+          "url": "https://jobs.ashbyhq.com/antares/a3940970-590e-4959-98f4-44aad60aedd1"
+        }
+      ]
+    }
+  ]
+}
