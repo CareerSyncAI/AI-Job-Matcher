@@ -273,4 +273,181 @@ def test_analysis_worker_enqueue_failure_marks_failed(client, db_session, monkey
     data = resp.json()
     assert data["status"] == "failed"
     assert data["current_stage"] == "failed"
+    assert data["failed_stage"] == "queued"
     assert data["failure_code"] == "worker_enqueue_failed"
+    assert "redis unreachable" not in (data["failure_detail"] or "")
+
+
+def test_storage_path_escape_and_symlink_rejection(client, db_session, tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        resume_analysis_module,
+        "get_settings",
+        lambda: Settings(jwt_secret="a" * 32, upload_directory=tmp_path, enable_worker=False),
+    )
+
+    owner, _, resume = _seed_candidate_with_resume(
+        db_session,
+        extracted_text=None,
+        storage_key="../../etc/passwd",
+    )
+    resp = client.post(f"/api/v1/resumes/{resume.id}/analysis", headers=_auth_headers(owner))
+    assert resp.status_code == 202
+    run_id = resp.json()["run_id"]
+    poll = client.get(f"/api/v1/resumes/{resume.id}/analysis/{run_id}", headers=_auth_headers(owner))
+    assert poll.status_code == 200
+    data = poll.json()
+    assert data["status"] == "failed"
+    assert data["failed_stage"] == "extracting_text"
+    assert data["failure_code"] == "storage_path_invalid"
+    assert "etc/passwd" not in (data["failure_detail"] or "")
+
+    # Symlink escape check (best-effort on platforms that permit symlinks)
+    outside = tmp_path.parent / f"outside_{uuid4().hex}.pdf"
+    outside.write_bytes(b"%PDF-1.4\nhello")
+    symlink_path = tmp_path / f"link_{uuid4().hex}.pdf"
+    try:
+        symlink_path.symlink_to(outside)
+    except OSError:
+        outside.unlink(missing_ok=True)
+        return
+
+    try:
+        sym_owner, _, sym_resume = _seed_candidate_with_resume(
+            db_session,
+            extracted_text=None,
+            storage_key=symlink_path.name,
+        )
+        sym_resp = client.post(f"/api/v1/resumes/{sym_resume.id}/analysis", headers=_auth_headers(sym_owner))
+        assert sym_resp.status_code == 202
+        sym_poll = client.get(
+            f"/api/v1/resumes/{sym_resume.id}/analysis/{sym_resp.json()['run_id']}",
+            headers=_auth_headers(sym_owner),
+        )
+        assert sym_poll.status_code == 200
+        assert sym_poll.json()["failure_code"] == "storage_path_invalid"
+    finally:
+        symlink_path.unlink(missing_ok=True)
+        outside.unlink(missing_ok=True)
+
+
+def test_atomic_worker_claim_and_terminal_immutability(db_session):
+    _, _, resume = _seed_candidate_with_resume(db_session, extracted_text="Experience\nPython\nSkills\nPython\nEducation\nBS")
+    run = ResumeAnalysisRun(
+        resume_id=resume.id,
+        status=ResumeAnalysisStatus.QUEUED,
+        current_stage="queued",
+        attempt_number=1,
+    )
+    db_session.add(run)
+    db_session.commit()
+
+    # First execution claims and completes
+    resume_analysis_module.execute_analysis_run(run.id, db=db_session)
+    db_session.refresh(run)
+    assert run.status == ResumeAnalysisStatus.COMPLETED
+    completed_at = run.completed_at
+
+    # Duplicate delivery cannot re-execute or alter completed run
+    resume_analysis_module.execute_analysis_run(run.id, db=db_session)
+    db_session.refresh(run)
+    assert run.status == ResumeAnalysisStatus.COMPLETED
+    assert run.completed_at == completed_at
+
+    # Terminal state cannot be overwritten by late failure marker
+    assert resume_analysis_module.mark_run_failed_atomic(db_session, run.id, failure_code="worker_timeout") is False
+    db_session.refresh(run)
+    assert run.status == ResumeAnalysisStatus.COMPLETED
+
+
+def test_concurrent_start_and_retry_enforced_by_db_constraint(client, db_session):
+    from datetime import UTC, datetime, timedelta
+
+    import pytest
+    from fastapi import HTTPException
+
+    owner, cand, resume = _seed_candidate_with_resume(
+        db_session,
+        extracted_text="Python Skills",
+        storage_key=f"{uuid4().hex}.pdf",
+    )
+    other_resume = Resume(
+        candidate_id=cand.id,
+        original_filename="other.pdf",
+        storage_key=f"{uuid4().hex}.pdf",
+        mime_type="application/pdf",
+        byte_size=1024,
+        sha256=uuid4().hex + uuid4().hex,
+        processing_status=ProcessingStatus.COMPLETED,
+        extracted_text="Python Skills",
+    )
+    db_session.add(other_resume)
+    db_session.commit()
+
+    # Insert an active run directly and verify DB partial unique index rejects second active run
+    run1 = ResumeAnalysisRun(
+        resume_id=resume.id,
+        initiated_by_user_id=owner.id,
+        status=ResumeAnalysisStatus.QUEUED,
+        current_stage="queued",
+        attempt_number=1,
+        lease_expires_at=datetime.now(UTC) + timedelta(minutes=5),
+    )
+    db_session.add(run1)
+    db_session.commit()
+
+    with pytest.raises(HTTPException) as exc_info:
+        resume_analysis_module.ResumeAnalysisService.start_run(
+            db_session,
+            resume=resume,
+            initiated_by_user_id=owner.id,
+        )
+    assert exc_info.value.status_code == 409
+
+    # Mismatched run_id across resumes returns 404
+    mismatch = client.get(f"/api/v1/resumes/{other_resume.id}/analysis/{run1.id}", headers=_auth_headers(owner))
+    assert mismatch.status_code == 404
+
+    # Expired lease allows bounded recovery and new start
+    run1.lease_expires_at = datetime.now(UTC) - timedelta(seconds=10)
+    db_session.commit()
+
+    recovered_next = resume_analysis_module.ResumeAnalysisService.start_run(
+        db_session,
+        resume=resume,
+        initiated_by_user_id=owner.id,
+    )
+    db_session.refresh(run1)
+    assert run1.status == ResumeAnalysisStatus.FAILED
+    assert run1.failure_code == "worker_lease_expired"
+    assert run1.failed_stage == "queued"
+    assert recovered_next.status == ResumeAnalysisStatus.QUEUED
+
+    # Retry chain integrity: mark recovered_next failed, retry once, second retry of same run fails with 409
+    resume_analysis_module.mark_run_failed_atomic(db_session, recovered_next.id, failure_code="parse_failed")
+    retry_1 = resume_analysis_module.ResumeAnalysisService.retry_run(
+        db_session,
+        resume=resume,
+        run_id=recovered_next.id,
+        initiated_by_user_id=owner.id,
+    )
+    assert retry_1.retry_of_run_id == recovered_next.id
+    assert retry_1.attempt_number == 2
+
+    resume_analysis_module.mark_run_failed_atomic(db_session, retry_1.id, failure_code="parse_failed")
+    with pytest.raises(HTTPException) as dup_retry_exc:
+        resume_analysis_module.ResumeAnalysisService.retry_run(
+            db_session,
+            resume=resume,
+            run_id=recovered_next.id,
+            initiated_by_user_id=owner.id,
+        )
+    assert dup_retry_exc.value.status_code == 409
+
+
+def test_ingestion_in_progress_blocks_explicit_analysis_start(client, db_session):
+    owner, _, resume = _seed_candidate_with_resume(db_session, extracted_text=None)
+    resume.processing_status = ProcessingStatus.PROCESSING
+    db_session.commit()
+
+    resp = client.post(f"/api/v1/resumes/{resume.id}/analysis", headers=_auth_headers(owner))
+    assert resp.status_code == 409

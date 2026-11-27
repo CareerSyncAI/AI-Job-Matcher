@@ -344,11 +344,21 @@ def _process_resume_inline(resume_id: UUID, job_id: UUID) -> None:
         resume.processing_status = ProcessingStatus.PROCESSING
         db.commit()
 
-        root = settings.upload_directory.expanduser().resolve()
-        file_path = (root / resume.storage_key).resolve()
+        from app.services.storage import StoragePathError, resolve_safe_storage_path
 
-        if not file_path.exists():
-            logger.error("Resume file missing on disk for resume %s (storage_key: %s)", resume.id, resume.storage_key)
+        try:
+            file_path = resolve_safe_storage_path(
+                resume.storage_key,
+                upload_directory=settings.upload_directory,
+                require_file=True,
+            )
+        except (StoragePathError, FileNotFoundError) as path_err:
+            logger.error(
+                "Resume file invalid/missing on disk for resume %s (storage_key: %s): %s",
+                resume.id,
+                resume.storage_key,
+                path_err,
+            )
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
             db.commit()
@@ -555,16 +565,20 @@ def analyze_stored_resume_ats(
     if not text.strip() and resume.storage_key:
         try:
             from app.core.config import get_settings
+            from app.services.storage import resolve_safe_storage_path
             from app.services.text_extraction import extract_text_from_file
+
             settings = get_settings()
-            root = settings.upload_directory.expanduser().resolve()
-            file_path = (root / resume.storage_key).resolve()
-            if file_path.exists():
-                extracted = extract_text_from_file(file_path, resume.mime_type)
-                if extracted and extracted.strip():
-                    text = extracted
-                    resume.extracted_text = extracted
-                    db.commit()
+            file_path = resolve_safe_storage_path(
+                resume.storage_key,
+                upload_directory=settings.upload_directory,
+                require_file=True,
+            )
+            extracted = extract_text_from_file(file_path, resume.mime_type)
+            if extracted and extracted.strip():
+                text = extracted
+                resume.extracted_text = extracted
+                db.commit()
         except Exception:
             pass
 
@@ -597,6 +611,7 @@ def _get_authorized_resume(resume_id: UUID, current_user: User, db: Session) -> 
 )
 def start_resume_analysis(
     resume_id: UUID,
+    request: Request,
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -608,6 +623,16 @@ def start_resume_analysis(
         resume=resume,
         initiated_by_user_id=current_user.id,
     )
+    record_audit_event(
+        db,
+        action="resume_analysis_started",
+        resource_type="resume_analysis_run",
+        actor_user_id=current_user.id,
+        resource_id=run.id,
+        request_id=getattr(request.state, "request_id", None),
+        metadata={"resume_id": str(resume_id), "attempt_number": run.attempt_number},
+    )
+    db.commit()
     return ResumeAnalysisService.dispatch(run, db=db, background_tasks=background_tasks)
 
 
@@ -642,6 +667,7 @@ def get_resume_analysis_run(
 def retry_resume_analysis_run(
     resume_id: UUID,
     run_id: UUID,
+    request: Request,
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -654,4 +680,18 @@ def retry_resume_analysis_run(
         run_id=run_id,
         initiated_by_user_id=current_user.id,
     )
+    record_audit_event(
+        db,
+        action="resume_analysis_retried",
+        resource_type="resume_analysis_run",
+        actor_user_id=current_user.id,
+        resource_id=run.id,
+        request_id=getattr(request.state, "request_id", None),
+        metadata={
+            "resume_id": str(resume_id),
+            "retry_of_run_id": str(run_id),
+            "attempt_number": run.attempt_number,
+        },
+    )
+    db.commit()
     return ResumeAnalysisService.dispatch(run, db=db, background_tasks=background_tasks)

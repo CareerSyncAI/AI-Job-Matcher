@@ -84,17 +84,46 @@ def store_upload(payload: bytes, extension: str, upload_id: UUID | None = None) 
     )
 
 
+class StoragePathError(ValueError):
+    """Raised when a storage key escapes or violates the configured upload root."""
+
+
+def resolve_safe_storage_path(
+    storage_key: str,
+    *,
+    upload_directory: Path | None = None,
+    require_file: bool = True,
+) -> Path:
+    """Resolve a flat storage_key inside settings.upload_directory with traversal and symlink checks."""
+    if not storage_key or "\x00" in storage_key or "/" in storage_key or "\\" in storage_key or ".." in storage_key:
+        raise StoragePathError("Invalid storage key format.")
+
+    base_dir = upload_directory if upload_directory is not None else get_settings().upload_directory
+    storage_root = base_dir.expanduser().resolve()
+    candidate = storage_root / storage_key
+    if candidate.is_symlink():
+        raise StoragePathError("Symlinked storage entries are not permitted.")
+
+    resolved = candidate.resolve()
+    if not resolved.is_relative_to(storage_root) or resolved.parent != storage_root:
+        raise StoragePathError("Resolved path escapes configured storage root.")
+
+    if require_file and not resolved.is_file():
+        raise FileNotFoundError("Stored file does not exist.")
+
+    return resolved
+
+
 def delete_file(storage_key: str) -> bool:
     """Safely remove an unreferenced or orphaned file from the configured storage directory.
 
-    Guards against path traversal and does not raise an exception if the file does not exist.
+    Guards against path traversal and symlinks; does not raise an exception if the file does not exist.
     """
-    if not storage_key or "/" in storage_key or "\\" in storage_key or ".." in storage_key:
+    try:
+        destination = resolve_safe_storage_path(storage_key, require_file=False)
+    except StoragePathError:
         return False
-    settings = get_settings()
-    storage_root = settings.upload_directory.expanduser().resolve()
-    destination = (storage_root / storage_key).resolve()
-    if destination.parent == storage_root and destination.exists():
+    if destination.exists() and destination.is_file():
         try:
             destination.unlink()
             return True

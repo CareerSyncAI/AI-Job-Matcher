@@ -13,12 +13,14 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -179,6 +181,15 @@ class Resume(TimestampMixin, Base):
 
 class ResumeAnalysisRun(TimestampMixin, Base):
     __tablename__ = "resume_analysis_runs"
+    __table_args__ = (
+        Index(
+            "uq_resume_analysis_runs_one_active",
+            "resume_id",
+            unique=True,
+            postgresql_where=text("status IN ('queued', 'running')"),
+            sqlite_where=text("status IN ('queued', 'running')"),
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     resume_id: Mapped[UUID] = mapped_column(
@@ -200,10 +211,12 @@ class ResumeAnalysisRun(TimestampMixin, Base):
         index=True,
     )
     current_stage: Mapped[str] = mapped_column(String(64), default="queued")
+    failed_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
     attempt_number: Mapped[int] = mapped_column(Integer, default=1)
     failure_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     failure_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     result_payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

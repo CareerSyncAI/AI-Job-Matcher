@@ -216,11 +216,16 @@ def _process_profile_resume_inline(resume_id: UUID, candidate_id: UUID) -> None:
         resume.processing_status = ProcessingStatus.PROCESSING
         db.commit()
 
-        root = settings.upload_directory.expanduser().resolve()
-        file_path = (root / resume.storage_key).resolve()
+        from app.services.storage import StoragePathError, resolve_safe_storage_path
 
-        if not file_path.exists():
-            logger.error("Profile resume file missing on disk for resume %s (storage_key: %s)", resume.id, resume.storage_key)
+        try:
+            file_path = resolve_safe_storage_path(
+                resume.storage_key,
+                upload_directory=settings.upload_directory,
+                require_file=True,
+            )
+        except (StoragePathError, FileNotFoundError) as path_err:
+            logger.error("Profile resume file invalid/missing on disk for resume %s: %s", resume.id, path_err)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
             db.commit()

@@ -54,6 +54,7 @@ class ResumeAnalysisStatusResponse(APIModel):
     run_id: UUID | None = None
     status: ResumeAnalysisStatus
     current_stage: str | None = None
+    failed_stage: str | None = None
     attempt_number: int = 0
     retry_of_run_id: UUID | None = None
     result_available: bool = False

@@ -77,12 +77,17 @@ def process_resume(self, resume_id: str, db=None) -> None:
         resume.processing_status = ProcessingStatus.PROCESSING
         db.commit()
 
-        # Build absolute path to stored file
-        root = settings.upload_directory.expanduser().resolve()
-        file_path = (root / resume.storage_key).resolve()
+        # Build absolute path to stored file safely
+        from app.services.storage import StoragePathError, resolve_safe_storage_path
 
-        if not file_path.exists():
-            logger.error("Resume file missing on disk for resume %s (storage_key: %s)", resume.id, resume.storage_key)
+        try:
+            file_path = resolve_safe_storage_path(
+                resume.storage_key,
+                upload_directory=settings.upload_directory,
+                require_file=True,
+            )
+        except (StoragePathError, FileNotFoundError) as path_err:
+            logger.error("Resume file invalid/missing on disk for resume %s: %s", resume.id, path_err)
             resume.processing_status = ProcessingStatus.NEEDS_ATTENTION
             resume.needs_attention_reason = AttentionReason.FILE_CORRUPTED
             db.commit()
@@ -251,11 +256,7 @@ def process_resume(self, resume_id: str, db=None) -> None:
 )
 def analyze_resume_task(self, run_id: str, db=None) -> None:
     """Execute a queued ResumeAnalysisRun in the background worker."""
-    from datetime import UTC, datetime
-
-    from app.models.entities import ResumeAnalysisRun
-    from app.models.enums import ResumeAnalysisStatus
-    from app.services.resume_analysis import STAGE_FAILED, execute_analysis_run
+    from app.services.resume_analysis import execute_analysis_run, mark_run_failed_atomic
 
     run_uuid = UUID(run_id)
     close_db = False
@@ -269,14 +270,7 @@ def analyze_resume_task(self, run_id: str, db=None) -> None:
         logger.warning("Analysis task soft time limit exceeded for run %s", run_id)
         db.rollback()
         try:
-            run = db.get(ResumeAnalysisRun, run_uuid)
-            if run and run.status != ResumeAnalysisStatus.COMPLETED:
-                run.status = ResumeAnalysisStatus.FAILED
-                run.current_stage = STAGE_FAILED
-                run.failure_code = "worker_timeout"
-                run.failure_detail = "Resume analysis exceeded worker time limit."
-                run.failed_at = datetime.now(UTC)
-                db.commit()
+            mark_run_failed_atomic(db, run_uuid, failure_code="worker_timeout")
         except Exception:
             db.rollback()
     finally:
