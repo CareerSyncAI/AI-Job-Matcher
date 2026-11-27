@@ -12,6 +12,39 @@ export type ResumeStudioPhase =
 
 export type PipelineStageStatus = "pending" | "running" | "completed" | "failed";
 
+export type BackendAnalysisStatus =
+  | "ready"
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed";
+
+export type BackendAnalysisStage =
+  | "ready"
+  | "queued"
+  | "extracting_text"
+  | "analyzing_ats"
+  | "persisting_results"
+  | "completed"
+  | "failed";
+
+export interface ResumeAnalysisStatusResponse {
+  resume_id: string;
+  run_id: string | null;
+  status: BackendAnalysisStatus;
+  current_stage: string | null;
+  attempt_number: number;
+  retry_of_run_id: string | null;
+  result_available: boolean;
+  failure_code: string | null;
+  failure_detail: string | null;
+  result: Record<string, unknown> | null;
+  created_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  failed_at: string | null;
+}
+
 export interface PipelineStageItem {
   id: string;
   name: string;
@@ -58,6 +91,94 @@ export interface ResumeRecordSummary {
   processing_status?: string;
   needs_attention_reason?: string | null;
   uploaded_at?: string;
+}
+
+const EXECUTION_STAGES: Array<{
+  id: Exclude<BackendAnalysisStage, "ready" | "completed" | "failed">;
+  name: string;
+  description: string;
+}> = [
+  {
+    id: "queued",
+    name: "Queued",
+    description: "Analysis run created and dispatched to the backend runner.",
+  },
+  {
+    id: "extracting_text",
+    name: "Extracting Text",
+    description: "Loading stored text or extracting content from the resume file.",
+  },
+  {
+    id: "analyzing_ats",
+    name: "Analyzing ATS & Skills",
+    description: "Evaluating sections, action verbs, formatting, and canonical skills.",
+  },
+  {
+    id: "persisting_results",
+    name: "Persisting Results",
+    description: "Saving structured analysis results for your profile.",
+  },
+];
+
+export function buildPipelineStages(
+  analysis: ResumeAnalysisStatusResponse | null | undefined
+): PipelineStageItem[] {
+  if (!analysis) {
+    return [];
+  }
+
+  const { status, current_stage: currentStage, failure_detail: failureDetail, failure_code: failureCode, started_at: startedAt } = analysis;
+
+  if (status === "ready") {
+    return EXECUTION_STAGES.map((stage) => ({
+      ...stage,
+      status: "pending",
+    }));
+  }
+
+  if (status === "completed") {
+    return EXECUTION_STAGES.map((stage) => ({
+      ...stage,
+      status: "completed",
+    }));
+  }
+
+  if (status === "queued") {
+    return EXECUTION_STAGES.map((stage, idx) => ({
+      ...stage,
+      status: idx === 0 ? "running" : "pending",
+    }));
+  }
+
+  if (status === "running") {
+    const activeIdx = EXECUTION_STAGES.findIndex((s) => s.id === currentStage);
+    const resolvedIdx = activeIdx >= 0 ? activeIdx : 1;
+    return EXECUTION_STAGES.map((stage, idx) => ({
+      ...stage,
+      status:
+        idx < resolvedIdx
+          ? "completed"
+          : idx === resolvedIdx
+          ? "running"
+          : "pending",
+    }));
+  }
+
+  // status === "failed"
+  const stageIdx = EXECUTION_STAGES.findIndex((s) => s.id === currentStage);
+  const failedIdx = stageIdx >= 0 ? stageIdx : startedAt ? 2 : 0;
+  const errText = failureDetail || failureCode || "Analysis stage failed.";
+
+  return EXECUTION_STAGES.map((stage, idx) => ({
+    ...stage,
+    status:
+      idx < failedIdx
+        ? "completed"
+        : idx === failedIdx
+        ? "failed"
+        : "pending",
+    error: idx === failedIdx ? errText : null,
+  }));
 }
 
 export function extractSkillsFromResponse(
@@ -154,6 +275,61 @@ export function derivePhaseFromResumeRecord(
     return "validating";
   }
   return "ready_for_analysis";
+}
+
+export function mapAnalysisStatusToStudioState(
+  analysis: ResumeAnalysisStatusResponse
+): {
+  phase: ResumeStudioPhase;
+  parsed: ParsedResumeData | null;
+  errorMessage: string | null;
+  shouldPoll: boolean;
+} {
+  if (analysis.status === "ready") {
+    return {
+      phase: "ready_for_analysis",
+      parsed: null,
+      errorMessage: null,
+      shouldPoll: false,
+    };
+  }
+
+  if (analysis.status === "queued" || analysis.status === "running") {
+    return {
+      phase: "analyzing",
+      parsed: null,
+      errorMessage: null,
+      shouldPoll: Boolean(analysis.run_id),
+    };
+  }
+
+  if (analysis.status === "completed") {
+    if (analysis.result_available && analysis.result) {
+      const { parsed, isPartial } = normalizeAtsResponse(analysis.result);
+      return {
+        phase: isPartial ? "partial" : "completed",
+        parsed,
+        errorMessage: null,
+        shouldPoll: false,
+      };
+    }
+    return {
+      phase: "failed",
+      parsed: null,
+      errorMessage: "Analysis completed but result payload was unavailable.",
+      shouldPoll: false,
+    };
+  }
+
+  return {
+    phase: "failed",
+    parsed: null,
+    errorMessage:
+      analysis.failure_detail ||
+      analysis.failure_code ||
+      "Resume analysis failed. Please retry.",
+    shouldPoll: false,
+  };
 }
 
 export function canStartAnalysis(
