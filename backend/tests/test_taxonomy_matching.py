@@ -7,10 +7,18 @@ Verifies:
 4. C vs C++ vs C# discrimination.
 5. Preservation of original skill string, canonical name, method, and heuristic confidence.
 """
+import sys
 from pathlib import Path
 
 import pytest
-from scripts.data_ingestion.taxonomy_integrator import TaxonomyIntegrator
+
+pytest.importorskip("pandas")
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from scripts.data_ingestion.taxonomy_integrator import TaxonomyIntegrator  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -18,6 +26,8 @@ def integrator():
     base_dir = Path(__file__).resolve().parent.parent.parent
     occ_p = base_dir / "data" / "processed" / "occupations" / "occupations.parquet"
     skills_p = base_dir / "data" / "processed" / "occupations" / "technology_skills.parquet"
+    if not occ_p.exists() or not skills_p.exists():
+        pytest.skip("Processed O*NET parquet files not available in this environment.")
     return TaxonomyIntegrator(occ_p, skills_p)
 
 

@@ -10,11 +10,19 @@ Verifies:
 7. Missing descriptions and missing locations.
 8. Idempotency across repeated executions.
 """
+import sys
 import tempfile
 from pathlib import Path
 
-import pandas as pd
-from scripts.data_ingestion.deduplicate import (
+import pytest
+
+pd = pytest.importorskip("pandas")
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from scripts.data_ingestion.deduplicate import (  # noqa: E402
     clean_canonical_url,
     clean_company_name,
     deduplicate_cross_dataset,

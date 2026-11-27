@@ -370,8 +370,8 @@ class ATSAnalyzer:
         else:
             strengths.append(f"Optimal word count length ({word_count} words) for automated parsing.")
 
-        # Bullet point check
-        bullet_count = len(re.findall(r"(?:^|\n)\s*[•\-\*]\s+", text))
+        # Bullet point check (avoid overlapping \n and \s* to prevent polynomial ReDoS)
+        bullet_count = len(re.findall(r"(?m)^[ \t]*[•\-\*][ \t]+", text))
         if bullet_count >= 5:
             strengths.append("Clean bulleted achievement structure.")
         else:

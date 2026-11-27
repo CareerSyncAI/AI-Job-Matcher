@@ -7,11 +7,19 @@ Verifies:
 4. Atomic temporary file promotion and cleanup of incomplete temporary artifacts.
 """
 import hashlib
+import sys
 import tempfile
 from pathlib import Path
 
-import pandas as pd
-from scripts.data_ingestion.config import CheckpointManager
+import pytest
+
+pd = pytest.importorskip("pandas")
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from scripts.data_ingestion.config import CheckpointManager  # noqa: E402
 
 
 def compute_sha256(filepath: Path) -> str:
