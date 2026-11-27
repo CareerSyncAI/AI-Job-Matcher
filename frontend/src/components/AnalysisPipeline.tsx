@@ -12,9 +12,12 @@ interface AnalysisPipelineProps {
   phase: ResumeStudioPhase;
   stages: PipelineStageItem[];
   errorMessage?: string | null;
+  connectionWarning?: string | null;
+  isConnectionPaused?: boolean;
   isDark?: boolean;
   onStartAnalysis?: () => void;
   onRetryAnalysis?: () => void;
+  onCheckStatus?: () => void;
   canTriggerAnalysis?: boolean;
   actionLabel?: string;
 }
@@ -37,9 +40,12 @@ export const AnalysisPipeline: React.FC<AnalysisPipelineProps> = ({
   phase,
   stages,
   errorMessage,
+  connectionWarning,
+  isConnectionPaused = false,
   isDark = true,
   onStartAnalysis,
   onRetryAnalysis,
+  onCheckStatus,
   canTriggerAnalysis = false,
   actionLabel = "Start AI Analysis",
 }) => {
@@ -105,7 +111,15 @@ export const AnalysisPipeline: React.FC<AnalysisPipelineProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {phase === "failed" && onRetryAnalysis ? (
+          {isConnectionPaused && onCheckStatus ? (
+            <button
+              type="button"
+              onClick={onCheckStatus}
+              className="px-4 py-2 text-xs font-semibold rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 transition cursor-pointer shadow-sm"
+            >
+              Check Status
+            </button>
+          ) : phase === "failed" && onRetryAnalysis ? (
             <button
               type="button"
               onClick={onRetryAnalysis}
@@ -134,6 +148,21 @@ export const AnalysisPipeline: React.FC<AnalysisPipelineProps> = ({
         </div>
       </div>
 
+      {connectionWarning && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`mt-4 p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
+            isDark
+              ? "bg-amber-950/30 border-amber-700/60 text-amber-200"
+              : "bg-amber-50 border-amber-200 text-amber-900"
+          }`}
+        >
+          <IconAlertTriangle size={16} className="shrink-0 text-amber-500 mt-0.5" />
+          <p className="leading-relaxed break-words">{connectionWarning}</p>
+        </div>
+      )}
+
       {errorMessage && (phase === "failed" || phase === "needs_attention") && (
         <div
           role="alert"
@@ -144,7 +173,7 @@ export const AnalysisPipeline: React.FC<AnalysisPipelineProps> = ({
           }`}
         >
           <IconAlertTriangle size={16} className="shrink-0 text-rose-500 mt-0.5" />
-          <p className="leading-relaxed">{errorMessage}</p>
+          <p className="leading-relaxed break-words">{errorMessage}</p>
         </div>
       )}
 

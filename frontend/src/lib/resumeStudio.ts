@@ -33,6 +33,7 @@ export interface ResumeAnalysisStatusResponse {
   run_id: string | null;
   status: BackendAnalysisStatus;
   current_stage: string | null;
+  failed_stage?: string | null;
   attempt_number: number;
   retry_of_run_id: string | null;
   result_available: boolean;
@@ -127,7 +128,7 @@ export function buildPipelineStages(
     return [];
   }
 
-  const { status, current_stage: currentStage, failure_detail: failureDetail, failure_code: failureCode, started_at: startedAt } = analysis;
+  const { status, current_stage: currentStage, failure_detail: failureDetail, failure_code: failureCode } = analysis;
 
   if (status === "ready") {
     return EXECUTION_STAGES.map((stage) => ({
@@ -164,10 +165,20 @@ export function buildPipelineStages(
     }));
   }
 
-  // status === "failed"
-  const stageIdx = EXECUTION_STAGES.findIndex((s) => s.id === currentStage);
-  const failedIdx = stageIdx >= 0 ? stageIdx : startedAt ? 2 : 0;
-  const errText = failureDetail || failureCode || "Analysis stage failed.";
+  // status === "failed": only attribute failure to a specific execution stage
+  // if the backend explicitly reports it via failed_stage or current_stage.
+  // Never infer or guess a failed stage when current_stage === "failed" or null.
+  const reportedFailedStage = analysis.failed_stage ?? currentStage;
+  const failedIdx = EXECUTION_STAGES.findIndex((s) => s.id === reportedFailedStage);
+  const errText = failureDetail || failureCode || "Analysis failed.";
+
+  if (failedIdx < 0) {
+    return EXECUTION_STAGES.map((stage) => ({
+      ...stage,
+      status: "pending" as const,
+      error: null,
+    }));
+  }
 
   return EXECUTION_STAGES.map((stage, idx) => ({
     ...stage,
@@ -271,10 +282,77 @@ export function derivePhaseFromResumeRecord(
   if (status === "NEEDS_ATTENTION" || status === "FAILED") {
     return "needs_attention";
   }
-  if (status === "PENDING" || status === "PROCESSING" || status === "VALIDATING") {
+  if (status === "UPLOADING") {
+    return "uploading";
+  }
+  if (
+    status === "QUEUED" ||
+    status === "PENDING" ||
+    status === "PROCESSING" ||
+    status === "VALIDATING" ||
+    !status
+  ) {
     return "validating";
   }
-  return "ready_for_analysis";
+  if (status === "COMPLETED" || status === "READY") {
+    return "ready_for_analysis";
+  }
+  return "validating";
+}
+
+export function isResumeIngestionReady(
+  resume: ResumeRecordSummary | null | undefined
+): boolean {
+  return derivePhaseFromResumeRecord(resume) === "ready_for_analysis";
+}
+
+export type ClassifiedErrorKind =
+  | "canceled"
+  | "auth"
+  | "not_found"
+  | "conflict"
+  | "transient"
+  | "fatal";
+
+export function classifyApiError(error: unknown): {
+  kind: ClassifiedErrorKind;
+  statusCode: number | null;
+} {
+  const errObj = error as {
+    name?: string;
+    code?: string;
+    response?: { status?: number };
+  } | null;
+
+  if (
+    errObj?.name === "AbortError" ||
+    errObj?.name === "CanceledError" ||
+    errObj?.code === "ERR_CANCELED"
+  ) {
+    return { kind: "canceled", statusCode: null };
+  }
+
+  const statusCode =
+    typeof errObj?.response?.status === "number" ? errObj.response.status : null;
+
+  if (statusCode === 401 || statusCode === 403) {
+    return { kind: "auth", statusCode };
+  }
+  if (statusCode === 404) {
+    return { kind: "not_found", statusCode };
+  }
+  if (statusCode === 409) {
+    return { kind: "conflict", statusCode };
+  }
+  if (
+    statusCode === null ||
+    statusCode === 408 ||
+    statusCode === 429 ||
+    statusCode >= 500
+  ) {
+    return { kind: "transient", statusCode };
+  }
+  return { kind: "fatal", statusCode };
 }
 
 export function mapAnalysisStatusToStudioState(

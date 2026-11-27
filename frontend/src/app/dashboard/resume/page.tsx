@@ -11,13 +11,15 @@ import {
   ParsedResumeData,
   ResumeAnalysisStatusResponse,
   ResumeRecordSummary,
-  ResumeStudioPhase,
   buildPipelineStages,
   canStartAnalysis,
   derivePhaseFromResumeRecord,
   getAnalysisActionLabel,
-  mapAnalysisStatusToStudioState,
 } from "@/lib/resumeStudio";
+import {
+  ResumeStudioLifecycleController,
+  ResumeStudioLifecycleSnapshot,
+} from "@/lib/resumeStudioLifecycle";
 import {
   IconDocument,
   IconCheckCircle,
@@ -80,210 +82,73 @@ export default function ResumePage() {
   const { isDark } = useTheme();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const analysisInFlightRef = useRef(false);
+  const controllerRef = useRef<ResumeStudioLifecycleController | null>(null);
 
   // File Upload State (real progress from Axios only — no fake timers)
   const [isUploading, setIsUploading] = useState(false);
   const [uploadPercent, setUploadPercent] = useState<number | null>(null);
-  const [uploadedResumeId, setUploadedResumeId] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Resume List Loading & Error State
   const [isLoadingResume, setIsLoadingResume] = useState(true);
   const [resumeListError, setResumeListError] = useState<string | null>(null);
 
-  // Backend-Driven Analysis Pipeline State
-  const [phase, setPhase] = useState<ResumeStudioPhase>("loading");
-  const [analysisStatus, setAnalysisStatus] = useState<ResumeAnalysisStatusResponse | null>(null);
-  const [activeRunId, setActiveRunId] = useState<string | null>(null);
-  const [isPolling, setIsPolling] = useState(false);
-  const [atsError, setAtsError] = useState<string | null>(null);
-  const [parsedData, setParsedData] = useState<ParsedResumeData | null>(null);
+  // Backend-Driven Analysis Pipeline State (managed by ResumeStudioLifecycleController)
+  const [lifecycle, setLifecycle] = useState<ResumeStudioLifecycleSnapshot>({
+    resumeId: null,
+    phase: "loading",
+    analysisStatus: null,
+    activeRunId: null,
+    isPolling: false,
+    isConnectionPaused: false,
+    connectionWarning: null,
+    canRetryWithRun: false,
+    atsError: null,
+    parsedData: null,
+  });
 
   // Isolated demo preview toggle — explicitly separated from real user state
   const [isDemoPreview, setIsDemoPreview] = useState(false);
 
-  const applyAnalysisResponse = useCallback(
-    (payload: ResumeAnalysisStatusResponse) => {
-      setAnalysisStatus(payload);
-      setActiveRunId(payload.run_id ?? null);
-      const mapped = mapAnalysisStatusToStudioState(payload);
-      setPhase(mapped.phase);
-      setParsedData(mapped.parsed);
-      setAtsError(mapped.errorMessage);
-      setIsPolling(mapped.shouldPoll);
-    },
-    []
-  );
-
-  const loadLatestAnalysisStatus = useCallback(
-    async (resumeId: string) => {
-      const statusRes = await api.get<ResumeAnalysisStatusResponse>(
-        `/resumes/${resumeId}/analysis`
-      );
-      applyAnalysisResponse(statusRes.data);
-    },
-    [applyAnalysisResponse]
-  );
-
-  const applyResumeRecord = useCallback(
-    async (latest: ResumeRecordSummary | null) => {
-      if (!latest || !latest.id) {
-        setUploadedResumeId(null);
-        setAnalysisStatus(null);
-        setActiveRunId(null);
-        setIsPolling(false);
-        setPhase("no_resume");
-        setAtsError(null);
-        setParsedData(null);
-        return;
-      }
-
-      setUploadedResumeId(latest.id);
-      const recordPhase = derivePhaseFromResumeRecord(latest);
-
-      if (recordPhase === "needs_attention") {
-        setAnalysisStatus(null);
-        setActiveRunId(null);
-        setIsPolling(false);
-        setPhase("needs_attention");
-        setParsedData(null);
-        setAtsError(
-          `Resume processing requires attention (${latest.needs_attention_reason || "unreadable or corrupted document"}). Please upload a clean PDF or DOCX.`
-        );
-        return;
-      }
-
-      try {
-        await loadLatestAnalysisStatus(latest.id);
-      } catch (err: unknown) {
-        setAnalysisStatus(null);
-        setActiveRunId(null);
-        setIsPolling(false);
-        setPhase("ready_for_analysis");
-        setParsedData(null);
-        setAtsError(
-          getApiErrorMessage(err, "Unable to check latest analysis status.")
-        );
-      }
-    },
-    [loadLatestAnalysisStatus]
-  );
-
-  // Poll GET /resumes/{resume_id}/analysis/{run_id} while queued or running
-  useEffect(() => {
-    if (!isPolling || !uploadedResumeId || !activeRunId) {
-      return;
-    }
-
-    let cancelled = false;
-    const timerId = setTimeout(async () => {
-      try {
-        const pollRes = await api.get<ResumeAnalysisStatusResponse>(
-          `/resumes/${uploadedResumeId}/analysis/${activeRunId}`
-        );
-        if (!cancelled) {
-          applyAnalysisResponse(pollRes.data);
-        }
-      } catch (err: unknown) {
-        if (!cancelled) {
-          setIsPolling(false);
-          setPhase("failed");
-          setAtsError(
-            getApiErrorMessage(
-              err,
-              "Lost connection while polling AI analysis status."
-            )
-          );
-        }
-      }
-    }, POLL_INTERVAL_MS);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timerId);
-    };
-  }, [activeRunId, applyAnalysisResponse, isPolling, uploadedResumeId]);
-
-  const handleStartAnalysis = useCallback(async () => {
-    if (
-      !canStartAnalysis(
-        phase,
-        uploadedResumeId,
-        analysisInFlightRef.current || isPolling
-      )
-    ) {
-      return;
-    }
-
-    analysisInFlightRef.current = true;
-    setPhase("analyzing");
-    setAtsError(null);
-
-    try {
-      const startRes =
-        phase === "failed" && activeRunId
-          ? await api.post<ResumeAnalysisStatusResponse>(
-              `/resumes/${uploadedResumeId}/analysis/${activeRunId}/retry`
-            )
-          : await api.post<ResumeAnalysisStatusResponse>(
-              `/resumes/${uploadedResumeId}/analysis`
-            );
-
-      applyAnalysisResponse(startRes.data);
-    } catch (err: unknown) {
-      const statusCode = (err as { response?: { status?: number } })?.response?.status;
-      // 409 Conflict indicates an active queued/running run already exists; recover it
-      if (statusCode === 409 && uploadedResumeId) {
-        try {
-          await loadLatestAnalysisStatus(uploadedResumeId);
-          return;
-        } catch {
-          // fall through to standard error handling
-        }
-      }
-
-      const serverMsg = getApiErrorMessage(
-        err,
-        "Failed to start AI analysis for this resume."
-      );
-      setIsPolling(false);
-      setPhase("failed");
-      setAtsError(serverMsg);
-    } finally {
-      analysisInFlightRef.current = false;
-    }
-  }, [
-    activeRunId,
-    applyAnalysisResponse,
-    isPolling,
-    loadLatestAnalysisStatus,
+  const {
+    resumeId: uploadedResumeId,
     phase,
-    uploadedResumeId,
-  ]);
+    analysisStatus,
+    isPolling,
+    isConnectionPaused,
+    connectionWarning,
+    atsError,
+    parsedData,
+  } = lifecycle;
+
+  const handleStartAnalysis = useCallback(() => {
+    void controllerRef.current?.startOrRetryAnalysis();
+  }, []);
+
+  const handleCheckStatus = useCallback(() => {
+    void controllerRef.current?.recoverLatestStatus();
+  }, []);
 
   const fetchActiveResume = useCallback(async () => {
     setIsLoadingResume(true);
     setResumeListError(null);
-    setPhase("loading");
+    controllerRef.current?.setLoading();
     try {
       const res = await api.get("/profile/resumes");
       if (Array.isArray(res.data) && res.data.length > 0) {
-        await applyResumeRecord(res.data[0] as ResumeRecordSummary);
+        await controllerRef.current?.applyResumeRecord(
+          res.data[0] as ResumeRecordSummary
+        );
       } else if (Array.isArray(res.data)) {
-        await applyResumeRecord(null);
+        await controllerRef.current?.applyResumeRecord(null);
       } else {
-        setUploadedResumeId(null);
-        setPhase("failed");
+        await controllerRef.current?.applyResumeRecord(null);
         setResumeListError(
           "Unexpected response format received while fetching candidate resumes."
         );
-        setParsedData(null);
       }
     } catch (err: unknown) {
-      setUploadedResumeId(null);
-      setPhase("failed");
-      setParsedData(null);
+      await controllerRef.current?.applyResumeRecord(null);
       setResumeListError(
         getApiErrorMessage(
           err,
@@ -293,34 +158,78 @@ export default function ResumePage() {
     } finally {
       setIsLoadingResume(false);
     }
-  }, [applyResumeRecord]);
+  }, []);
 
   useEffect(() => {
+    const controller = new ResumeStudioLifecycleController({
+      pollIntervalMs: POLL_INTERVAL_MS,
+      maxTransientPollErrors: 5,
+      getErrorMessage: getApiErrorMessage,
+      onStateChange: (next) => {
+        setLifecycle(next);
+      },
+      client: {
+        getLatestAnalysisStatus: async (resumeId, signal) => {
+          const res = await api.get<ResumeAnalysisStatusResponse>(
+            `/resumes/${resumeId}/analysis`,
+            { signal }
+          );
+          return res.data;
+        },
+        getRunStatus: async (resumeId, runId, signal) => {
+          const res = await api.get<ResumeAnalysisStatusResponse>(
+            `/resumes/${resumeId}/analysis/${runId}`,
+            { signal }
+          );
+          return res.data;
+        },
+        startAnalysis: async (resumeId, signal) => {
+          const res = await api.post<ResumeAnalysisStatusResponse>(
+            `/resumes/${resumeId}/analysis`,
+            undefined,
+            { signal }
+          );
+          return res.data;
+        },
+        retryAnalysis: async (resumeId, runId, signal) => {
+          const res = await api.post<ResumeAnalysisStatusResponse>(
+            `/resumes/${resumeId}/analysis/${runId}/retry`,
+            undefined,
+            { signal }
+          );
+          return res.data;
+        },
+      },
+    });
+    controllerRef.current = controller;
+
     if (user && user.role !== "candidate" && user.role !== "admin") {
-      return;
+      return () => {
+        controller.dispose();
+        controllerRef.current = null;
+      };
     }
+
     let isMounted = true;
     const loadInitial = async () => {
       try {
         const res = await api.get("/profile/resumes");
         if (!isMounted) return;
         if (Array.isArray(res.data) && res.data.length > 0) {
-          await applyResumeRecord(res.data[0] as ResumeRecordSummary);
+          await controller.applyResumeRecord(
+            res.data[0] as ResumeRecordSummary
+          );
         } else if (Array.isArray(res.data)) {
-          await applyResumeRecord(null);
+          await controller.applyResumeRecord(null);
         } else {
-          setUploadedResumeId(null);
-          setPhase("failed");
+          await controller.applyResumeRecord(null);
           setResumeListError(
             "Unexpected response format received while fetching candidate resumes."
           );
-          setParsedData(null);
         }
       } catch (err: unknown) {
         if (!isMounted) return;
-        setUploadedResumeId(null);
-        setPhase("failed");
-        setParsedData(null);
+        await controller.applyResumeRecord(null);
         setResumeListError(
           getApiErrorMessage(
             err,
@@ -334,10 +243,13 @@ export default function ResumePage() {
       }
     };
     void loadInitial();
+
     return () => {
       isMounted = false;
+      controller.dispose();
+      controllerRef.current = null;
     };
-  }, [applyResumeRecord, user]);
+  }, [user]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -361,13 +273,8 @@ export default function ResumePage() {
 
     setIsUploading(true);
     setUploadPercent(null);
-    setIsPolling(false);
-    setActiveRunId(null);
-    setAnalysisStatus(null);
-    setPhase("uploading");
+    controllerRef.current?.setUploading();
     setStatusMsg(null);
-    setAtsError(null);
-    setParsedData(null);
     setIsDemoPreview(false);
     setResumeListError(null);
 
@@ -385,7 +292,7 @@ export default function ResumePage() {
       });
 
       const uploadedRecord = (res.data || null) as ResumeRecordSummary | null;
-      await applyResumeRecord(uploadedRecord);
+      await controllerRef.current?.applyResumeRecord(uploadedRecord);
 
       if (uploadedRecord && derivePhaseFromResumeRecord(uploadedRecord) === "ready_for_analysis") {
         setStatusMsg({
@@ -399,9 +306,7 @@ export default function ResumePage() {
         "Failed to process resume upload. Please try again."
       );
       setStatusMsg({ type: "error", text: serverMsg });
-      setPhase("failed");
-      setAtsError(serverMsg);
-      setParsedData(null);
+      await controllerRef.current?.applyResumeRecord(null);
     } finally {
       setIsUploading(false);
       setUploadPercent(null);
@@ -624,9 +529,12 @@ export default function ResumePage() {
             phase={phase}
             stages={stages}
             errorMessage={atsError}
+            connectionWarning={connectionWarning}
+            isConnectionPaused={isConnectionPaused}
             isDark={isDark}
             onStartAnalysis={handleStartAnalysis}
             onRetryAnalysis={handleStartAnalysis}
+            onCheckStatus={handleCheckStatus}
             canTriggerAnalysis={canTrigger}
             actionLabel={getAnalysisActionLabel(phase)}
           />
