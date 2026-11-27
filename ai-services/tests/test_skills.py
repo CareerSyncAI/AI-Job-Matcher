@@ -135,6 +135,29 @@ def test_normalizer_handles_bullets_numbers_and_trailing_punctuation(normalizer)
         assert res["category"] == expected_cat
 
 
+def test_normalizer_handles_adversarial_spacing_delimiters_and_malformed_input(normalizer):
+    """Long noisy input is handled without regex backtracking or losing skill punctuation."""
+    cases = [
+        ("\t  \u2022\t1.\tPython,,,,;;;;", "Python", True),
+        ("React (v18)", "React", True),
+        ("--- / React ???", "React", True),
+        ("C#", "C#", True),
+        ("C++", "C++", True),
+        ("Bank reconciliation", "Bank Reconciliation", True),
+        ("Uncatalogued community practice", "Uncatalogued Community Practice", False),
+    ]
+    for raw, expected, matched in cases:
+        result = normalizer.normalize_single(raw)
+        assert result["canonical"] == expected
+        assert result["matched"] is matched
+
+    malformed = normalizer.normalize_single("[" + " " * 5000 + "Python")
+    assert malformed["matched"] is True
+    assert malformed["canonical"] == "Python"
+    long_noise = normalizer.normalize_single((" \t,;" * 10000) + "Unknown Skill")
+    assert long_noise["matched"] is False
+
+
 def test_false_positive_elimination_in_prose(extractor):
     """Ensures that common prose words are NOT falsely extracted as technical skills."""
     prose_cases = [

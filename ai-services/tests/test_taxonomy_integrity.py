@@ -10,8 +10,6 @@ Verifies:
 
 from __future__ import annotations
 
-import pytest
-
 from src.normalizers.skill_normalizer import SkillNormalizer
 from src.normalizers.taxonomy import (
     ALIAS_LOOKUP,
