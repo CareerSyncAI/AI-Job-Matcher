@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { getApplicationStatusLabel } from "@/lib/applicationStatus";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
@@ -31,6 +31,7 @@ interface ApplicationItem {
   job_title?: string;
   company_name?: string;
   location?: string;
+  is_job_closed?: boolean;
   match_score?: number;
 }
 
@@ -40,6 +41,7 @@ export default function CandidateApplicationsPage() {
 
   const [applications, setApplications] = useState<ApplicationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -64,21 +66,28 @@ export default function CandidateApplicationsPage() {
                 job_title: jobRes.data?.title || "Engineering Role",
                 company_name: jobRes.data?.department || "Verified Hiring Partner",
                 location: jobRes.data?.location || "Remote",
+                is_job_closed: false,
               };
-            } catch {
+            } catch (err: unknown) {
+              const statusCode = (err as { response?: { status?: number } })?.response?.status;
+              // In this system, /jobs/{id} returns 404 for non-open jobs when queried by candidate
+              const isClosed = statusCode === 404;
               return {
                 ...app,
-                job_title: "Role Application",
+                job_title: isClosed ? "Role Application (Requisition Closed)" : "Role Application",
                 company_name: "Hiring Organization",
                 location: "Remote / Hybrid",
+                is_job_closed: isClosed,
               };
             }
           })
         );
         setApplications(enriched);
+        setFetchError(null);
       } catch (err) {
         console.error("Failed to load applications:", err);
         setApplications([]);
+        setFetchError(getApiErrorMessage(err, "Failed to load candidate applications from server."));
       } finally {
         setLoading(false);
       }
@@ -244,6 +253,7 @@ export default function CandidateApplicationsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search role or company..."
+            aria-label="Search applications by role or company"
             className={`w-full text-xs rounded-xl px-3.5 py-2 pl-9 border focus:outline-none focus:border-emerald-500 transition ${
               isDark
                 ? "bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600"
@@ -260,23 +270,60 @@ export default function CandidateApplicationsPage() {
           <div className={`p-10 text-center rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-500"} animate-pulse`}>
             Loading your applications...
           </div>
+        ) : fetchError ? (
+          <div
+            className={`p-12 text-center rounded-2xl border ${
+              isDark ? "bg-rose-500/10 border-rose-500/20 text-rose-300" : "bg-rose-50 border-rose-200 text-rose-700"
+            }`}
+          >
+            <IconTarget size={36} className="mx-auto text-rose-400 mb-3" />
+            <h3 className="text-base font-semibold">Failed to Load Applications</h3>
+            <p className="text-xs mt-1.5 max-w-md mx-auto">
+              {fetchError}
+            </p>
+          </div>
         ) : filteredApps.length === 0 ? (
           <div
             className={`p-12 text-center rounded-2xl border ${
               isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-xs"
             }`}
           >
-            <IconTarget size={32} className="mx-auto text-slate-400 mb-3" />
-            <h3 className="text-sm font-semibold">No applications found in this filter</h3>
-            <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              Explore available job matches and submit applications directly with your ATS resume.
+            <IconTarget size={36} className="mx-auto text-slate-400 mb-3" />
+            <h3 className="text-base font-semibold">
+              {applications.length === 0
+                ? "No applications submitted yet"
+                : "No applications found in this filter"}
+            </h3>
+            <p className={`text-xs mt-1.5 max-w-md mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+              {applications.length === 0
+                ? "Explore verified job requisitions matched against your skill matrix and apply directly with your ATS resume."
+                : "Try resetting your search query or choosing another filter category above."}
             </p>
-            <Link
-              href="/dashboard/jobs"
-              className="inline-block mt-4 px-4 py-2 bg-[#059669] text-white text-xs font-semibold rounded-xl"
-            >
-              Discover Open Roles
-            </Link>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/dashboard/jobs"
+                className="px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center gap-2"
+              >
+                <IconBriefcase size={15} />
+                Browse Open Opportunities
+              </Link>
+              {applications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveFilter("ALL");
+                    setSearchQuery("");
+                  }}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition ${
+                    isDark
+                      ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                      : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           filteredApps.map((app) => {
@@ -290,31 +337,69 @@ export default function CandidateApplicationsPage() {
                     : "bg-white border-slate-200 hover:border-emerald-500/40 text-slate-900 shadow-xs"
                 }`}
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h3 className="font-semibold text-base">{app.job_title || "Software Engineering Role"}</h3>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badge.bg}`}>
-                        {badge.label}
-                      </span>
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <h3 className="font-semibold text-base">{app.job_title || "Software Engineering Role"}</h3>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badge.bg}`}>
+                          {badge.label}
+                        </span>
+                        {app.is_job_closed && (
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                            isDark ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-600 border-slate-200"
+                          }`}>
+                            Requisition Closed
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={`flex flex-wrap items-center gap-4 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        <span className="flex items-center gap-1 font-medium">
+                          <IconBuilding size={14} className="text-emerald-500" />
+                          {app.company_name || "Enterprise Partner"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <IconMapPin size={14} />
+                          {app.location || "Remote / Hybrid"}
+                        </span>
+                        <span>
+                          Applied {new Date(app.applied_at).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className={`flex flex-wrap items-center gap-4 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                      <span className="flex items-center gap-1 font-medium">
-                        <IconBuilding size={14} className="text-emerald-500" />
-                        {app.company_name || "Enterprise Partner"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <IconMapPin size={14} />
-                        {app.location || "Remote / Hybrid"}
-                      </span>
-                      <span>
-                        Applied {new Date(app.applied_at).toLocaleDateString()}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-3 shrink-0">
+                      {app.match_score != null && (
+                        <div className="text-right mr-1">
+                          <span className="text-xs text-slate-400 font-medium block">Match Score</span>
+                          <span className="text-2xl font-bold font-mono leading-none text-emerald-500">{app.match_score}%</span>
+                        </div>
+                      )}
+
+                      <Link
+                        href={`/dashboard/applications/${app.id}/match-results`}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
+                      >
+                        <IconTarget size={14} />
+                        View Match Results
+                      </Link>
+
+                      <Link
+                        href="/dashboard/jobs"
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold border transition ${
+                          isDark
+                            ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                            : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        Job Details
+                      </Link>
                     </div>
                   </div>
+
                   {app.status_history && app.status_history.length > 0 && (
-                    <div className={`mt-4 border-t pt-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+                    <div className={`border-t pt-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
                       <p className={`mb-2 text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Status history</p>
                       <ol className="flex flex-wrap gap-x-5 gap-y-2">
                         {app.status_history.map((entry, index) => (
@@ -326,34 +411,6 @@ export default function CandidateApplicationsPage() {
                       </ol>
                     </div>
                   )}
-
-                  <div className="flex flex-wrap items-center gap-3 shrink-0">
-                    {app.match_score != null && (
-                      <div className="text-right mr-1">
-                        <span className="text-xs text-slate-400 font-medium block">Match Score</span>
-                        <span className="text-2xl font-bold font-mono leading-none text-emerald-500">{app.match_score}%</span>
-                      </div>
-                    )}
-
-                    <Link
-                      href={`/dashboard/applications/${app.id}/match-results`}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
-                    >
-                      <IconTarget size={14} />
-                      View Match Results
-                    </Link>
-
-                    <Link
-                      href="/dashboard/jobs"
-                      className={`px-4 py-2 rounded-xl text-xs font-semibold border transition ${
-                        isDark
-                          ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
-                          : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
-                      }`}
-                    >
-                      Job Details
-                    </Link>
-                  </div>
                 </div>
               </div>
             );

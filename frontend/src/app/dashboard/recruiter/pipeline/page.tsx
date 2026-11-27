@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
+import { useSearchParams } from "next/navigation";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { NEXT_APPLICATION_STATUS, normalizeApplicationStatus, type ApplicationStatus } from "@/lib/applicationStatus";
 import { useTheme } from "@/lib/theme";
+import { Modal } from "@/components/Modal";
 import {
   IconLayers,
   IconBriefcase,
-  IconX,
   IconUsers,
 } from "@/components/Icons";
 
@@ -53,12 +54,23 @@ const STAGES = [
 ] as const;
 
 export default function RecruiterPipelinePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading pipeline...</div>}>
+      <RecruiterPipelineContent />
+    </Suspense>
+  );
+}
+
+function RecruiterPipelineContent() {
   const { isDark } = useTheme();
+  const searchParams = useSearchParams();
+  const requestedJobId = searchParams.get("jobId");
 
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [candidates, setCandidates] = useState<PipelineCandidate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<PipelineCandidate | null>(null);
   const [noteInput, setNoteInput] = useState("");
   const [savingNote, setSavingNote] = useState(false);
@@ -74,18 +86,21 @@ export default function RecruiterPipelinePage() {
         const list: JobSummary[] = Array.isArray(res.data) ? res.data : [];
         setJobs(list);
         if (list.length > 0) {
-          setSelectedJobId(list[0].id);
+          const matchRequested = requestedJobId && list.some((j) => j.id === requestedJobId);
+          setSelectedJobId(matchRequested ? requestedJobId : list[0].id);
+          setFetchError(null);
         } else {
           setCandidates([]);
         }
       } catch (err) {
         console.error("Failed to load recruiter jobs:", err);
+        setFetchError("Unable to retrieve job requisitions from the server.");
       } finally {
         setLoading(false);
       }
     };
     fetchJobs();
-  }, []);
+  }, [requestedJobId]);
 
   // Fetch candidates for selected job
   useEffect(() => {
@@ -142,7 +157,7 @@ export default function RecruiterPipelinePage() {
       }
     } catch (err) {
       console.error("Failed to update candidate pipeline stage:", err);
-      setStatusError("The application status could not be updated. Refresh and try again.");
+      setStatusError(getApiErrorMessage(err, "The application status could not be updated. Refresh and try again."));
     } finally {
       setSavingApplicationId(null);
     }
@@ -232,6 +247,14 @@ export default function RecruiterPipelinePage() {
       {loading ? (
         <div className={`p-16 text-center rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-500"} animate-pulse`}>
           Loading ATS pipeline stages...
+        </div>
+      ) : fetchError ? (
+        <div className={`p-16 text-center rounded-2xl border ${isDark ? "bg-rose-500/10 border-rose-500/20 text-rose-300" : "bg-rose-50 border-rose-200 text-rose-700"}`}>
+          <IconUsers size={36} className="mx-auto text-rose-400 mb-3" />
+          <h3 className="text-base font-semibold">Failed to Load Pipeline</h3>
+          <p className="text-xs mt-1 max-w-sm mx-auto">
+            {fetchError}
+          </p>
         </div>
       ) : candidates.length === 0 ? (
         <div className={`p-16 text-center rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-500"}`}>
@@ -365,30 +388,30 @@ export default function RecruiterPipelinePage() {
       )}
 
       {/* Candidate Detail Modal with Notes */}
-      {selectedCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div
-            className={`relative w-full max-w-lg rounded-2xl border p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto ${
-              isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
-            }`}
-          >
-            <div className={`flex items-start justify-between border-b pb-4 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
-              <div>
-                <h3 className="text-base font-bold">{selectedCandidate.name}</h3>
-                <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  {selectedCandidate.currentRole || "Candidate"} • Deterministic Match:{" "}
-                  <span className="text-emerald-400 font-bold font-mono">{selectedCandidate.matchScore}%</span>
-                </p>
+      <Modal
+        isOpen={!!selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+        title={selectedCandidate?.name}
+        description={selectedCandidate ? `${selectedCandidate.currentRole || "Candidate"} • Deterministic Match: ${selectedCandidate.matchScore}%` : undefined}
+        maxWidth="max-w-lg"
+        className={`max-h-[90vh] overflow-y-auto ${
+          isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
+        }`}
+      >
+        {selectedCandidate && (
+          <div className="space-y-5 pt-1">
+            {statusError && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
+                <span>{statusError}</span>
+                <button
+                  type="button"
+                  onClick={() => setStatusError(null)}
+                  className="text-rose-400 hover:text-rose-200 font-semibold cursor-pointer ml-2"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedCandidate(null)}
-                className="p-1 text-slate-400 hover:text-slate-200"
-              >
-                <IconX size={20} />
-              </button>
-            </div>
-
+            )}
             {/* Current status and next valid action */}
             <div className="space-y-1.5">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Application Status:</span>
@@ -418,10 +441,12 @@ export default function RecruiterPipelinePage() {
             </div>
 
             {/* Recruiter Notes Section */}
-            <div className="space-y-2 border-t border-slate-800 pt-3">
-              <span className="text-xs font-semibold text-slate-300 block">Recruiter Audit Notes:</span>
+            <div className={`space-y-2 border-t pt-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+              <span className={`text-xs font-semibold block ${isDark ? "text-slate-300" : "text-slate-700"}`}>Recruiter Audit Notes:</span>
               {selectedCandidate.recruiterNotes ? (
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 whitespace-pre-line">
+                <div className={`p-3 rounded-xl border text-xs whitespace-pre-line ${
+                  isDark ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"
+                }`}>
                   {selectedCandidate.recruiterNotes}
                 </div>
               ) : (
@@ -434,7 +459,10 @@ export default function RecruiterPipelinePage() {
                   value={noteInput}
                   onChange={(e) => setNoteInput(e.target.value)}
                   placeholder="Add evaluation note..."
-                  className="flex-1 text-xs rounded-xl px-3 py-2 bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  aria-label="Add recruiter evaluation note"
+                  className={`flex-1 text-xs rounded-xl px-3 py-2 border focus:outline-none focus:border-emerald-500 ${
+                    isDark ? "bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  }`}
                 />
                 <button
                   type="button"
@@ -447,7 +475,7 @@ export default function RecruiterPipelinePage() {
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end border-t border-slate-800">
+            <div className={`pt-2 flex justify-end border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}>
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}
@@ -457,8 +485,8 @@ export default function RecruiterPipelinePage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

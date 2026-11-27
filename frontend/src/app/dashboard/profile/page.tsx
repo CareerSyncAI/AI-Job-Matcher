@@ -4,7 +4,9 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
+import { getApiErrorMessage } from "@/lib/api";
 import api from "@/lib/api";
+import { Modal } from "@/components/Modal";
 import {
   IconUser,
   IconBuilding,
@@ -23,17 +25,18 @@ import {
 } from "@/components/Icons";
 
 interface UserProfileData {
-  id: number;
+  id: string | number;
   email: string;
   role: string;
-  full_name: string | null;
+  name?: string | null;
+  full_name?: string | null;
   headline: string | null;
   location: string | null;
   organization_name: string | null;
   bio: string | null;
   skills: string[];
-  created_at: string | null;
-  updated_at: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 type ProfileSectionTab = "general" | "skills" | "appearance" | "security" | "session";
@@ -116,7 +119,7 @@ export default function ProfilePage() {
         const res = await api.get("/auth/profile");
         const data: UserProfileData = res.data;
         setProfile(data);
-        setFullName(data.full_name || "");
+        setFullName(data.name || data.full_name || "");
         setHeadline(data.headline || "");
         setLocation(data.location || "");
         setOrganizationName(data.organization_name || "");
@@ -124,7 +127,7 @@ export default function ProfilePage() {
         setSkills(data.skills || []);
       } catch (err: unknown) {
         console.error("Failed to load profile:", err);
-        setProfileError("Could not retrieve account details from database.");
+        setProfileError(getApiErrorMessage(err, "Could not retrieve account details from database."));
       } finally {
         setLoading(false);
       }
@@ -162,8 +165,10 @@ export default function ProfilePage() {
     setProfileError(null);
 
     try {
+      const trimmedName = fullName.trim() || null;
       const res = await api.put("/auth/profile", {
-        full_name: fullName.trim() || null,
+        name: trimmedName,
+        full_name: trimmedName,
         headline: headline.trim() || null,
         location: location.trim() || null,
         organization_name: organizationName.trim() || null,
@@ -171,15 +176,13 @@ export default function ProfilePage() {
         skills: skills,
       });
 
-      setProfile(res.data);
+      const updatedProfile: UserProfileData = res.data;
+      setProfile(updatedProfile);
+      setFullName(updatedProfile.name || updatedProfile.full_name || "");
       setProfileSuccess("Profile details saved and synchronized across your account.");
       await refreshUser();
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setProfileError(err.message);
-      } else {
-        setProfileError("Failed to update profile. Please try again.");
-      }
+      setProfileError(getApiErrorMessage(err, "Failed to update profile. Please try again."));
     } finally {
       setSavingProfile(false);
     }
@@ -211,10 +214,16 @@ export default function ProfilePage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setPasswordError(err.message);
+      const errResponse = (err as { response?: { status?: number } })?.response;
+      const status = errResponse?.status;
+      const serverMsg = getApiErrorMessage(err, "");
+
+      if (status === 401 || status === 400) {
+        setPasswordError(serverMsg || "Current password is incorrect. Please verify and try again.");
+      } else if (status === 429) {
+        setPasswordError(serverMsg || "Too many password update attempts. Please wait a few minutes before trying again.");
       } else {
-        setPasswordError("Failed to change password. Verify your current password.");
+        setPasswordError(serverMsg || "Unable to update password at this time. Please try again later.");
       }
     } finally {
       setChangingPassword(false);
@@ -708,14 +717,14 @@ export default function ProfilePage() {
                 </div>
 
                 {passwordSuccess && (
-                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-medium flex items-center gap-2">
+                  <div role="status" aria-live="polite" className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-medium flex items-center gap-2">
                     <IconCheckCircle size={16} className="shrink-0" />
                     <p>{passwordSuccess}</p>
                   </div>
                 )}
 
                 {passwordError && (
-                  <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-medium flex items-center gap-2">
+                  <div role="alert" aria-live="assertive" className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-medium flex items-center gap-2">
                     <IconAlertTriangle size={16} className="shrink-0" />
                     <p>{passwordError}</p>
                   </div>
@@ -946,52 +955,41 @@ export default function ProfilePage() {
         )}
 
         {/* Sign Out Confirmation Modal */}
-        {confirmSignOutOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-            <div
-              className={`relative w-full max-w-sm rounded-2xl border p-6 shadow-2xl space-y-5 ${
-                isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
-                  <IconLogout size={20} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold">Sign Out</h3>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                    Are you sure you want to exit?
-                  </p>
-                </div>
-              </div>
+        <Modal
+          isOpen={confirmSignOutOpen}
+          onClose={() => setConfirmSignOutOpen(false)}
+          title="Sign Out"
+          description="Are you sure you want to exit?"
+          maxWidth="max-w-sm"
+          className={isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"}
+        >
+          <div className="space-y-4">
+            <p className={`text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+              Your active session on this device will be terminated. Any unsaved edits will be discarded.
+            </p>
 
-              <p className={`text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Your active session on this device will be terminated. Any unsaved edits will be discarded.
-              </p>
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmSignOutOpen(false)}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer border ${
-                    isDark
-                      ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300"
-                      : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition cursor-pointer shadow-md shadow-rose-600/20"
-                >
-                  Confirm Sign Out
-                </button>
-              </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmSignOutOpen(false)}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer border ${
+                  isDark
+                    ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300"
+                    : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition cursor-pointer shadow-md shadow-rose-600/20"
+              >
+                Confirm Sign Out
+              </button>
             </div>
           </div>
-        )}
+        </Modal>
       </div>
   );
 }

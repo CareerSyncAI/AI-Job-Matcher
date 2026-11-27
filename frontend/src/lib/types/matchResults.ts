@@ -11,6 +11,10 @@ export interface SkillEvidenceItem {
   sourceText?: string | null;
   type: EvidenceType;
   details?: string | null;
+  required?: boolean | null;
+  source_section?: string | null;
+  character_start?: number | null;
+  character_end?: number | null;
 }
 
 export interface ExperienceAlignment {
@@ -69,18 +73,33 @@ export const ISOLATED_TEST_MATCH_RESULTS_FIXTURE: CandidateMatchResults = {
       claim: "Documented proficiency in React.",
       sourceText: "Architected high-performance web applications using React and Next.js.",
       type: "matched",
+      required: true,
+      source_section: "experience",
+      character_start: 120,
+      character_end: 185,
+      details: "required",
     },
     {
       requirement: "TypeScript Requirement",
       claim: "Documented proficiency in TypeScript.",
       sourceText: "Built type-safe microservice web clients in modern TypeScript.",
       type: "matched",
+      required: true,
+      source_section: "unknown",
+      character_start: 210,
+      character_end: 275,
+      details: "required",
     },
     {
       requirement: "Kubernetes Requirement",
       claim: "No direct or transferable evidence detected for Kubernetes.",
       sourceText: null,
       type: "not_detected",
+      required: false,
+      source_section: null,
+      character_start: null,
+      character_end: null,
+      details: "preferred",
     },
   ],
   experience: {

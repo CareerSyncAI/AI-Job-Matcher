@@ -18,6 +18,7 @@ import {
   IconTarget,
   IconUsers,
   IconLayers,
+  IconX,
 } from "@/components/Icons";
 
 const candidateNavItems = [
@@ -45,6 +46,24 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Lock body scroll and listen for Escape on mobile sidebar
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSidebarOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sidebarOpen]);
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -100,13 +119,23 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
           <Link href="/dashboard" className="flex items-center gap-2 group min-w-0">
             <CareerSyncBrand size={28} showTagline={false} isLight={!isDark} />
           </Link>
-          {user?.role === "recruiter" && (
-            <span className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border shrink-0 ${
-              isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
-            }`}>
-              Recruiter
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {user?.role === "recruiter" && (
+              <span className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border shrink-0 ${
+                isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              }`}>
+                Recruiter
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              className={`lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition cursor-pointer`}
+              aria-label="Close navigation sidebar"
+            >
+              <IconX size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Navigation items */}
@@ -246,11 +275,11 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                 aria-label="User Account Menu"
               >
                 <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#059669] to-[#0d9488] flex items-center justify-center text-white font-bold text-xs shadow-xs">
-                  {user?.email?.charAt(0).toUpperCase() || "U"}
+                  {(user?.name || user?.full_name || user?.email || "U").charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden sm:block text-left">
                   <span className={`block text-xs font-semibold leading-tight ${isDark ? "text-slate-200" : "text-slate-800"}`}>
-                    {user?.email?.split("@")[0]}
+                    {user?.name || user?.full_name || user?.email?.split("@")[0]}
                   </span>
                   <span className={`block text-xs font-medium capitalize ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>
                     {user?.role || "Candidate"}
@@ -279,7 +308,12 @@ export const DashboardShell: React.FC<{ children: React.ReactNode }> = ({
                       isDark ? "border-slate-800" : "border-slate-100"
                     }`}
                   >
-                    <p className={`text-xs font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                    {(user?.name || user?.full_name) && (
+                      <p className={`text-xs font-bold truncate ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+                        {user.name || user.full_name}
+                      </p>
+                    )}
+                    <p className={`text-xs truncate ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                       {user?.email}
                     </p>
                     <div className="flex items-center gap-2 mt-1">

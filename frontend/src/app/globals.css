@@ -43,6 +43,21 @@ html.light, [data-theme="light"] {
   --text-muted: #64748b;
 }
 
+/* Focus visibility styling for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
 /* Automatic light theme styling for cards, surfaces, borders, and inputs */
 html.light body,
 [data-theme="light"] body {

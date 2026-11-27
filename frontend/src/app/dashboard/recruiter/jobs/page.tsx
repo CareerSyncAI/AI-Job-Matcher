@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
+import { Modal } from "@/components/Modal";
 import {
   IconBriefcase,
   IconBuilding,
   IconMapPin,
-  IconX,
 } from "@/components/Icons";
 
 interface JobPosting {
@@ -32,6 +32,8 @@ export default function RecruiterJobsPage() {
 
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Modal state
@@ -56,11 +58,15 @@ export default function RecruiterJobsPage() {
     const loadJobs = async () => {
       try {
         const res = await api.get("/jobs");
-        if (isMounted) setJobs(Array.isArray(res.data) ? res.data : []);
+        if (isMounted) {
+          setJobs(Array.isArray(res.data) ? res.data : []);
+          setFetchError(null);
+        }
       } catch (err: unknown) {
         if (!isMounted) return;
         console.warn("Could not fetch recruiter jobs:", err);
         setJobs([]);
+        setFetchError("Unable to retrieve job requisitions from the server.");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -111,22 +117,20 @@ export default function RecruiterJobsPage() {
       setDescription("");
       setRefreshKey((prev) => prev + 1);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setFormError(err.message);
-      } else {
-        setFormError(status === "draft" ? "Failed to save draft." : "Failed to publish job opening.");
-      }
+      setFormError(getApiErrorMessage(err, status === "draft" ? "Failed to save draft." : "Failed to publish job opening."));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleStatusChange = async (jobId: string, newStatus: JobPosting["status"]) => {
+    setActionError(null);
     try {
       await api.patch(`/jobs/${jobId}`, { status: newStatus });
       setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to update status:", err);
+      setActionError(getApiErrorMessage(err, "Failed to update requisition status. Please try again."));
       setRefreshKey((prev) => prev + 1);
     }
   };
@@ -206,6 +210,20 @@ export default function RecruiterJobsPage() {
         </div>
       </div>
 
+      {/* Action Error Alert */}
+      {actionError && (
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
+          <span>{actionError}</span>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="text-rose-400 hover:text-rose-200 cursor-pointer ml-3 font-semibold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Jobs List */}
       <div className="space-y-4">
         {loading && jobs.length === 0 ? (
@@ -215,6 +233,24 @@ export default function RecruiterJobsPage() {
             } animate-pulse`}
           >
             Loading job requisitions...
+          </div>
+        ) : fetchError ? (
+          <div
+            className={`p-12 text-center rounded-2xl border ${
+              isDark ? "bg-rose-500/10 border-rose-500/20 text-rose-300" : "bg-rose-50 border-rose-200 text-rose-700"
+            }`}
+          >
+            <IconBriefcase size={32} className="mx-auto text-rose-400 mb-3" />
+            <h3 className="text-sm font-semibold">Failed to load job requisitions</h3>
+            <p className="text-xs mt-1 max-w-sm mx-auto">
+              {fetchError}
+            </p>
+            <button
+              onClick={() => setRefreshKey((prev) => prev + 1)}
+              className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl cursor-pointer"
+            >
+              Retry
+            </button>
           </div>
         ) : jobs.length === 0 ? (
           <div
@@ -248,7 +284,7 @@ export default function RecruiterJobsPage() {
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
-                      href="/dashboard/recruiter/pipeline"
+                      href={`/dashboard/recruiter/pipeline?jobId=${job.id}`}
                       className="font-semibold text-lg hover:text-emerald-500 transition-colors cursor-pointer"
                     >
                       {job.title}
@@ -318,7 +354,7 @@ export default function RecruiterJobsPage() {
                   </div>
 
                   <Link
-                    href="/dashboard/recruiter/pipeline"
+                    href={`/dashboard/recruiter/pipeline?jobId=${job.id}`}
                     className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#059669] hover:bg-[#047857] text-white shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
                   >
                     View Pipeline →
@@ -331,42 +367,30 @@ export default function RecruiterJobsPage() {
       </div>
 
       {/* Post Job Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div
-            className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6 sm:p-8 shadow-2xl space-y-6 ${
-              isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
-            }`}
-          >
-            <div className="flex items-center justify-between border-b pb-4">
-              <div>
-                <h3 className="text-lg font-bold">Create Job Requisition</h3>
-                <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  Define role requirements and skill vectors for candidate scoring.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-200 cursor-pointer"
-              >
-                <IconX size={20} />
-              </button>
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Create Job Requisition"
+        description="Define role requirements and skill vectors for candidate scoring."
+        maxWidth="max-w-2xl"
+        className={`max-h-[90vh] overflow-y-auto ${
+          isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
+        }`}
+      >
+        <div className="space-y-4 pt-1">
+          {formError && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs">
+              {formError}
             </div>
+          )}
 
-            {formError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs">
-                {formError}
-              </div>
-            )}
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleCreateJob("open");
-              }}
-              className="space-y-4"
-            >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateJob("open");
+            }}
+            className="space-y-4"
+          >
               <div className="space-y-1.5">
                 <label htmlFor="job-title" className="block text-xs font-medium">Job Title *</label>
                 <input
@@ -565,8 +589,7 @@ export default function RecruiterJobsPage() {
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </Modal>
     </div>
   );
 }

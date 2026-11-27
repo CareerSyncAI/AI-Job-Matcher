@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
+import { useSearchParams } from "next/navigation";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { APPLICATION_STATUS_LABELS, NEXT_APPLICATION_STATUS, normalizeApplicationStatus, type ApplicationStatus } from "@/lib/applicationStatus";
 import { useTheme } from "@/lib/theme";
+import { Modal } from "@/components/Modal";
 import {
   IconUsers,
   IconSearch,
   IconMapPin,
-  IconX,
   IconBriefcase,
 } from "@/components/Icons";
 
@@ -52,12 +53,23 @@ interface JobSummary {
 }
 
 export default function RecruiterCandidatesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading candidates directory...</div>}>
+      <RecruiterCandidatesContent />
+    </Suspense>
+  );
+}
+
+function RecruiterCandidatesContent() {
   const { isDark } = useTheme();
+  const searchParams = useSearchParams();
+  const requestedJobId = searchParams.get("jobId");
 
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [candidates, setCandidates] = useState<CandidateCardDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<string>("All");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateCardDTO | null>(null);
@@ -75,18 +87,21 @@ export default function RecruiterCandidatesPage() {
         const jobsList: JobSummary[] = Array.isArray(res.data) ? res.data : [];
         setJobs(jobsList);
         if (jobsList.length > 0) {
-          setSelectedJobId(jobsList[0].id);
+          const matchRequested = requestedJobId && jobsList.some((j) => j.id === requestedJobId);
+          setSelectedJobId(matchRequested ? requestedJobId : jobsList[0].id);
+          setFetchError(null);
         } else {
           setCandidates([]);
         }
       } catch (err) {
         console.error("Failed to load recruiter jobs:", err);
+        setFetchError("Unable to load recruiter requisitions from the server.");
       } finally {
         setLoading(false);
       }
     };
     fetchJobs();
-  }, []);
+  }, [requestedJobId]);
 
   // Fetch candidate applications whenever selectedJobId changes
   useEffect(() => {
@@ -169,7 +184,7 @@ export default function RecruiterCandidatesPage() {
       }
     } catch (err) {
       console.error("Failed to update candidate status:", err);
-      setUploadFeedback({ type: "error", message: "The application status could not be updated. Refresh and try again." });
+      setUploadFeedback({ type: "error", message: getApiErrorMessage(err, "The application status could not be updated. Refresh and try again.") });
     } finally {
       setSavingApplicationId(null);
     }
@@ -230,8 +245,7 @@ export default function RecruiterCandidatesPage() {
       }
     } catch (err: unknown) {
       console.error("Failed to upload resume to job:", err);
-      const errResponse = (err as { response?: { data?: { detail?: string } } })?.response;
-      const detail = errResponse?.data?.detail || "Failed to upload and evaluate resume. Please try again.";
+      const detail = getApiErrorMessage(err, "Failed to upload and evaluate resume. Please try again.");
       setUploadFeedback({
         type: "error",
         message: detail,
@@ -417,6 +431,18 @@ export default function RecruiterCandidatesPage() {
         <div className={`p-12 text-center rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-white border-slate-200 text-slate-500"} animate-pulse`}>
           Retrieving evaluated candidates...
         </div>
+      ) : fetchError ? (
+        <div
+          className={`p-12 text-center rounded-2xl border ${
+            isDark ? "bg-rose-500/10 border-rose-500/20 text-rose-300" : "bg-rose-50 border-rose-200 text-rose-700"
+          }`}
+        >
+          <IconUsers size={32} className="mx-auto text-rose-400 mb-3" />
+          <h3 className="text-sm font-semibold">Failed to load candidates</h3>
+          <p className="text-xs mt-1 max-w-sm mx-auto">
+            {fetchError}
+          </p>
+        </div>
       ) : filteredCandidates.length === 0 ? (
         <div
           className={`p-12 text-center rounded-2xl border ${
@@ -552,51 +578,47 @@ export default function RecruiterCandidatesPage() {
       )}
 
       {/* Candidate Profile / Evidence Modal */}
-      {selectedCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div
-            className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6 sm:p-8 shadow-2xl space-y-6 ${
-              isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
-            }`}
-          >
-            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#059669] to-[#0d9488] text-white flex items-center justify-center font-bold text-xl">
-                  {selectedCandidate.name.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold">{selectedCandidate.name}</h3>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                    {selectedCandidate.currentRole || "Candidate"} • {selectedCandidate.location || "Location Not Provided"}
-                  </p>
-                </div>
+      <Modal
+        isOpen={!!selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+        title={selectedCandidate?.name}
+        description={selectedCandidate ? `${selectedCandidate.currentRole || "Candidate"} • ${selectedCandidate.location || "Location Not Provided"}` : undefined}
+        maxWidth="max-w-2xl"
+        className={`max-h-[90vh] overflow-y-auto ${
+          isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"
+        }`}
+      >
+        {selectedCandidate && (
+          <div className="space-y-6 pt-1">
+            {uploadFeedback && uploadFeedback.type === "error" && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
+                <span>{uploadFeedback.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setUploadFeedback(null)}
+                  className="text-rose-400 hover:text-rose-200 font-semibold cursor-pointer ml-2"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedCandidate(null)}
-                className="p-1 text-slate-400 hover:text-slate-200"
-              >
-                <IconX size={20} />
-              </button>
-            </div>
-
+            )}
             {/* Score Breakdown Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-xs text-slate-400 font-medium block">Match Score</span>
-                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-emerald-500 block">{selectedCandidate.matchScore}%</span>
+                <span className={`text-xs font-medium block ${isDark ? "text-slate-400" : "text-slate-600"}`}>Match Score</span>
+                <span className={`text-2xl font-bold font-mono leading-none mt-1.5 block ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>{selectedCandidate.matchScore}%</span>
               </div>
               <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-xs text-slate-400 font-medium block">Skills Score</span>
-                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-slate-200 block">{selectedCandidate.skillScore}%</span>
+                <span className={`text-xs font-medium block ${isDark ? "text-slate-400" : "text-slate-600"}`}>Skills Score</span>
+                <span className={`text-2xl font-bold font-mono leading-none mt-1.5 block ${isDark ? "text-slate-200" : "text-slate-800"}`}>{selectedCandidate.skillScore}%</span>
               </div>
               <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-xs text-slate-400 font-medium block">Experience</span>
-                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-slate-200 block">{selectedCandidate.experienceScore}%</span>
+                <span className={`text-xs font-medium block ${isDark ? "text-slate-400" : "text-slate-600"}`}>Experience</span>
+                <span className={`text-2xl font-bold font-mono leading-none mt-1.5 block ${isDark ? "text-slate-200" : "text-slate-800"}`}>{selectedCandidate.experienceScore}%</span>
               </div>
               <div className={`p-3.5 rounded-xl border text-center ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                <span className="text-xs text-slate-400 font-medium block">Education</span>
-                <span className="text-2xl font-bold font-mono leading-none mt-1.5 text-slate-200 block">{selectedCandidate.educationScore}%</span>
+                <span className={`text-xs font-medium block ${isDark ? "text-slate-400" : "text-slate-600"}`}>Education</span>
+                <span className={`text-2xl font-bold font-mono leading-none mt-1.5 block ${isDark ? "text-slate-200" : "text-slate-800"}`}>{selectedCandidate.educationScore}%</span>
               </div>
             </div>
 
@@ -668,8 +690,8 @@ export default function RecruiterCandidatesPage() {
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

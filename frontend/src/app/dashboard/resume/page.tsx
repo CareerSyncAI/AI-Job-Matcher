@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import api from "@/lib/api";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -307,10 +307,10 @@ export default function ResumePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.match(/\.(pdf|docx|txt)$/i)) {
+    if (!file.name.match(/\.(pdf|docx)$/i)) {
       setStatusMsg({
         type: "error",
-        text: "Please upload a supported resume format: PDF, DOCX, or TXT.",
+        text: "Please upload a supported resume format: PDF or DOCX.",
       });
       return;
     }
@@ -357,13 +357,13 @@ export default function ResumePage() {
         await runAtsAnalysis(newResumeId);
       }
     } catch (err: unknown) {
-      const errResponse = (err as { response?: { data?: { detail?: string } } })?.response;
+      const serverMsg = getApiErrorMessage(err, "Failed to process resume upload. Please try again.");
       setStatusMsg({
         type: "error",
-        text: errResponse?.data?.detail || "Failed to process resume upload. Please try again.",
+        text: serverMsg,
       });
       setAtsStatus("failed");
-      setAtsError("Resume upload failed. Please try again with a valid PDF or DOCX.");
+      setAtsError(serverMsg || "Resume upload failed. Please try again with a valid PDF or DOCX.");
       setParsedData(null);
     } finally {
       setIsUploading(false);
@@ -488,7 +488,7 @@ export default function ResumePage() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.docx,.txt"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onChange={handleFileChange}
         className="hidden"
         aria-label="Upload resume file"
