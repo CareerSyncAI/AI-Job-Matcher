@@ -68,7 +68,7 @@ def test_postgres_connection_and_pgvector_extension(pg_engine):
 
 
 def test_postgres_alembic_schema_verification(pg_engine):
-    """Verify that all 16 relational tables, critical indexes, and foreign keys exist in PostgreSQL."""
+    """Verify that all 17 relational tables, critical indexes, and foreign keys exist in PostgreSQL."""
     assert pg_engine.dialect.name == "postgresql"
     inspector = inspect(pg_engine)
     existing_tables = set(inspector.get_table_names())
@@ -81,6 +81,12 @@ def test_postgres_alembic_schema_verification(pg_engine):
 
     job_indexes = {idx["name"] for idx in inspector.get_indexes("jobs")}
     assert "ix_jobs_recruiter_id" in job_indexes, "Missing ix_jobs_recruiter_id index on jobs table"
+
+    analysis_indexes = {idx["name"] for idx in inspector.get_indexes("resume_analysis_runs")}
+    assert "uq_resume_analysis_runs_one_active" in analysis_indexes
+
+    analysis_cols = {col["name"] for col in inspector.get_columns("resume_analysis_runs")}
+    assert {"failed_stage", "lease_expires_at"}.issubset(analysis_cols)
 
     # Verify critical foreign key constraints
     job_fks = inspector.get_foreign_keys("jobs")
@@ -300,7 +306,7 @@ def test_postgres_upgrade_from_0002_preserves_data_and_fks(pg_engine):
 
         version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         assert len(version) <= 32
-        assert version == "0004_resume_analysis_runs"
+        assert version == "0005_harden_analysis_runs"
 
     inspector = inspect(pg_engine)
     history_fks = {fk["referred_table"] for fk in inspector.get_foreign_keys("application_status_history")}
@@ -308,3 +314,73 @@ def test_postgres_upgrade_from_0002_preserves_data_and_fks(pg_engine):
 
     analysis_fks = {fk["referred_table"] for fk in inspector.get_foreign_keys("resume_analysis_runs")}
     assert {"resumes", "users"}.issubset(analysis_fks)
+
+    analysis_indexes = {idx["name"] for idx in inspector.get_indexes("resume_analysis_runs")}
+    assert "uq_resume_analysis_runs_one_active" in analysis_indexes
+
+
+def test_postgres_single_active_analysis_run_and_atomic_claim(pg_engine):
+    """Verify PostgreSQL partial unique index prevents duplicate active runs and atomic claim succeeds once."""
+    from sqlalchemy.exc import IntegrityError
+    from sqlalchemy.orm import sessionmaker
+
+    from app.models.entities import CandidateProfile, Resume, ResumeAnalysisRun, User
+    from app.models.enums import ProcessingStatus, ResumeAnalysisStatus, UserRole
+    from app.services.resume_analysis import execute_analysis_run
+
+    Session = sessionmaker(bind=pg_engine, expire_on_commit=False)
+    with Session() as db:
+        user = User(
+            email=f"pg_conc_{uuid4().hex[:8]}@example.com",
+            password_hash="hash123",
+            role=UserRole.CANDIDATE,
+            is_active=True,
+        )
+        db.add(user)
+        db.flush()
+        cand = CandidateProfile(user_id=user.id, email=user.email, name="PG Conc")
+        db.add(cand)
+        db.flush()
+        resume = Resume(
+            candidate_id=cand.id,
+            original_filename="pg.pdf",
+            storage_key=f"pg_{uuid4().hex}.pdf",
+            mime_type="application/pdf",
+            byte_size=128,
+            sha256=uuid4().hex + uuid4().hex,
+            processing_status=ProcessingStatus.COMPLETED,
+            extracted_text="Experience\n- Built Python APIs.\nSkills\nPython\nEducation\nB.S. CS",
+        )
+        db.add(resume)
+        db.flush()
+
+        run1 = ResumeAnalysisRun(
+            resume_id=resume.id,
+            initiated_by_user_id=user.id,
+            status=ResumeAnalysisStatus.QUEUED,
+            current_stage="queued",
+            attempt_number=1,
+        )
+        db.add(run1)
+        db.commit()
+
+        run2 = ResumeAnalysisRun(
+            resume_id=resume.id,
+            initiated_by_user_id=user.id,
+            status=ResumeAnalysisStatus.QUEUED,
+            current_stage="queued",
+            attempt_number=1,
+        )
+        db.add(run2)
+        with pytest.raises(IntegrityError):
+            db.commit()
+        db.rollback()
+
+        execute_analysis_run(run1.id, db=db)
+        db.refresh(run1)
+        assert run1.status == ResumeAnalysisStatus.COMPLETED
+
+        # Re-executing a completed run is a no-op
+        execute_analysis_run(run1.id, db=db)
+        db.refresh(run1)
+        assert run1.status == ResumeAnalysisStatus.COMPLETED
