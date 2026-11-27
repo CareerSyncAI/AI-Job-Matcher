@@ -263,9 +263,11 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
 
         resume_text = (resume.extracted_text or "") if resume else ""
 
-        # 1. Extract skills from resume text using full taxonomy
-        extracted_from_resume = taxonomy.extract_skills_from_text(resume_text)
+        # 1. Extract supported and unsupported skill mentions from resume text using full taxonomy
+        skill_evidence = taxonomy.extract_skill_evidence_from_text(resume_text)
+        extracted_from_resume = skill_evidence["supported"]
         detected_skills_map = {s["canonical_name"].casefold(): s for s in extracted_from_resume}
+        unsupported_skills_map = {s["canonical_name"].casefold(): s for s in skill_evidence["unsupported"]}
 
         # Also pull explicit skills declared in candidate profile
         candidate_declared_skills: set[str] = set()
@@ -387,9 +389,44 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                         "details": snippet_text,
                     })
                 else:
-                    # Missing mention: status is NOT_DETECTED, not GAP (preserves Uncertainty First principle)
                     missing_skills.append(job_skill.name)
-                    status_val = EvaluatedSkillStatus.NOT_DETECTED
+                    unsupported_info = unsupported_skills_map.get(skill_norm)
+                    if unsupported_info and unsupported_info.get("unsupported_reason") == "negated":
+                        status_val = EvaluatedSkillStatus.GAP
+                        claim_type = "skill_gap"
+                        claim_text = f"Candidate explicitly indicated no experience with '{job_skill.name}'"
+                        claim_summary = f"Confirmed skill gap for {job_skill.name} based on resume statement."
+                        evidence_type = "gap"
+                        confidence = EvidenceConfidence.HIGH
+                        snippet_text = unsupported_info.get("snippet")
+                        char_start = unsupported_info.get("character_start")
+                        char_end = unsupported_info.get("character_end")
+                    elif unsupported_info:
+                        status_val = EvaluatedSkillStatus.NOT_DETECTED
+                        reason = unsupported_info.get("unsupported_reason", "unsupported")
+                        claim_type = "not_detected"
+                        claim_text = (
+                            f"Unsupported mention ({reason.replace('_', ' ')}) for '{job_skill.name}'; "
+                            "not credited as demonstrated proficiency"
+                        )
+                        claim_summary = f"Mention of '{job_skill.name}' did not demonstrate direct proficiency."
+                        evidence_type = "not_detected"
+                        confidence = EvidenceConfidence.LOW
+                        snippet_text = unsupported_info.get("snippet")
+                        char_start = unsupported_info.get("character_start")
+                        char_end = unsupported_info.get("character_end")
+                    else:
+                        # Missing mention: status is NOT_DETECTED, not GAP (preserves Uncertainty First principle)
+                        status_val = EvaluatedSkillStatus.NOT_DETECTED
+                        claim_type = "not_detected"
+                        claim_text = f"No direct or transferable evidence detected for '{job_skill.name}'"
+                        claim_summary = f"No documented evidence of '{job_skill.name}' found in provided documents."
+                        evidence_type = "not_detected"
+                        confidence = EvidenceConfidence.LOW
+                        snippet_text = None
+                        char_start = None
+                        char_end = None
+
                     evaluated_requirements.append(
                         EvaluatedRequirement(required=job_skill.required, status=status_val)
                     )
@@ -401,19 +438,19 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                     })
                     evidence_claims_records.append({
                         "id": claim_id,
-                        "claim_type": "not_detected",
-                        "claim_text": f"No direct or transferable evidence detected for '{job_skill.name}'",
-                        "source_snippet": None,
+                        "claim_type": claim_type,
+                        "claim_text": claim_text,
+                        "source_snippet": snippet_text,
                         "source_section": "unknown",
-                        "character_start": None,
-                        "character_end": None,
-                        "confidence": EvidenceConfidence.LOW,
+                        "character_start": char_start,
+                        "character_end": char_end,
+                        "confidence": confidence,
                         "evidence_kind": EvidenceKind.DIRECT,
-                        "type": "not_detected",
+                        "type": evidence_type,
                         "requirement": job_skill.name,
-                        "claim": f"No documented evidence of '{job_skill.name}' found in provided documents.",
+                        "claim": claim_summary,
                         "required": job_skill.required,
-                        "details": None,
+                        "details": snippet_text,
                     })
 
         # Calculate skills score with both required and preferred skills contribution

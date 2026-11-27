@@ -561,6 +561,41 @@ RAW_TAXONOMY: list[SkillDefinition] = [
 ]
 
 
+_CLAUSE_BOUNDARY_RE = re.compile(
+    r"(?:\r?\n|\.(?=\s|$)|[;!?]|,(?=\s)|\b(?:but|however|although|though|yet|whereas|except|then)\b)",
+    re.IGNORECASE,
+)
+
+_NEGATION_RE = re.compile(
+    r"\b(?:no(?!-?sql\b)|not(?!\s+only\b)|never|without|lack(?:ing|s|ed)?|none|zero|"
+    r"haven't|hasn't|didn't|don't|couldn't|wouldn't|can't|cannot|"
+    r"do\s+not|have\s+not|has\s+not|did\s+not|neither|nor)\b",
+    re.IGNORECASE,
+)
+
+_LEARNING_ONLY_RE = re.compile(
+    r"\b(?:learning|studying|exploring|beginner\s+(?:in|with)|novice\s+(?:in|with)|"
+    r"coursework\s+(?:in|on)|taking\s+a\s+course\s+(?:on|in)|tutorial\s+(?:on|for)|"
+    r"self[- ]teaching|interested\s+in\s+(?:learning|exploring)|"
+    r"aspiring\s+to\s+learn|currently\s+learning|just\s+started\s+learning)\b",
+    re.IGNORECASE,
+)
+
+_THIRD_PARTY_RE = re.compile(
+    r"\b(?:collaborated\s+with|worked\s+(?:with|alongside)\s+(?:a|an|the)?\s*(?:team|engineers?|developers?)|"
+    r"managed\s+(?:a\s+)?(?:team|engineers?|developers?)\s+(?:who|that)\s+used|"
+    r"mentored\s+by|reported\s+to|assisted\s+(?:a|an|the)\s+(?:team|developer|engineer))\b",
+    re.IGNORECASE,
+)
+
+_QUOTED_REQUIREMENT_RE = re.compile(
+    r"\b(?:job\s+description\s+(?:required|listed|mentioned)|"
+    r"requirements?\s*:|role\s+(?:required|asked\s+for)|"
+    r"position\s+requires|seeking\s+(?:a|an))\b",
+    re.IGNORECASE,
+)
+
+
 class SkillTaxonomy:
     """Singleton taxonomy engine managing alias lookups, ambiguity rules, and transferable skill evaluation."""
 
@@ -618,16 +653,42 @@ class SkillTaxonomy:
         allowed = self.transferable_map.get(cand_norm.casefold(), set())
         return target_norm.casefold() in allowed
 
-    def extract_skills_from_text(self, text: str) -> list[dict[str, Any]]:
+    def _classify_mention_support(self, text: str, start: int, end: int) -> str | None:
+        """Return None if a skill mention is supported, or an unsupported reason code."""
+        window_start = max(0, start - 160)
+        window_end = min(len(text), end + 80)
+
+        left_text = text[window_start:start]
+        left_boundaries = list(_CLAUSE_BOUNDARY_RE.finditer(left_text))
+        clause_start = window_start + left_boundaries[-1].end() if left_boundaries else window_start
+
+        right_text = text[end:window_end]
+        right_match = _CLAUSE_BOUNDARY_RE.search(right_text)
+        clause_end = end + right_match.start() if right_match else window_end
+
+        clause = text[clause_start:clause_end]
+        if _NEGATION_RE.search(clause):
+            return "negated"
+        if _LEARNING_ONLY_RE.search(clause):
+            return "learning_only"
+        if _THIRD_PARTY_RE.search(clause):
+            return "third_party"
+        if _QUOTED_REQUIREMENT_RE.search(clause):
+            return "quoted_requirement"
+        return None
+
+    def extract_skill_evidence_from_text(self, text: str) -> dict[str, list[dict[str, Any]]]:
         """
-        Extract canonical skills from text with ambiguity filtering and character offset tracking.
-        Returns list of extracted skill dicts with verbatim evidence and confidence.
+        Extract canonical skills partitioned into supported and unsupported mentions.
+        A skill with at least one supported mention is classified as supported even if
+        an earlier/other clause negated it (e.g. historical negation followed by actual use).
         """
         if not text or not text.strip():
-            return []
+            return {"supported": [], "unsupported": []}
 
         lower_text = text.casefold()
-        detected: dict[str, dict[str, Any]] = {}
+        supported: dict[str, dict[str, Any]] = {}
+        unsupported: dict[str, dict[str, Any]] = {}
 
         for alias, pattern in self._compiled_patterns.items():
             for match in pattern.finditer(text):
@@ -639,24 +700,44 @@ class SkillTaxonomy:
                     if not self._passes_disambiguation(lower_text, definition.disambiguation_contexts):
                         continue
 
-                # Character offsets and snippet
                 start, end = match.start(), match.end()
                 snippet_start = max(0, start - 30)
                 snippet_end = min(len(text), end + 30)
                 snippet = text[snippet_start:snippet_end].replace("\n", " ").strip()
 
-                if canon_name not in detected:
-                    detected[canon_name] = {
-                        "canonical_name": canon_name,
-                        "category": definition.category,
-                        "raw_match": match.group(0),
-                        "character_start": start,
-                        "character_end": end,
-                        "snippet": snippet,
-                        "confidence": "high",
+                entry = {
+                    "canonical_name": canon_name,
+                    "category": definition.category,
+                    "raw_match": match.group(0),
+                    "character_start": start,
+                    "character_end": end,
+                    "snippet": snippet,
+                    "confidence": "high",
+                }
+
+                unsupported_reason = self._classify_mention_support(text, start, end)
+                if unsupported_reason is None:
+                    if canon_name not in supported:
+                        supported[canon_name] = entry
+                    unsupported.pop(canon_name, None)
+                elif canon_name not in supported and canon_name not in unsupported:
+                    unsupported[canon_name] = {
+                        **entry,
+                        "unsupported_reason": unsupported_reason,
+                        "confidence": "low",
                     }
 
-        return list(detected.values())
+        return {
+            "supported": list(supported.values()),
+            "unsupported": list(unsupported.values()),
+        }
+
+    def extract_skills_from_text(self, text: str) -> list[dict[str, Any]]:
+        """
+        Extract supported canonical skills from text with ambiguity filtering and character offset tracking.
+        Unsupported mentions (negated, learning-only, third-party, quoted requirements) are excluded.
+        """
+        return self.extract_skill_evidence_from_text(text)["supported"]
 
     def _passes_disambiguation(self, text_lower: str, valid_contexts: tuple[str, ...]) -> bool:
         """Check if an ambiguous token appears within a recognized technical context."""
