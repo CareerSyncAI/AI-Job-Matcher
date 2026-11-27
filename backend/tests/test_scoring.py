@@ -47,6 +47,9 @@ def test_required_coverage_tier():
     )
     assert required_coverage_tier(reqs_with_gap) == CoverageTier.REQUIRED_GAP
 
+    inferred_required = (EvaluatedRequirement(required=True, status=EvaluatedSkillStatus.TRANSFERABLE),)
+    assert required_coverage_tier(inferred_required) == CoverageTier.INSUFFICIENT_REQUIRED_EVIDENCE
+
 
 def test_candidate_ranking_order():
     weights = Weights(skills=35, experience=35, education=15, semantic=15)
@@ -74,6 +77,24 @@ def test_candidate_ranking_order():
     ranked = rank_candidates([c2, c1], weights)
     assert ranked[0].candidate_id == cand1_id
     assert ranked[1].candidate_id == cand2_id
+
+
+def test_direct_required_evidence_ranks_above_transferable_evidence():
+    weights = Weights(skills=35, experience=35, education=15, semantic=15)
+    direct_id, transferable_id = uuid4(), uuid4()
+    direct = RankingCandidate(
+        candidate_id=direct_id,
+        requirements=(EvaluatedRequirement(required=True, status=EvaluatedSkillStatus.MATCHED),),
+        skills_score=70, experience_score=70, education_score=70, semantic_score=70,
+    )
+    transferable = RankingCandidate(
+        candidate_id=transferable_id,
+        requirements=(EvaluatedRequirement(required=True, status=EvaluatedSkillStatus.TRANSFERABLE),),
+        skills_score=100, experience_score=100, education_score=100, semantic_score=100,
+    )
+
+    ranked = rank_candidates([transferable, direct], weights)
+    assert [candidate.candidate_id for candidate in ranked] == [direct_id, transferable_id]
 
 
 def test_professional_experience_years_deduplication():

@@ -9,40 +9,56 @@ from __future__ import annotations
 
 import re
 
-SECTION_PATTERNS = {
-    "summary": re.compile(
-        r"^(?:professional\s+summary|summary|profile|about\s+me|objective|executive\s+summary|career\s+objective)\b",
-        re.IGNORECASE,
+SECTION_ALIASES = {
+    "summary": (
+        "professional summary", "summary", "profile", "about me", "objective",
+        "executive summary", "career objective", "career summary", "summary of qualifications",
+        "personal summary",
     ),
-    "skills": re.compile(
-        r"^(?:skills\s*(?:&|and)?\s*abilities|technical\s+skills|core\s+competencies|skills|competencies|technologies|tools\s*(?:&|and)?\s*frameworks|tech\s+stack|highlights|key\s+skills)\b",
-        re.IGNORECASE,
+    "skills": (
+        "skills and abilities", "skills abilities", "technical skills", "core competencies",
+        "clinical skills", "skills", "competencies", "technologies", "tools and frameworks",
+        "tools frameworks", "tech stack", "highlights", "key skills", "technical proficiencies",
+        "core qualifications", "skills summary", "key competencies", "areas of expertise",
+        "technical expertise", "languages and frameworks", "languages and technologies",
     ),
-    "experience": re.compile(
-        r"^(?:work\s+experience|professional\s+experience|experience|employment\s+history|career\s+history|work\s+history|career\s+overview)\b",
-        re.IGNORECASE,
+    "experience": (
+        "work experience", "professional experience", "experience", "employment history", "career history",
+        "work history", "career overview", "clinical experience", "relevant experience", "accounting experience",
+        "professional background", "work background", "professional history", "relevant work experience",
+        "career highlights",
     ),
-    "education": re.compile(
-        r"^(?:education|academic\s+background|educational\s+qualifications|academics|qualifications|academic\s+history)\b",
-        re.IGNORECASE,
+    "education": (
+        "education", "academic background", "educational qualifications", "academics",
+        "qualifications", "academic history", "academic training", "education and training",
+        "educational background", "degrees and certifications",
     ),
-    "projects": re.compile(
-        r"^(?:projects|personal\s+projects|key\s+projects|academic\s+projects|portfolio)\b",
-        re.IGNORECASE,
+    "projects": (
+        "professional projects", "projects", "personal projects", "key projects",
+        "academic projects", "portfolio", "selected projects", "technical projects",
+        "project experience",
     ),
-    "certifications": re.compile(
-        r"^(?:certifications|certificates|licenses\s*(?:&|and)?\s*certifications|professional\s+certifications)\b",
-        re.IGNORECASE,
+    "certifications": (
+        "professional certifications", "certifications", "certificates", "licenses and certifications",
+        "licenses certifications", "licenses", "accreditations", "certifications and licenses",
+        "credentials", "professional licenses",
     ),
 }
 
+
+def _normalize_heading(value: str) -> str:
+    return " ".join(re.sub(r"[^\w]+", " ", value.casefold(), flags=re.UNICODE).split())
+
+
+SECTION_LOOKUP = {_normalize_heading(alias): section for section, aliases in SECTION_ALIASES.items() for alias in aliases}
+_ALIAS_REGEXES = sorted(
+    (re.escape(alias).replace(r"\ ", r"[\s._-]+") for aliases in SECTION_ALIASES.values() for alias in aliases),
+    key=len,
+    reverse=True,
+)
 UNIVERSAL_HEADER_REGEX = re.compile(
-    r"(?:^|\n|\s{3,}|\t+)(professional\s+summary|summary|profile|about\s+me|objective|executive\s+summary|"
-    r"technical\s+skills|skills\s*(?:&|and)?\s*abilities|core\s+competencies|skills|competencies|technologies|"
-    r"work\s+experience|professional\s+experience|experience|employment\s+history|career\s+history|"
-    r"education|academic\s+background|academics|qualifications|"
-    r"projects|certifications)(?::|\s{2,}|\t+|\n|$)",
-    re.IGNORECASE,
+    r"^[ \t]*([#•*–—-]?[ \t]*(?:" + "|".join(_ALIAS_REGEXES) + r")[ \t]*(?:[:：|])?)[ \t]*$",
+    re.IGNORECASE | re.MULTILINE,
 )
 
 
@@ -70,7 +86,7 @@ class SectionDetector:
             # Fallback: All text in summary if no headers detected
             return {"summary": text.strip()}
 
-        # Content before the first header is contact/header
+        # Content before the first standalone section heading is contact/header.
         first_match = matches[0]
         lead_content = text[:first_match.start()].strip()
         if lead_content:
@@ -79,7 +95,7 @@ class SectionDetector:
         # Slice between consecutive matches
         for i in range(len(matches)):
             curr_match = matches[i]
-            header_raw = curr_match.group(1).strip()
+            header_raw = curr_match.group(1).strip(" \t\r\n:：|#•*–—-")
             sec_key = self._resolve_section_key(header_raw)
 
             chunk_start = curr_match.end()
@@ -97,8 +113,4 @@ class SectionDetector:
         }
 
     def _resolve_section_key(self, header_str: str) -> str:
-        clean = header_str.strip()
-        for sec_key, pattern in SECTION_PATTERNS.items():
-            if pattern.search(clean):
-                return sec_key
-        return "summary"
+        return SECTION_LOOKUP.get(_normalize_heading(header_str), "summary")

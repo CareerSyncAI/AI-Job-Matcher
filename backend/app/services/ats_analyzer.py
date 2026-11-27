@@ -47,7 +47,7 @@ class ATSAnalysisResult:
     issues: list[ATSIssue]
 
 
-# Curated Strong Action Verbs for ATS evaluation
+# Curated general and domain-specific action verbs for ATS evaluation.
 STRONG_ACTION_VERBS: set[str] = {
     "accelerated", "accomplished", "achieved", "acquired", "adapted", "administered",
     "advanced", "advised", "allocated", "analyzed", "architected", "automated",
@@ -75,21 +75,108 @@ STRONG_ACTION_VERBS: set[str] = {
     "standardized", "steered", "streamlined", "strengthened", "structured", "supervised",
     "surpassed", "synthesized", "systematized", "tested", "tracked", "trained",
     "transformed", "transitioned", "translated", "tripled", "troubleshot", "unified",
-    "upgraded", "utilized", "validated", "verified", "yielded"
+    "upgraded", "utilized", "validated", "verified", "yielded", "audited",
+    "forecasted", "reported", "assessed", "triaged", "counseled", "budgeted",
+    "invoiced", "booked", "facilitated", "educated", "advocated",
 }
 
-SECTION_HEADER_REGEXES = {
-    "summary": re.compile(r"(?:^|\n)\s*(?:summary|professional summary|executive summary|profile|about me|career objective|objective)\s*(?::|\n|$)", re.IGNORECASE),
-    "skills": re.compile(r"(?:^|\n)\s*(?:skills|technical skills|core competencies|technologies|tools & frameworks|tech stack|key skills)\s*(?::|\n|$)", re.IGNORECASE),
-    "experience": re.compile(r"(?:^|\n)\s*(?:experience|work experience|professional experience|employment history|work history)\s*(?::|\n|$)", re.IGNORECASE),
-    "education": re.compile(r"(?:^|\n)\s*(?:education|academic background|academics|qualifications|degrees)\s*(?::|\n|$)", re.IGNORECASE),
-    "projects": re.compile(r"(?:^|\n)\s*(?:projects|personal projects|key projects|academic projects|portfolio)\s*(?::|\n|$)", re.IGNORECASE),
-    "certifications": re.compile(r"(?:^|\n)\s*(?:certifications|certificates|licenses|accreditations)\s*(?::|\n|$)", re.IGNORECASE),
+SECTION_HEADER_ALIASES = {
+    "summary": (
+        "summary", "professional summary", "executive summary", "profile", "about me",
+        "career objective", "objective", "career summary", "summary of qualifications",
+        "personal summary",
+    ),
+    "skills": (
+        "skills", "technical skills", "core competencies", "competencies", "clinical skills",
+        "technologies", "tools and frameworks", "tech stack", "key skills", "technical proficiencies",
+        "core qualifications", "skills summary", "key competencies", "areas of expertise",
+        "technical expertise", "languages and frameworks", "languages and technologies",
+    ),
+    "experience": (
+        "experience", "work experience", "professional experience", "employment history", "career history",
+        "work history", "clinical experience", "relevant experience", "accounting experience",
+        "professional background", "work background", "professional history", "relevant work experience",
+        "career highlights",
+    ),
+    "education": (
+        "education", "academic background", "academics", "qualifications", "degrees",
+        "academic training", "education and training", "educational background", "degrees and certifications",
+    ),
+    "projects": (
+        "projects", "professional projects", "personal projects", "key projects", "academic projects",
+        "portfolio", "selected projects", "technical projects", "project experience",
+    ),
+    "certifications": (
+        "certifications", "certificates", "licenses", "professional certifications", "accreditations",
+        "certifications and licenses", "credentials", "professional licenses",
+    ),
+}
+
+
+def _normalize_heading(value: str) -> str:
+    """Normalize punctuation and whitespace while retaining a full-line heading match."""
+    normalized = re.sub(r"[^\w]|_", " ", value.casefold(), flags=re.UNICODE)
+    normalized = " ".join(normalized.split())
+    return re.sub(r"\s+continued$", "", normalized)
+
+
+SECTION_HEADER_LOOKUP = {
+    _normalize_heading(alias): section
+    for section, aliases in SECTION_HEADER_ALIASES.items()
+    for alias in aliases
+}
+
+
+DOMAIN_VERB_RECOMMENDATIONS = {
+    "Accounting & Finance": "Use precise accounting action verbs such as reconciled, audited, prepared, analyzed, forecasted, and reported where they accurately describe your work.",
+    "Healthcare & Nursing": "Use clear care-focused verbs such as assessed, administered, monitored, documented, coordinated, and evaluated where they accurately describe your work.",
+    "Business Analysis": "Use specific analysis verbs such as gathered, mapped, analyzed, validated, documented, and facilitated where they accurately describe your work.",
+    "Project Management": "Use delivery verbs such as planned, coordinated, tracked, mitigated, delivered, and evaluated where they accurately describe your work.",
+    "Digital Marketing": "Use campaign verbs such as researched, optimized, launched, measured, tested, and reported where they accurately describe your work.",
+    "Backend Engineering": "Use clear action verbs that describe the engineering work and outcome, such as built, tested, improved, or delivered.",
+    "Frontend Engineering": "Use clear action verbs that describe the product work and outcome, such as designed, built, tested, or improved.",
+    "Cloud & DevOps": "Use clear action verbs that describe operational work and outcomes, such as automated, monitored, secured, or improved.",
+    "Databases & Storage": "Use clear action verbs that describe data work and outcomes, such as modeled, queried, optimized, or validated.",
+    "AI & Machine Learning": "Use clear action verbs that describe the analysis and outcome, such as evaluated, modeled, validated, or improved.",
+    "Data Engineering": "Use clear action verbs that describe data work and outcomes, such as analyzed, transformed, validated, or delivered.",
+    "Security & Systems": "Use clear action verbs that describe security or systems work and outcomes, such as assessed, monitored, secured, or improved.",
+    "Core CS & Methodologies": "Use clear action verbs that describe your contribution and outcome, such as planned, tested, documented, or improved.",
+}
+
+DOMAIN_METRIC_RECOMMENDATIONS = {
+    "Accounting & Finance": "Where accurate, quantify results with amounts, reconciliation accuracy, close time, or reporting volume.",
+    "Healthcare & Nursing": "Where appropriate and accurate, quantify workload or process outcomes such as patient volume, response time, or documentation completion.",
+    "Business Analysis": "Where accurate, quantify requirements delivered, process time saved, defects avoided, or stakeholder adoption.",
+    "Project Management": "Where accurate, quantify delivery time, budget variance, scope, risks resolved, or milestones completed.",
+    "Digital Marketing": "Where accurate, quantify campaign reach, conversion rate, acquisition cost, or return on investment.",
 }
 
 
 class ATSAnalyzer:
     """Standalone ATS resume analyzer checking structural, syntactic, and content readiness."""
+
+    @staticmethod
+    def _detect_sections(text: str) -> dict[str, bool]:
+        """Detect recognized headings as complete lines, not incidental body-text words."""
+        detected = {section: False for section in SECTION_HEADER_ALIASES}
+        for line in text.splitlines():
+            heading = _normalize_heading(line.strip(" \t\r\n:：|#•*-–—"))
+            section = SECTION_HEADER_LOOKUP.get(heading)
+            if section:
+                detected[section] = True
+        return detected
+
+    @staticmethod
+    def _resume_domain(skills: list[dict[str, Any]]) -> str | None:
+        counts: dict[str, int] = {}
+        for skill in skills:
+            category = skill.get("category")
+            if isinstance(category, str):
+                counts[category] = counts.get(category, 0) + 1
+        if not counts:
+            return None
+        domain, count = max(counts.items(), key=lambda item: item[1])
+        return domain if count >= 1 else None
 
     def analyze(self, text: str) -> ATSAnalysisResult:
         if not text or not text.strip():
@@ -102,9 +189,7 @@ class ATSAnalyzer:
         strengths: list[str] = []
 
         # ── 1. Section Completeness (Weight: 25%) ──
-        detected_sections: dict[str, bool] = {}
-        for sec_name, pattern in SECTION_HEADER_REGEXES.items():
-            detected_sections[sec_name] = bool(pattern.search(text))
+        detected_sections = self._detect_sections(text)
 
         critical_sections = ["experience", "skills", "education"]
         missing_critical = [sec for sec in critical_sections if not detected_sections.get(sec)]
@@ -126,8 +211,8 @@ class ATSAnalyzer:
             issues.append(ATSIssue(
                 category="sections",
                 severity="critical",
-                issue=f"Missing standard section headers: {', '.join(missing_critical).title()}.",
-                recommendation="Add explicit standard headings like 'Experience', 'Technical Skills', and 'Education' so parsers can index your background.",
+                issue=f"No recognized section heading was detected for: {', '.join(missing_critical).title()}.",
+                recommendation="If this content is present, use a clear heading such as 'Professional Experience', 'Clinical Skills', or 'Academic Background' so parsers can identify it.",
             ))
         else:
             strengths.append("All primary resume sections (Experience, Skills, Education) are clearly detectable.")
@@ -135,13 +220,36 @@ class ATSAnalyzer:
         # ── 2. Contact Information (Weight: 20%) ──
         email_match = re.search(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b", text)
         phone_match = re.search(r"\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b", text)
-        linkedin_match = re.search(r"\b(?:linkedin\.com/in/[A-Za-z0-9._%+\-]+|github\.com/[A-Za-z0-9._%+\-]+)\b", text, re.IGNORECASE)
+        linkedin_match = re.search(r"\b(?:https?://)?(?:www\.)?linkedin\.com/in/[A-Za-z0-9._%+\-]+\b", text, re.IGNORECASE)
+        github_match = re.search(r"\b(?:https?://)?(?:www\.)?github\.com/[A-Za-z0-9._%+\-]+\b", text, re.IGNORECASE)
+        portfolio_match = re.search(
+            r"\b(?:portfolio|personal\s+website|website)\s*[:|\-]?\s*((?:https?://|www\.)[A-Za-z0-9.-]+(?:/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]*)?)",
+            text,
+            re.IGNORECASE,
+        )
         location_match = re.search(r"\b(?:[A-Z][a-zA-Z\s]+,\s*(?:[A-Z]{2}|[A-Za-z]+))\b", text)
+
+        from app.services.taxonomy import taxonomy
+        detected_skills_raw = taxonomy.extract_skills_from_text(text)
+        skill_domain = self._resume_domain(detected_skills_raw)
+        is_technical_profile = skill_domain in {
+            "Backend Engineering", "Frontend Engineering", "Cloud & DevOps", "Databases & Storage",
+            "AI & Machine Learning", "Data Engineering", "Security & Systems", "Core CS & Methodologies",
+        }
+        relevant_profile_url = (
+            linkedin_match.group(0) if linkedin_match
+            else portfolio_match.group(1) if portfolio_match
+            else github_match.group(0) if github_match and is_technical_profile
+            else None
+        )
 
         contact_details = {
             "email": email_match.group(0) if email_match else None,
             "phone": phone_match.group(0) if phone_match else None,
-            "profile_links": linkedin_match.group(0) if linkedin_match else None,
+            "profile_links": relevant_profile_url,
+            "linkedin": linkedin_match.group(0) if linkedin_match else None,
+            "github": github_match.group(0) if github_match else None,
+            "portfolio": portfolio_match.group(1) if portfolio_match else None,
             "location": location_match.group(0) if location_match else None,
         }
 
@@ -166,15 +274,20 @@ class ATSAnalyzer:
                 recommendation="Include your phone number formatted with area code (e.g. +1 (555) 012-3456).",
             ))
 
-        if linkedin_match:
+        if relevant_profile_url:
             contact_score += 20.0
-            strengths.append("Includes recognized professional profile links (LinkedIn/GitHub).")
+            if linkedin_match:
+                strengths.append("Includes a LinkedIn professional profile link.")
+            elif portfolio_match:
+                strengths.append("Includes a portfolio or professional website link.")
+            else:
+                strengths.append("Includes a GitHub profile relevant to the detected technical background.")
         else:
             issues.append(ATSIssue(
                 category="contact",
                 severity="info",
-                issue="No LinkedIn or GitHub profile link detected.",
-                recommendation="Add a clean URL to your LinkedIn or portfolio profile in the header.",
+                issue="No LinkedIn or portfolio profile URL was detected.",
+                recommendation="Consider including a relevant LinkedIn profile or professional portfolio URL if you have one.",
             ))
 
         if location_match:
@@ -212,7 +325,10 @@ class ATSAnalyzer:
                 category="impact",
                 severity="warning",
                 issue="Low density of strong action verbs in work descriptions.",
-                recommendation="Begin bullet points with active power verbs like 'Architected', 'Engineered', 'Streamlined', 'Reduced'.",
+                recommendation=DOMAIN_VERB_RECOMMENDATIONS.get(
+                    skill_domain,
+                    "Use specific action verbs that accurately describe your contribution, responsibility, and result.",
+                ),
             ))
 
         if metric_count >= 3:
@@ -222,7 +338,10 @@ class ATSAnalyzer:
                 category="impact",
                 severity="warning",
                 issue="Few quantifiable results or measurable outcomes detected.",
-                recommendation="Quantify your impact with concrete numbers (e.g. 'Reduced latency by 35%', 'Scaled service to 100k daily users').",
+                recommendation=DOMAIN_METRIC_RECOMMENDATIONS.get(
+                    skill_domain,
+                    "Where accurate, quantify outcomes with relevant measures such as time saved, volume handled, cost, quality, or completion rate.",
+                ),
             ))
 
         # ── 4. Formatting & Readability (Weight: 20%) ──
@@ -264,21 +383,29 @@ class ATSAnalyzer:
         formatting_score = max(20.0, formatting_score)
 
         # ── 5. Skills Presentation & Clarity (Weight: 15%) ──
-        from app.services.taxonomy import taxonomy
-        detected_skills_raw = taxonomy.extract_skills_from_text(text)
         extracted_skills = sorted(list({s["canonical_name"] for s in detected_skills_raw}))
         skill_count = len(extracted_skills)
 
-        skills_score = min(100.0, (skill_count / 8.0) * 100.0)
+        # No recognized terms is uncertain: the resume may use domain-specific vocabulary
+        # that the curated taxonomy does not yet cover. Keep the component neutral and disclose it.
+        skills_evaluable = skill_count > 0
+        skills_score = min(100.0, (skill_count / 8.0) * 100.0) if skills_evaluable else 50.0
 
         if skill_count >= 6:
-            strengths.append(f"Clear technical competency indexing ({skill_count} recognized skills extracted).")
+            strengths.append(f"Clear competency indexing ({skill_count} recognized skills extracted).")
+        elif not skills_evaluable:
+            issues.append(ATSIssue(
+                category="skills",
+                severity="info",
+                issue="No skills from the current taxonomy were recognized; this does not establish that the resume contains no skills.",
+                recommendation="Review the extracted text and listed competencies. Some domain terms may not be covered by the current taxonomy.",
+            ))
         else:
             issues.append(ATSIssue(
                 category="skills",
                 severity="warning",
-                issue="Low density of explicitly recognized technical skills.",
-                recommendation="Include a dedicated 'Technical Skills' section categorizing languages, frameworks, databases, and tools.",
+                issue="Few skills from the current taxonomy were recognized.",
+                recommendation="If your resume lists additional competencies, use clear skill names and a dedicated skills heading; some terms may not be covered by the current taxonomy.",
             ))
 
         # ── Composite ATS Score Calculation ──

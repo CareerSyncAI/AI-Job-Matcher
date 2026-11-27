@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from app.evaluation.benchmark_runner import run_ground_truth_evaluation
-from app.services.ats_analyzer import ats_analyzer
+from app.services.ats_analyzer import ATSAnalyzer, ats_analyzer
 from app.services.semantic_matcher import SublinearTFCosineMatcher
 from app.services.taxonomy import taxonomy
 
@@ -38,6 +38,107 @@ def test_taxonomy_canonical_normalization():
     assert taxonomy.normalize("postgres") == "PostgreSQL"
     assert taxonomy.normalize("ts") == "TypeScript"
     assert taxonomy.normalize("non_existent_skill_xyz") is None
+
+
+def test_cross_domain_accounting_and_healthcare_skills_keep_evidence():
+    accounting = taxonomy.extract_skills_from_text(
+        "Accounts payable (AP), accounts receivable (AR), general ledger (GL), bank reconciliation, "
+        "financial reporting, GST, Tally Prime, and QuickBooks."
+    )
+    accounting_by_name = {item["canonical_name"]: item for item in accounting}
+    assert {"Accounts Payable", "Accounts Receivable", "General Ledger", "Bank Reconciliation", "Financial Reporting", "GST", "Tally", "QuickBooks"} <= set(accounting_by_name)
+    assert accounting_by_name["Accounts Payable"]["snippet"]
+    assert "accounts payable" in accounting_by_name["Accounts Payable"]["raw_match"].casefold()
+    assert accounting_by_name["Accounts Payable"]["character_start"] >= 0
+    abbreviation = taxonomy.extract_skills_from_text("Handled AP workflows in accounting.")
+    assert any(item["canonical_name"] == "Accounts Payable" for item in abbreviation)
+
+    nursing = taxonomy.extract_skills_from_text(
+        "Patient care, clinical assessment, medication administration, vital signs, EHR, BLS, and CPR."
+    )
+    nursing_names = {item["canonical_name"] for item in nursing}
+    assert {"Patient Care", "Clinical Assessment", "Medication Administration", "Vital Signs Monitoring", "Electronic Health Records", "Basic Life Support", "CPR"} <= nursing_names
+
+
+def test_cross_domain_taxonomy_preserves_existing_software_skills_and_filters_short_terms():
+    software = taxonomy.extract_skills_from_text("Built APIs using Python, FastAPI, React, SQL, and AWS.")
+    software_names = {item["canonical_name"] for item in software}
+    assert {"Python", "FastAPI", "React", "SQL", "AWS"} <= software_names
+
+    unrelated = taxonomy.extract_skills_from_text("AP was approved. AR was assigned. GL was rendered.")
+    unrelated_names = {item["canonical_name"] for item in unrelated}
+    assert not {"Accounts Payable", "Accounts Receivable", "General Ledger"} & unrelated_names
+
+
+def test_ats_recognizes_heading_aliases_but_not_body_mentions():
+    analyzer = ATSAnalyzer()
+    result = analyzer.analyze(
+        "EMPLOYMENT-HISTORY.\nAccountant at Example Co.\nCLINICAL SKILLS:\nPatient care\n"
+        "ACADEMIC BACKGROUND\nNursing Diploma\nPROFESSIONAL CERTIFICATIONS:\nBLS"
+    )
+    assert result.detected_sections["experience"] is True
+    assert result.detected_sections["skills"] is True
+    assert result.detected_sections["education"] is True
+    assert result.detected_sections["certifications"] is True
+    assert not result.missing_critical_sections
+
+    prose = analyzer.analyze("I have professional experience in accounting and clinical skills from prior roles.")
+    assert prose.detected_sections["experience"] is False
+    assert prose.detected_sections["skills"] is False
+    assert any("No recognized section heading" in issue.issue for issue in prose.issues)
+
+
+def test_ats_recommendations_are_domain_appropriate_and_links_are_relevant():
+    accounting = ats_analyzer.analyze(
+        "ACCOUNTING EXPERIENCE\nAccounts Payable and General Ledger. Reconciled monthly statements. "
+        "GitHub: https://github.com/example-accounting\n"
+        "SKILLS\nQuickBooks, bank reconciliation, financial reporting\n"
+        "EDUCATION\nBachelor of Accounting"
+    )
+    accounting_recommendations = " ".join(issue.recommendation for issue in accounting.issues)
+    assert "audited" in accounting_recommendations.casefold()
+    assert "Architected" not in accounting_recommendations
+    assert not any("GitHub profile relevant" in strength for strength in accounting.strengths)
+    assert accounting.contact_details["github"] == "https://github.com/example-accounting"
+    assert accounting.contact_details["profile_links"] is None
+
+    nursing = ats_analyzer.analyze(
+        "CLINICAL EXPERIENCE\nPatient care and clinical assessment.\n"
+        "SKILLS\nMedication administration, vital signs, CPR, BLS\n"
+        "EDUCATION\nNursing Diploma"
+    )
+    nursing_recommendations = " ".join(issue.recommendation for issue in nursing.issues)
+    assert "assessed" in nursing_recommendations.casefold()
+    assert "Architected" not in nursing_recommendations
+
+
+def test_ats_unknown_skill_coverage_is_neutral_disclosed_and_score_is_consistent():
+    text = (
+        "PROFESSIONAL EXPERIENCE\nCompleted specialized work with uncommon domain practices.\n"
+        "SKILLS\nQwerty-domain-method and niche practice\n"
+        "EDUCATION\nProfessional qualification\n"
+    ) * 8
+    result = ats_analyzer.analyze(text)
+
+    assert result.detected_skills == []
+    assert result.skills_score == 50.0
+    assert any("does not establish that the resume contains no skills" in issue.issue for issue in result.issues)
+    assert result.overall_ats_score == round(
+        0.25 * result.section_score
+        + 0.20 * result.contact_score
+        + 0.20 * result.impact_score
+        + 0.20 * result.formatting_score
+        + 0.15 * result.skills_score,
+        1,
+    )
+    assert all(0.0 <= score <= 100.0 for score in (
+        result.overall_ats_score,
+        result.section_score,
+        result.contact_score,
+        result.impact_score,
+        result.formatting_score,
+        result.skills_score,
+    ))
 
 
 def test_taxonomy_ambiguous_token_disambiguation():
@@ -268,3 +369,46 @@ def test_benchmark_metrics_degrade_on_poor_predictions():
     assert len(report.error_analysis_logs) > 0
     categories = {log.error_category for log in report.error_analysis_logs}
     assert "skill_extraction" in categories or "education_mismatch" in categories
+
+
+def test_resume_text_name_extraction():
+    from app.api.v1.resumes import _extract_name_from_resume_text
+
+    text_with_name = """Jane Doe
+jane.doe@example.com | (555) 123-4567 | San Francisco, CA
+linkedin.com/in/janedoe
+
+Professional Summary
+Senior Software Engineer with 8 years of experience building scalable systems.
+"""
+    assert _extract_name_from_resume_text(text_with_name, "resume_final_2024.pdf") == "Jane Doe"
+
+    text_without_clear_name = """jane.doe@example.com | (555) 123-4567
+Summary: Dedicated engineer.
+"""
+    assert _extract_name_from_resume_text(text_without_clear_name, "Jane_Smith_Resume.pdf") == "Jane Smith"
+
+
+def test_text_extraction_dehyphenation():
+    from app.services.text_extraction import _normalize
+
+    raw = "Extensive experi-\nence with distributed archi-\ntectures and micro-\nservices."
+    normalized = _normalize(raw)
+    assert "experience" in normalized
+    assert "architectures" in normalized
+    assert "microservices" in normalized
+
+
+def test_helm_and_kubernetes_distinct_taxonomy():
+    assert taxonomy.normalize("helm") == "Helm"
+    assert taxonomy.normalize("helm charts") == "Helm"
+    assert taxonomy.normalize("kubernetes") == "Kubernetes"
+    assert taxonomy.normalize("k8s") == "Kubernetes"
+
+    # Contextual disambiguation
+    tech_skills = {item["canonical_name"] for item in taxonomy.extract_skills_from_text("Deploying microservices on Kubernetes using Helm charts.")}
+    assert "Kubernetes" in tech_skills
+    assert "Helm" in tech_skills
+
+    prose_skills = {item["canonical_name"] for item in taxonomy.extract_skills_from_text("He served at the helm of the executive board.")}
+    assert "Helm" not in prose_skills

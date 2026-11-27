@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+import pytest
+from fastapi import HTTPException
+
 from app.models.enums import UserRole
 from app.security.passwords import hash_password, verify_password
 from app.security.tokens import (
@@ -10,6 +13,7 @@ from app.security.tokens import (
     hash_refresh_token,
     new_refresh_token,
 )
+from app.services.authentication import AuthenticationService
 
 
 def test_password_hashing():
@@ -34,6 +38,33 @@ def test_refresh_token_generation():
     token2 = new_refresh_token()
     assert token1 != token2
     assert hash_refresh_token(token1) == hash_refresh_token(token1)
+
+
+def test_refresh_rotation_locks_session_row_before_reading():
+    class Query:
+        lock_requested = False
+
+        def filter(self, *_conditions):
+            return self
+
+        def with_for_update(self):
+            self.lock_requested = True
+            return self
+
+        def one_or_none(self):
+            assert self.lock_requested, "Refresh session must be locked before it is read."
+            return None
+
+    query = Query()
+
+    class Database:
+        def query(self, _model):
+            return query
+
+    with pytest.raises(HTTPException) as error:
+        AuthenticationService.rotate_refresh_token(Database(), "invalid-refresh-token")
+
+    assert error.value.status_code == 401
 
 
 def test_change_password_success_and_invalidation(client):
@@ -136,4 +167,15 @@ def test_login_rate_limiting_lockout(client):
     blocked_res = client.post("/api/v1/auth/login", json={"email": email, "password": "Password123456!"})
     assert blocked_res.status_code == 429
     assert "too many failed login attempts" in str(blocked_res.json()).lower()
+
+
+def test_forgot_password_reports_unconfigured_recovery(client):
+    response = client.post(
+        "/api/v1/auth/forgot-password",
+        json={"email": "person@example.com"},
+    )
+
+    assert response.status_code == 503
+    assert "not configured" in response.json()["error"]["message"].lower()
+    assert "dispatched" not in response.text.lower()
 

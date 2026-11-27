@@ -6,12 +6,144 @@ from __future__ import annotations
 
 import io
 import logging
+import re
 import zipfile
 from pathlib import Path
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+# Recognized hyphenated compound terms that must preserve their hyphens across line breaks
+KNOWN_HYPHENATED_COMPOUNDS: frozenset[str] = frozenset({
+    "cross-functional",
+    "built-in",
+    "end-to-end",
+    "full-stack",
+    "front-end",
+    "back-end",
+    "client-side",
+    "server-side",
+    "real-time",
+    "open-source",
+    "state-of-the-art",
+    "user-friendly",
+    "multi-tenant",
+    "part-time",
+    "full-time",
+    "cost-effective",
+    "data-driven",
+    "test-driven",
+    "high-level",
+    "low-level",
+    "high-availability",
+    "low-latency",
+    "object-oriented",
+    "fast-paced",
+    "third-party",
+    "large-scale",
+    "production-ready",
+    "hands-on",
+    "scale-out",
+    "scale-up",
+    "well-known",
+    "micro-frontends",
+    "self-motivated",
+    "mission-critical",
+    "auto-scaling",
+    "zero-downtime",
+    "event-driven",
+    "domain-driven",
+    "cloud-native",
+    "peer-to-peer",
+    "machine-learning",
+    "multi-threaded",
+    "cross-platform",
+    "cross-browser",
+    "high-throughput",
+    "low-overhead",
+    "user-centric",
+    "service-oriented",
+    "clean-code",
+    "test-first",
+})
+
+# Recognized single unhyphenated terms that should be rejoined when split across line breaks
+KNOWN_SINGLE_WORDS: frozenset[str] = frozenset({
+    "microservices",
+    "microservice",
+    "infrastructure",
+    "database",
+    "databases",
+    "workflow",
+    "workflows",
+    "codebase",
+    "codebases",
+    "framework",
+    "frameworks",
+    "lifecycle",
+    "backend",
+    "frontend",
+    "standalone",
+    "dashboard",
+    "dashboards",
+    "pipeline",
+    "pipelines",
+    "bandwidth",
+    "benchmark",
+    "benchmarks",
+    "multithreading",
+    "throughput",
+    "timeline",
+    "milestone",
+    "milestones",
+    "teamwork",
+    "architecture",
+    "architectures",
+    "performance",
+    "development",
+    "developer",
+    "developers",
+    "engineering",
+    "engineer",
+    "engineers",
+    "implementation",
+    "implementations",
+    "optimization",
+    "optimizations",
+    "collaboration",
+    "configuration",
+    "configurations",
+    "experience",
+    "experiences",
+    "responsible",
+    "responsibilities",
+    "management",
+    "distributed",
+    "application",
+    "applications",
+    "environment",
+    "environments",
+    "continuous",
+    "integration",
+    "deployment",
+    "monitoring",
+    "scalability",
+    "specification",
+    "specifications",
+    "maintenance",
+    "troubleshooting",
+    "requirements",
+    "conceptual",
+    "production",
+    "repository",
+    "repositories",
+    "kubernetes",
+    "javascript",
+    "typescript",
+    "postgresql",
+})
 
 
 class DocumentSecurityError(Exception):
@@ -31,6 +163,25 @@ class PDFPageLimitExceededError(DocumentSecurityError):
 class DOCXSecurityError(DocumentSecurityError):
     """Raised when a DOCX archive violates security or structure constraints (zip bomb, excessive entries, etc.)."""
     pass
+
+
+class ScannedDocumentError(DocumentSecurityError):
+    """Raised when a PDF document contains pages with images but no extractable text layer (scanned document)."""
+    pass
+
+
+def is_scanned_pdf(path: Path | str) -> bool:
+    """Diagnostic check whether a PDF appears to be a scanned image document without extractable text."""
+    p = Path(path)
+    if not p.exists():
+        return False
+    try:
+        _extract_pdf(p)
+        return False
+    except ScannedDocumentError:
+        return True
+    except Exception:
+        return False
 
 
 def validate_docx_archive(
@@ -142,6 +293,8 @@ def _extract_pdf(path: Path, max_pages: int | None = None) -> str:
     settings = get_settings()
     limit = max_pages if max_pages is not None else settings.max_pdf_pages
     text_pages: list[str] = []
+    has_images = False
+    page_count = 0
 
     # --- Primary: pdfplumber (layout-preserving) ---
     try:
@@ -151,18 +304,36 @@ def _extract_pdf(path: Path, max_pages: int | None = None) -> str:
             if page_count > limit:
                 raise PDFPageLimitExceededError(page_count, limit)
             for page in pdf.pages:
+                if getattr(page, "images", None) and len(page.images) > 0:
+                    has_images = True
                 page_text = page.extract_text(layout=True) or page.extract_text() or ""
                 text_pages.append(page_text)
-        if any(t.strip() for t in text_pages):
-            return _normalize("\n\n".join(text_pages))
+
+        raw_text = "\n\n".join(text_pages)
+        normalized = _normalize(raw_text)
+        clean_chars = len(normalized.strip())
+        clean_words = len(normalized.strip().split())
+
+        # Scanned PDF check: document has pages and image content, but text layer is absent or near-empty
+        if page_count > 0 and has_images and (clean_chars < 50 and clean_words < 10):
+            raise ScannedDocumentError(
+                f"PDF file '{path.name}' contains {page_count} page(s) with image content but no extractable text layer (scanned document)."
+            )
+
+        if clean_chars >= 50 or clean_words >= 10:
+            return normalized
+        if not has_images and clean_chars == 0:
+            return ""
     except ImportError:
         pass
-    except PDFPageLimitExceededError:
+    except (PDFPageLimitExceededError, ScannedDocumentError):
         raise
     except Exception as exc:
         logger.debug("pdfplumber failed, trying pypdf: %s", exc)
 
     # --- Fallback: pypdf ---
+    text_pages = []
+    has_images = False
     try:
         import pypdf  # type: ignore
         reader = pypdf.PdfReader(str(path))
@@ -170,12 +341,33 @@ def _extract_pdf(path: Path, max_pages: int | None = None) -> str:
         if page_count > limit:
             raise PDFPageLimitExceededError(page_count, limit)
         for page in reader.pages:
+            if getattr(page, "images", None) and len(page.images) > 0:
+                has_images = True
             text_pages.append(page.extract_text() or "")
-        return _normalize("\n\n".join(text_pages))
-    except PDFPageLimitExceededError:
+
+        raw_text = "\n\n".join(text_pages)
+        normalized = _normalize(raw_text)
+        clean_chars = len(normalized.strip())
+        clean_words = len(normalized.strip().split())
+
+        if page_count > 0 and has_images and (clean_chars < 50 and clean_words < 10):
+            raise ScannedDocumentError(
+                f"PDF file '{path.name}' contains {page_count} page(s) with image content but no extractable text layer (scanned document)."
+            )
+
+        if clean_chars >= 50 or clean_words >= 10:
+            return normalized
+        if not has_images and clean_chars == 0:
+            return ""
+    except (PDFPageLimitExceededError, ScannedDocumentError):
         raise
     except Exception as exc:
         logger.warning("pypdf also failed for %s: %s", path.name, exc)
+
+    if page_count > 0 and has_images:
+        raise ScannedDocumentError(
+            f"PDF file '{path.name}' contains {page_count} page(s) with image content but no extractable text layer (scanned document)."
+        )
 
     return ""
 
@@ -208,19 +400,103 @@ def _extract_docx(path: Path) -> str:
     return ""
 
 
+def _resolve_hyphen_break(match: re.Match[str]) -> str:
+    """Resolve a word broken across line breaks by a hyphen.
+
+    Preserves legitimate hyphenated compound words while rejoining syllables of single words.
+    """
+    p1 = match.group(1)
+    p2 = match.group(2)
+    p1_lower = p1.lower()
+    p2_lower = p2.lower()
+    compound = f"{p1_lower}-{p2_lower}"
+    joined = f"{p1_lower.replace('-', '')}{p2_lower}"
+
+    if compound in KNOWN_HYPHENATED_COMPOUNDS:
+        return f"{p1}-{p2}"
+    if joined in KNOWN_SINGLE_WORDS:
+        return f"{p1.replace('-', '')}{p2}"
+
+    # Proper noun or technical term compound (e.g. Java-Python, Linux-Unix)
+    if p1[0].isupper() and p2[0].isupper() and len(p1) > 2 and len(p2) > 2:
+        return f"{p1}-{p2}"
+
+    # Common hyphenation prefixes forming valid compound words
+    if p1_lower in {"cross", "multi", "inter", "self", "pre", "post", "non", "sub", "auto", "semi", "co"}:
+        if joined in KNOWN_SINGLE_WORDS:
+            return f"{p1}{p2}"
+        return f"{p1}-{p2}"
+
+    # Default to rejoining split syllables (e.g. deve-loper -> developer, experi-ence -> experience)
+    return f"{p1}{p2}"
+
+
 def _normalize(text: str) -> str:
-    """Clean up common encoding artifacts and collapse excessive whitespace."""
-    import re
-    # Unicode ligatures and smart quotes
+    """Clean up common encoding artifacts, repair split words, and normalize whitespace."""
+    if not text:
+        return ""
+
+    # 1. Unicode ligatures and smart quotes
     text = (
-        text.replace("\ufb01", "fi")
+        text.replace("\ufb00", "ff")
+        .replace("\ufb01", "fi")
         .replace("\ufb02", "fl")
+        .replace("\ufb03", "ffi")
+        .replace("\ufb04", "ffl")
         .replace("\u2018", "'")
         .replace("\u2019", "'")
+        .replace("\u201a", "'")
+        .replace("\u201b", "'")
         .replace("\u201c", '"')
         .replace("\u201d", '"')
+        .replace("\u201e", '"')
+        .replace("\u201f", '"')
+        .replace("\u2013", "-")
+        .replace("\u2014", " -- ")
+        .replace("\u2015", "-")
+        .replace("\u2212", "-")
         .replace("\xa0", " ")
+        .replace("\u200b", "")
+        .replace("\u200c", "")
+        .replace("\u200d", "")
+        .replace("\ufeff", "")
     )
-    # Collapse 3+ blank lines → 2
+
+    # 2. Protect URLs during normalization
+    url_placeholders: list[str] = []
+
+    def _protect_url(m: re.Match[str]) -> str:
+        idx = len(url_placeholders)
+        url_placeholders.append(m.group(0))
+        return f"__URL_PLACEHOLDER_{idx}__"
+
+    text = re.sub(r"https?://[^\s]+|www\.[^\s]+", _protect_url, text)
+
+    # 3. Preserve dates split across line breaks (e.g. "2020-\n2023" -> "2020 - 2023")
+    text = re.sub(r"(\b\d{4})\s*-\s*\n\s*(\d{4}\b)", r"\1 - \2", text)
+    text = re.sub(
+        r"(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4})\s*-\s*\n\s*([A-Za-z0-9]+)",
+        r"\1 - \2",
+        text,
+    )
+
+    # 4. Preserve parenthetical / em-dash separators that have whitespace before hyphen
+    text = re.sub(r"(\S+)\s+(?:--?|—|–)\s*\n\s*(\S+)", r"\1 - \2", text)
+
+    # 5. Resolve hyphenated split words vs legitimate compound words across line breaks
+    text = re.sub(r"((?:\b[A-Za-z]{2,}-)*[A-Za-z]{2,})-\s*\n\s*([A-Za-z]{2,}\b)", _resolve_hyphen_break, text)
+
+    # 6. Repair broken line wraps within sentences (line continues with lowercase letter)
+    text = re.sub(r"([A-Za-z0-9,])\s*\n\s*([a-z])", r"\1 \2", text)
+
+    # 7. Restore protected URLs
+    for idx, url in enumerate(url_placeholders):
+        text = text.replace(f"__URL_PLACEHOLDER_{idx}__", url)
+
+    # 8. Collapse per-line horizontal whitespace and clean blank lines
+    cleaned_lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.splitlines()]
+    text = "\n".join(cleaned_lines)
+
+    # Collapse 3+ newlines to 2
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()

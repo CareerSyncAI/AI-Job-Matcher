@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
@@ -28,7 +28,11 @@ from app.models.enums import (
     EvidenceConfidence,
     EvidenceKind,
 )
-from app.schemas.evaluations import CandidateCardDTO, CandidateEvidenceItem
+from app.schemas.evaluations import (
+    CandidateCardDTO,
+    CandidateEvidenceItem,
+    sanitize_character_offsets,
+)
 from app.services.scoring import (
     EvaluatedRequirement,
     Weights,
@@ -66,6 +70,57 @@ def get_scoring_matcher_id(matcher_or_engine_or_name: Any) -> str:
     return getattr(matcher_or_engine_or_name, "__class__", type(matcher_or_engine_or_name)).__name__
 
 
+def extract_canonical_skill_from_claim_text(claim_text: str | None, candidate_skill_names: list[str]) -> str | None:
+    """Extract exact canonical skill name from claim text without unsafe substring collisions."""
+    if not claim_text or not candidate_skill_names:
+        return None
+
+    # 1. Exact canonical prefixes used by evaluation engine
+    if claim_text.startswith("Directly matched skill from resume: "):
+        candidate = claim_text[len("Directly matched skill from resume: "):].strip()
+        for name in candidate_skill_names:
+            if name.casefold() == candidate.casefold():
+                return name
+
+    if claim_text.startswith("Skill '") and "' declared in candidate profile credentials" in claim_text:
+        try:
+            candidate = claim_text.split("Skill '", 1)[1].split("'", 1)[0].strip()
+            for name in candidate_skill_names:
+                if name.casefold() == candidate.casefold():
+                    return name
+        except IndexError:
+            pass
+
+    if claim_text.startswith("Transferable skill recognized for ") and " via " in claim_text:
+        try:
+            candidate = claim_text.split("Transferable skill recognized for ", 1)[1].split(" via ", 1)[0].strip()
+            for name in candidate_skill_names:
+                if name.casefold() == candidate.casefold():
+                    return name
+        except IndexError:
+            pass
+
+    if claim_text.startswith("No direct or transferable evidence detected for '"):
+        try:
+            candidate = claim_text.split("No direct or transferable evidence detected for '", 1)[1].split("'", 1)[0].strip()
+            for name in candidate_skill_names:
+                if name.casefold() == candidate.casefold():
+                    return name
+        except IndexError:
+            pass
+
+    # 2. Strict whole-word token boundary matching (prevents Java vs JavaScript substring collisions)
+    import re
+    # Sort candidate names descending by length so longer names match first if both present
+    sorted_names = sorted(candidate_skill_names, key=len, reverse=True)
+    for name in sorted_names:
+        pattern = rf"(?:\b|'){re.escape(name)}(?:\b|')"
+        if re.search(pattern, claim_text, flags=re.IGNORECASE):
+            return name
+
+    return None
+
+
 def compute_evaluation_fingerprint(
     *,
     job: Job,
@@ -97,7 +152,14 @@ def compute_evaluation_fingerprint(
 
     # 1. Normalized job skills
     normalized_job_skills: list[dict[str, Any]] = []
-    for skill in sorted(job.skills or [], key=lambda s: s.name.strip().casefold()):
+    for skill in sorted(
+        job.skills or [],
+        key=lambda s: (
+            (taxonomy.normalize(s.name) or s.name).strip().casefold(),
+            bool(getattr(s, "required", False)),
+            float(getattr(s, "min_years", 0.0) or 0.0),
+        ),
+    ):
         skill_canon = taxonomy.normalize(skill.name) or skill.name
         normalized_job_skills.append({
             "name": skill_canon.strip().casefold(),
@@ -243,10 +305,11 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                 evaluated_requirements.append(
                     EvaluatedRequirement(required=job_skill.required, status=status_val)
                 )
+                claim_id = uuid4()
                 evaluated_skills_records.append({
                     "name": job_skill.name,
                     "status": status_val,
-                    "evidence_ref": "direct_match",
+                    "evidence_ref": str(claim_id),
                 })
 
                 snippet_info = detected_skills_map.get(skill_norm)
@@ -266,17 +329,20 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                     claim_text = f"Skill '{job_skill.name}' declared in candidate profile credentials"
 
                 evidence_claims_records.append({
+                    "id": claim_id,
                     "claim_type": "skill_match",
                     "claim_text": claim_text,
                     "source_snippet": snippet_text,
-                    "source_section": "skills",
+                    "source_section": "candidate_profile" if snippet_text is None else "unknown",
                     "character_start": char_start,
                     "character_end": char_end,
                     "confidence": confidence,
                     "evidence_kind": evidence_kind,
                     "type": "matched",
-                    "requirement": f"{job_skill.name} Requirement",
+                    "requirement": job_skill.name,
                     "claim": f"Documented proficiency in {job_skill.name}.",
+                    "required": job_skill.required,
+                    "details": snippet_text,
                 })
 
             else:
@@ -293,10 +359,11 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                     evaluated_requirements.append(
                         EvaluatedRequirement(required=job_skill.required, status=status_val)
                     )
+                    claim_id = uuid4()
                     evaluated_skills_records.append({
                         "name": job_skill.name,
                         "status": status_val,
-                        "evidence_ref": f"transferable_from:{transferable_match}",
+                        "evidence_ref": str(claim_id),
                     })
                     snippet_info = detected_skills_map.get(transferable_match.casefold())
                     snippet_text = snippet_info.get("snippet") if snippet_info else None
@@ -304,17 +371,20 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                     char_end = snippet_info.get("character_end") if snippet_info else None
 
                     evidence_claims_records.append({
+                        "id": claim_id,
                         "claim_type": "transferable_skill",
                         "claim_text": f"Transferable skill recognized for {job_skill.name} via {transferable_match.title()}",
                         "source_snippet": snippet_text,
-                        "source_section": "skills",
+                        "source_section": "unknown",
                         "character_start": char_start,
                         "character_end": char_end,
                         "confidence": EvidenceConfidence.MEDIUM,
                         "evidence_kind": EvidenceKind.INFERRED,
                         "type": "transferable",
-                        "requirement": f"{job_skill.name} Requirement",
+                        "requirement": job_skill.name,
                         "claim": f"Transferable adjacent competency detected ({transferable_match.title()}).",
+                        "required": job_skill.required,
+                        "details": snippet_text,
                     })
                 else:
                     # Missing mention: status is NOT_DETECTED, not GAP (preserves Uncertainty First principle)
@@ -323,24 +393,27 @@ class DeterministicEvaluationEngine(BaseEvaluationEngine):
                     evaluated_requirements.append(
                         EvaluatedRequirement(required=job_skill.required, status=status_val)
                     )
+                    claim_id = uuid4()
                     evaluated_skills_records.append({
                         "name": job_skill.name,
                         "status": status_val,
-                        "evidence_ref": None,
+                        "evidence_ref": str(claim_id),
                     })
                     evidence_claims_records.append({
+                        "id": claim_id,
                         "claim_type": "not_detected",
                         "claim_text": f"No direct or transferable evidence detected for '{job_skill.name}'",
                         "source_snippet": None,
-                        "source_section": "skills",
+                        "source_section": "unknown",
                         "character_start": None,
                         "character_end": None,
                         "confidence": EvidenceConfidence.LOW,
                         "evidence_kind": EvidenceKind.DIRECT,
                         "type": "not_detected",
-                        "requirement": f"{job_skill.name} Requirement",
+                        "requirement": job_skill.name,
                         "claim": f"No documented evidence of '{job_skill.name}' found in provided documents.",
-                        "details": f"Requirement '{job_skill.name}' ({'required' if job_skill.required else 'preferred'}) was not detected in candidate resume or credentials.",
+                        "required": job_skill.required,
+                        "details": None,
                     })
 
         # Calculate skills score with both required and preferred skills contribution
@@ -658,6 +731,7 @@ class EvaluationService:
         for ec in eval_result["evidence_claims"]:
             db.add(
                 EvidenceClaim(
+                    id=ec.get("id") or uuid4(),
                     match_result_id=match_result.id,
                     claim_type=ec["claim_type"],
                     claim_text=ec["claim_text"],
@@ -747,45 +821,11 @@ class EvaluationService:
         elif latest_run.status in (EvaluationStatus.QUEUED, EvaluationStatus.RUNNING):
             eval_status = "pending"
             is_fresh = False
-            # Find previous completed run for historical reference
-            display_run = (
-                db.query(EvaluationRun)
-                .options(
-                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evaluated_skills),
-                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evidence_claims),
-                )
-                .filter(
-                    EvaluationRun.application_id == application.id,
-                    EvaluationRun.status == EvaluationStatus.COMPLETED,
-                )
-                .order_by(
-                    EvaluationRun.created_at.desc(),
-                    EvaluationRun.completed_at.desc(),
-                    EvaluationRun.id.desc(),
-                )
-                .first()
-            )
+            display_run = None
         elif latest_run.status == EvaluationStatus.FAILED:
             eval_status = "failed"
             is_fresh = False
-            # Find previous completed run for historical reference
-            display_run = (
-                db.query(EvaluationRun)
-                .options(
-                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evaluated_skills),
-                    selectinload(EvaluationRun.match_result).selectinload(MatchResult.evidence_claims),
-                )
-                .filter(
-                    EvaluationRun.application_id == application.id,
-                    EvaluationRun.status == EvaluationStatus.COMPLETED,
-                )
-                .order_by(
-                    EvaluationRun.created_at.desc(),
-                    EvaluationRun.completed_at.desc(),
-                    EvaluationRun.id.desc(),
-                )
-                .first()
-            )
+            display_run = None
         elif latest_run.status == EvaluationStatus.COMPLETED:
             display_run = latest_run
             # Current only when configuration_hash is verifiable and matches current config
@@ -815,6 +855,9 @@ class EvaluationService:
 
         evidence_items: list[CandidateEvidenceItem] = []
         if match_result:
+            skills = match_result.evaluated_skills or []
+            job_skill_names = [js.name for js in (job.skills or [])]
+            resume_len = len(resume.extracted_text) if (resume and resume.extracted_text) else None
             for claim in match_result.evidence_claims:
                 ctype = claim.claim_type.lower()
                 if "gap" in ctype:
@@ -828,13 +871,35 @@ class EvaluationService:
                 else:
                     evidence_type = "matched"
 
+                matched_skill_name = next(
+                    (s.name for s in skills if s.evidence_ref and s.evidence_ref == str(claim.id)),
+                    None,
+                )
+                if not matched_skill_name:
+                    matched_skill_name = extract_canonical_skill_from_claim_text(claim.claim_text, job_skill_names)
+
+                job_skill = next((js for js in (job.skills or []) if js.name.casefold() == (matched_skill_name or "").casefold()), None)
+
+                req_name = job_skill.name if job_skill else (matched_skill_name or claim.claim_type.replace("_", " ").title())
+                is_req = job_skill.required if job_skill else None
+
+                c_start, c_end = sanitize_character_offsets(
+                    claim.character_start,
+                    claim.character_end,
+                    text_length=resume_len,
+                )
+
                 evidence_items.append(
                     CandidateEvidenceItem(
-                        requirement=claim.claim_type.replace("_", " ").title(),
+                        requirement=req_name,
                         claim=claim.claim_text,
                         sourceText=claim.source_snippet,
                         type=evidence_type,
                         details=claim.source_snippet,
+                        required=is_req,
+                        source_section=claim.source_section or "unknown",
+                        character_start=c_start,
+                        character_end=c_end,
                     )
                 )
 

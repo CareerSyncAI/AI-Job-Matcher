@@ -20,20 +20,41 @@ class SkillNormalizer:
 
     def normalize_single(self, raw_skill: str) -> dict[str, Any]:
         """Normalize a single raw skill string."""
-        cleaned = raw_skill.strip()
+        raw_clean = raw_skill.strip()
+        # Unwrap outer enclosing brackets/parentheses if present (e.g. "(Docker)" -> "Docker", "[Python]" -> "Python")
+        if (raw_clean.startswith("(") and raw_clean.endswith(")")) or (raw_clean.startswith("[") and raw_clean.endswith("]")):
+            raw_clean = raw_clean[1:-1].strip()
+        raw_lower = raw_clean.lower()
+
+        # Step 1: Strip leading bullets, numbers, or dashes
+        cleaned = re.sub(r"^[\s•*▪\-–—]+\s*|^\d+[\.\)]\s*", "", raw_clean)
+        # Step 2: Strip trailing punctuation (preserves trailing '#' for C# and '+' for C++)
+        cleaned = re.sub(r"[\s,.;:!?]+$", "", cleaned)
         cleaned_lower = cleaned.lower()
 
-        # Remove trailing punctuation or parentheticals e.g. "React (v18)" -> "React"
-        cleaned_base = re.sub(r"\s*[\(\[].*?[\)\]]", "", cleaned_lower).strip()
+        # Step 3: Remove parentheticals and extra outer delimiters (e.g. "React (v18)" -> "React", "(Docker)" -> "Docker")
+        cleaned_base = re.sub(r"\s*[\(\[].*?[\)\]]", "", raw_clean).strip().lower()
+        cleaned_base = re.sub(r"^[\s•*▪\-–—/(\[{'\"`]+\s*|^\d+[\.\)]\s*", "", cleaned_base)
+        cleaned_base = re.sub(r"[\s,.;:!?/)}\]'\"`]+$", "", cleaned_base)
 
-        if cleaned_lower in self.lookup:
+        # Priority 1: Direct match on raw input
+        if raw_lower in self.lookup:
+            canonical_name, category = self.lookup[raw_lower]
+            return {
+                "input": raw_skill,
+                "canonical": canonical_name,
+                "category": category,
+                "matched": True,
+                "confidence": 1.0 if raw_lower == canonical_name.lower() else 0.95,
+            }
+        elif cleaned_lower in self.lookup:
             canonical_name, category = self.lookup[cleaned_lower]
             return {
                 "input": raw_skill,
                 "canonical": canonical_name,
                 "category": category,
                 "matched": True,
-                "confidence": 1.0 if cleaned_lower == canonical_name.lower() else 0.95
+                "confidence": 1.0 if cleaned_lower == canonical_name.lower() else 0.95,
             }
         elif cleaned_base in self.lookup:
             canonical_name, category = self.lookup[cleaned_base]
@@ -42,16 +63,16 @@ class SkillNormalizer:
                 "canonical": canonical_name,
                 "category": category,
                 "matched": True,
-                "confidence": 0.90
+                "confidence": 0.90,
             }
         else:
             # Fallback: title-case the cleaned string as an unrecognized domain skill
             return {
                 "input": raw_skill,
-                "canonical": cleaned.title(),
+                "canonical": cleaned.title() if cleaned else raw_clean.title(),
                 "category": "Other / Domain Specific",
                 "matched": False,
-                "confidence": 0.50
+                "confidence": 0.50,
             }
 
     def normalize_list(self, raw_skills: list[str]) -> list[dict[str, Any]]:

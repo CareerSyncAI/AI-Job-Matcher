@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 from enum import IntEnum
+from typing import Any
 from uuid import UUID
 
 from app.models.enums import EvaluatedSkillStatus
@@ -146,9 +147,147 @@ def required_coverage_tier(requirements: Iterable[EvaluatedRequirement]) -> Cove
     required = [requirement.status for requirement in requirements if requirement.required]
     if any(status is EvaluatedSkillStatus.GAP for status in required):
         return CoverageTier.REQUIRED_GAP
-    if any(status in {EvaluatedSkillStatus.NOT_DETECTED, EvaluatedSkillStatus.NOT_PROVIDED} for status in required):
+    # Transferable skills earn partial score credit, but are inferred evidence
+    # and should not count as fully covered required qualifications for ranking.
+    if any(status in {
+        EvaluatedSkillStatus.TRANSFERABLE,
+        EvaluatedSkillStatus.NOT_DETECTED,
+        EvaluatedSkillStatus.NOT_PROVIDED,
+    } for status in required):
         return CoverageTier.INSUFFICIENT_REQUIRED_EVIDENCE
     return CoverageTier.NO_COMPUTABLE_REQUIRED_GAPS
+
+
+def candidate_card_coverage_tier(
+    card: Any,
+    job_skills: Iterable[Any] | None = None,
+) -> CoverageTier:
+    """Determine the required coverage tier for a candidate card against job requirements.
+
+    - Unevaluated candidates never receive the highest tier (NO_COMPUTABLE_REQUIRED_GAPS).
+    - Direct required evidence achieves Tier 1.
+    - Transferable required evidence or missing required skills receive Tier 2.
+    - Candidates with evaluation status other than 'current' can never receive Tier 1 (NO_COMPUTABLE_REQUIRED_GAPS).
+    - Unevaluated, pending, running, queued, failed, stale, or unknown candidates receive at least Tier 2 (INSUFFICIENT_REQUIRED_EVIDENCE).
+    - Missing required skills or explicit required gaps receive Tier 3.
+    - Transferable required skills receive Tier 2.
+    - Preferred-skill gaps never reduce required coverage.
+    """
+    eval_status = getattr(card, "evaluation_status", None)
+    is_fresh = getattr(card, "is_fresh", False)
+    if eval_status in ("not_evaluated", "pending", "queued", "running", "failed", "unknown", "stale") or not is_fresh:
+        return CoverageTier.INSUFFICIENT_REQUIRED_EVIDENCE
+
+    requirements: list[EvaluatedRequirement] = []
+
+    preferred_skill_names: set[str] = set()
+    if job_skills:
+        matched_set = {s.casefold() for s in (getattr(card, "matchedSkills", None) or [])}
+        transferable_set = {s.casefold() for s in (getattr(card, "transferableSkills", None) or [])}
+        preferred_skill_names = {
+            getattr(js, "name", "").casefold()
+            for js in job_skills
+            if not getattr(js, "required", True)
+        }
+
+        import re
+        for js in job_skills:
+            is_required = getattr(js, "required", True)
+            name_lower = getattr(js, "name", "").casefold()
+
+            if name_lower in matched_set:
+                status = EvaluatedSkillStatus.MATCHED
+            elif name_lower in transferable_set:
+                status = EvaluatedSkillStatus.TRANSFERABLE
+            else:
+                pattern = rf"(?:\b|'){re.escape(name_lower)}(?:\b|')"
+                has_gap = any(
+                    getattr(ev, "type", None) == "gap"
+                    and (
+                        getattr(ev, "requirement", "").casefold() == name_lower
+                        or bool(re.search(pattern, getattr(ev, "claim", "") or "", flags=re.IGNORECASE))
+                    )
+                    for ev in (getattr(card, "evidence", None) or [])
+                )
+                status = EvaluatedSkillStatus.GAP if has_gap else EvaluatedSkillStatus.NOT_DETECTED
+
+            requirements.append(EvaluatedRequirement(required=is_required, status=status))
+
+    # Hard gaps on required qualifications (e.g. experience tenure or education)
+    # Generic or qualification gap evidence must only count as a hard required gap if it is NOT for a preferred skill
+    for ev in (getattr(card, "evidence", None) or []):
+        if getattr(ev, "type", None) != "gap":
+            continue
+
+        # If evidence item is explicitly marked preferred (required is False) or names a preferred skill,
+        # it MUST NEVER become a hard required gap
+        if getattr(ev, "required", None) is False:
+            continue
+
+        req_name = (getattr(ev, "requirement", "") or "").casefold()
+        if req_name in preferred_skill_names:
+            continue
+
+        # Non-skill hard requirements (e.g. experience tenure or education gaps) or explicitly required skill gaps
+        is_hard_req = (
+            getattr(ev, "required", None) is True
+            or "experience" in req_name
+            or "experience" in (getattr(ev, "claim", "") or "").casefold()
+            or "education" in req_name
+            or "education" in (getattr(ev, "claim", "") or "").casefold()
+            or not job_skills  # If job_skills not provided and not marked preferred, treat generic gap as required
+        )
+        if is_hard_req:
+            requirements.append(EvaluatedRequirement(required=True, status=EvaluatedSkillStatus.GAP))
+
+    computed_tier = required_coverage_tier(requirements)
+
+    # Stale or non-current evaluations can never receive Tier 1
+    if (eval_status != "current" or not is_fresh) and computed_tier == CoverageTier.NO_COMPUTABLE_REQUIRED_GAPS:
+        return CoverageTier.INSUFFICIENT_REQUIRED_EVIDENCE
+
+    return computed_tier
+
+
+def candidate_card_rank_key(
+    card: Any,
+    job_skills: Iterable[Any] | None = None,
+) -> tuple[Any, ...]:
+    """Compute the deterministic sorting key for candidate cards in recruiter candidate lists.
+
+    - Only current, completed, fresh evaluations can use their actual scores.
+    - Stale, unknown, pending, queued, running, failed, and not_evaluated evaluations have zero effective ranking score.
+    - Old scores never influence the ordering of non-current evaluations.
+    - Current evaluations rank ahead of non-current evaluations when coverage tiers are equivalent.
+    """
+    status = getattr(card, "evaluation_status", "not_evaluated")
+    is_current = (status == "current" and getattr(card, "is_fresh", False))
+
+    tier = candidate_card_coverage_tier(card, job_skills)
+
+    if is_current:
+        effective_match_score = getattr(card, "matchScore", 0.0)
+        effective_skill_score = getattr(card, "skillScore", 0.0)
+        effective_exp_score = getattr(card, "experienceScore", 0.0)
+        effective_edu_score = getattr(card, "educationScore", 0.0)
+        effective_sem_score = getattr(card, "semanticScore", 0.0)
+    else:
+        effective_match_score = 0.0
+        effective_skill_score = 0.0
+        effective_exp_score = 0.0
+        effective_edu_score = 0.0
+        effective_sem_score = 0.0
+
+    return (
+        tier.value,
+        0 if is_current else 1,  # Current evaluations rank ahead of non-current in equivalent coverage tiers
+        -effective_match_score,
+        -effective_skill_score,
+        -effective_exp_score,
+        -effective_edu_score,
+        -effective_sem_score,
+        str(getattr(card, "id", "")),
+    )
 
 
 def rank_candidates(candidates: Iterable[RankingCandidate], weights: Weights) -> list[RankingCandidate]:

@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+from uuid import uuid4
+
 import pytest
 from fastapi import HTTPException
 
+from app.models.entities import Resume
+from app.models.enums import AttentionReason, ProcessingStatus
+from app.services.resumes import ResumeService
 from app.services.storage import (
     PDF_MAGIC,
     safe_filename,
@@ -46,3 +52,41 @@ def test_store_upload_sha256(tmp_path, monkeypatch):
     assert stored.byte_size == len(b"Test resume content")
     assert len(stored.sha256) == 64
     assert (tmp_path / stored.storage_key).exists()
+
+
+def test_worker_enqueue_failure_marks_resume_for_attention(db_session, monkeypatch):
+    import sys
+
+    from app.services import resumes as resume_service
+
+    resume = Resume(
+        id=uuid4(),
+        original_filename="resume.pdf",
+        storage_key="resume.pdf",
+        mime_type="application/pdf",
+        byte_size=16,
+        sha256="a" * 64,
+        processing_status=ProcessingStatus.QUEUED,
+    )
+    db_session.add(resume)
+    db_session.commit()
+
+    def fail_enqueue(_resume_id):
+        raise RuntimeError("broker unavailable")
+
+    monkeypatch.setattr(
+        resume_service,
+        "get_settings",
+        lambda: SimpleNamespace(enable_worker=True),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "app.workers.tasks",
+        SimpleNamespace(process_resume=SimpleNamespace(delay=fail_enqueue)),
+    )
+
+    assert ResumeService.enqueue_worker(resume.id, db=db_session) is False
+
+    db_session.refresh(resume)
+    assert resume.processing_status is ProcessingStatus.NEEDS_ATTENTION
+    assert resume.needs_attention_reason is AttentionReason.ANALYSIS_FAILED

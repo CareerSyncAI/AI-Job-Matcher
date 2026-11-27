@@ -21,6 +21,8 @@ import os
 import re
 import threading
 import time
+import unicodedata
+from collections import OrderedDict
 from typing import Any
 
 import numpy as np
@@ -29,6 +31,71 @@ from src.similarity.base import BaseSimilarityEngine, SemanticMatchOutput
 from src.similarity.baseline_matcher import BaselineSemanticMatcher
 
 logger = logging.getLogger("careersync.similarity.embedding")
+
+
+class _BoundedJobEmbeddingCache:
+    """Thread-safe LRU for job text vectors only; candidate text is never passed here."""
+
+    MAX_ENTRIES = 2048
+    MAX_BYTES = 8 * 1024 * 1024
+    ENTRY_OVERHEAD_BYTES = 256
+
+    def __init__(self) -> None:
+        self._entries: OrderedDict[tuple[str, str, int, str, str, str], np.ndarray] = OrderedDict()
+        self._bytes = 0
+        self._lock = threading.RLock()
+
+    @staticmethod
+    def key(
+        model_id: str, revision: str, dimensions: int, device: str, text: str
+    ) -> tuple[str, str, int, str, str, str]:
+        normalized_text = " ".join(unicodedata.normalize("NFC", text).split())
+        # Keep the original text as a discriminator too: normalization helps
+        # identify equivalent content while exact text avoids reusing a vector
+        # computed from different whitespace in a way that could change scores.
+        return model_id, revision, dimensions, device, normalized_text, text
+
+    def clear(self) -> None:
+        with self._lock:
+            self._entries.clear()
+            self._bytes = 0
+
+    def get(self, key: tuple[str, str, int, str, str, str]) -> np.ndarray | None:
+        with self._lock:
+            vector = self._entries.get(key)
+            if vector is not None:
+                self._entries.move_to_end(key)
+            return vector
+
+    def put(self, key: tuple[str, str, int, str, str, str], vector: np.ndarray) -> None:
+        value = np.asarray(vector, dtype=np.float32).reshape(-1).copy()
+        entry_size = self._entry_size(key, value)
+        if entry_size > self.MAX_BYTES:
+            return
+        value.setflags(write=False)
+        with self._lock:
+            previous = self._entries.pop(key, None)
+            if previous is not None:
+                self._bytes -= self._entry_size(key, previous)
+            self._entries[key] = value
+            self._bytes += entry_size
+            while len(self._entries) > self.MAX_ENTRIES or self._bytes > self.MAX_BYTES:
+                removed_key, removed = self._entries.popitem(last=False)
+                self._bytes -= self._entry_size(removed_key, removed)
+
+    @classmethod
+    def _entry_size(cls, key: tuple[str, str, int, str, str, str], vector: np.ndarray) -> int:
+        text_bytes = len(key[-2].encode("utf-8")) + len(key[-1].encode("utf-8"))
+        return vector.nbytes + text_bytes + cls.ENTRY_OVERHEAD_BYTES
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._entries)
+
+    @property
+    def size_bytes(self) -> int:
+        with self._lock:
+            return self._bytes
 
 
 class SentenceEmbeddingMatcher(BaseSimilarityEngine):
@@ -74,9 +141,18 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
         self._load_failed = False
         self._load_error_msg: str | None = None
         self._baseline_fallback = BaselineSemanticMatcher()
+        self._job_embedding_cache = _BoundedJobEmbeddingCache()
+        # Serialize cache misses so concurrent requests for the same requisition
+        # share one encode operation rather than stampeding the model.
+        self._job_embedding_encode_lock = threading.Lock()
 
         if not lazy_load:
             self._ensure_model_loaded()
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if name == "_model" and hasattr(self, "_job_embedding_cache"):
+            self._job_embedding_cache.clear()
 
     def is_model_loaded(self) -> bool:
         """Check whether embedding weights are initialized in memory."""
@@ -263,12 +339,7 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                 normalize_embeddings=True,
                 show_progress_bar=False
             )
-            job_embeddings = model.encode(
-                job_chunks,
-                convert_to_numpy=True,
-                normalize_embeddings=True,
-                show_progress_bar=False
-            )
+            job_embeddings = self._encode_job_chunks(model, job_chunks)
 
             # 3. Compute cosine similarity between normalized embeddings
             # sim_matrix shape: (len(cand_chunks), len(job_chunks))
@@ -432,6 +503,46 @@ class SentenceEmbeddingMatcher(BaseSimilarityEngine):
                 fallback_output.fallback_reason = f"InferenceError: {exc}"
                 return fallback_output
             raise
+
+    def _encode_job_chunks(self, model: Any, job_chunks: list[str]) -> np.ndarray:
+        """Return cached job vectors, encoding only uncached job chunks."""
+        with self._job_embedding_encode_lock:
+            identity = (
+                self.model_id,
+                self.model_revision,
+                self.vector_dimensions,
+                self.device,
+            )
+            keys = [
+                self._job_embedding_cache.key(*identity, text)
+                for text in job_chunks
+            ]
+            vectors: list[np.ndarray | None] = [
+                self._job_embedding_cache.get(key) for key in keys
+            ]
+            missing_by_key: dict[tuple[str, str, int, str, str, str], str] = {}
+            for key, vector in zip(keys, vectors, strict=True):
+                if vector is None:
+                    missing_by_key.setdefault(key, key[-1])
+
+            if missing_by_key:
+                missing_keys = list(missing_by_key)
+                encoded = model.encode(
+                    [missing_by_key[key] for key in missing_keys],
+                    convert_to_numpy=True,
+                    normalize_embeddings=True,
+                    show_progress_bar=False,
+                )
+                encoded_by_key = {}
+                for key, vector in zip(missing_keys, encoded, strict=True):
+                    self._job_embedding_cache.put(key, vector)
+                    encoded_by_key[key] = np.asarray(vector, dtype=np.float32)
+
+                for index, key in enumerate(keys):
+                    if vectors[index] is None:
+                        cached = self._job_embedding_cache.get(key)
+                        vectors[index] = cached if cached is not None else encoded_by_key[key]
+            return np.stack(vectors)
 
     def _find_verbatim_quote(self, query: str, text: str) -> str | None:
         """Finds an actual sentence or clause in the text containing the query term."""

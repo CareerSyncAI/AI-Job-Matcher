@@ -74,3 +74,45 @@ def test_education_extractor(edu_extractor):
     degrees = [e["degree_level"] for e in entries]
     assert "Master" in degrees
     assert "Bachelor" in degrees
+
+
+def test_internship_separated_from_professional_tenure(exp_extractor):
+    """Internships are identified and excluded from professional tenure calculations."""
+    text = """
+    Software Engineering Intern | Startup Inc
+    June 2019 - Aug 2019
+    - Built internal dashboard tools.
+
+    Junior Developer | Tech Corp
+    Jan 2020 - Dec 2021
+    - Backend API development.
+    """
+    res = exp_extractor.extract(text)
+    entries = res["entries"]
+    assert len(entries) == 2
+
+    # Check internship flags
+    intern_entry = next(e for e in entries if "Intern" in e["role_title"])
+    dev_entry = next(e for e in entries if "Developer" in e["role_title"])
+    assert intern_entry["is_internship"] is True
+    assert dev_entry["is_internship"] is False
+
+    # Total tenure only includes the full-time role (23 months, ~1.9 yrs)
+    assert res["total_experience_months"] == 23
+
+
+def test_malformed_and_reversed_date_ranges_safely_ignored(exp_extractor):
+    """Reversed or nonsensical date ranges do not corrupt tenure or crash."""
+    text = """
+    Invalid Role | Bad Data Corp
+    2024 - 2020
+    - Impossible timeline.
+
+    Valid Role | Good Corp
+    2021 - 2023
+    - Normal job.
+    """
+    res = exp_extractor.extract(text)
+    assert len(res["entries"]) == 1
+    assert res["entries"][0]["organization"] == "Good Corp"
+    assert res["total_experience_months"] >= 24

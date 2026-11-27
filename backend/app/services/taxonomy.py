@@ -36,6 +36,11 @@ DOMAINS = {
     "DATA": "Data Engineering",
     "SECURITY": "Security & Systems",
     "CORE": "Core CS & Methodologies",
+    "ACCOUNTING": "Accounting & Finance",
+    "HEALTHCARE": "Healthcare & Nursing",
+    "BUSINESS": "Business Analysis",
+    "PROJECT": "Project Management",
+    "MARKETING": "Digital Marketing",
 }
 
 # Master Taxonomy Definitions
@@ -84,6 +89,20 @@ RAW_TAXONOMY: list[SkillDefinition] = [
         disambiguation_contexts=("spring boot", "spring framework", "java spring", "spring mvc", "spring cloud", "spring data"),
         related_skills=("Java", "Microservices", "Hibernate"),
         transferable_to=("Microservices", "REST APIs"),
+    ),
+    SkillDefinition(
+        canonical_name="RabbitMQ",
+        category=DOMAINS["BACKEND"],
+        aliases=("rabbitmq", "rabbit mq"),
+        related_skills=("Celery", "Kafka", "Microservices"),
+        transferable_to=(),
+    ),
+    SkillDefinition(
+        canonical_name="Celery",
+        category=DOMAINS["BACKEND"],
+        aliases=("celery",),
+        related_skills=("RabbitMQ", "Redis", "Python"),
+        transferable_to=(),
     ),
     SkillDefinition(
         canonical_name="Go",
@@ -187,8 +206,22 @@ RAW_TAXONOMY: list[SkillDefinition] = [
         related_skills=("Docker", "Kubernetes", "gRPC", "REST APIs"),
         transferable_to=(),
     ),
+    SkillDefinition(
+        canonical_name="OpenAPI",
+        category=DOMAINS["BACKEND"],
+        aliases=("openapi", "swagger", "openapi 3", "swagger ui"),
+        related_skills=("REST APIs", "FastAPI"),
+        transferable_to=("REST APIs",),
+    ),
 
     # ── Frontend Engineering ──
+    SkillDefinition(
+        canonical_name="Bootstrap",
+        category=DOMAINS["FRONTEND"],
+        aliases=("bootstrap", "bootstrap 5", "bootstrap 4"),
+        related_skills=("HTML5", "CSS3", "Tailwind CSS"),
+        transferable_to=("CSS3",),
+    ),
     SkillDefinition(
         canonical_name="React",
         category=DOMAINS["FRONTEND"],
@@ -315,9 +348,18 @@ RAW_TAXONOMY: list[SkillDefinition] = [
     SkillDefinition(
         canonical_name="Kubernetes",
         category=DOMAINS["DEVOPS"],
-        aliases=("kubernetes", "k8s", "helm", "container orchestration"),
-        related_skills=("Docker", "DevOps", "Cloud", "AWS"),
+        aliases=("kubernetes", "k8s", "container orchestration"),
+        related_skills=("Docker", "DevOps", "Cloud", "AWS", "Helm"),
         transferable_to=("Docker", "DevOps"),
+    ),
+    SkillDefinition(
+        canonical_name="Helm",
+        category=DOMAINS["DEVOPS"],
+        aliases=("helm", "helm charts", "helm3", "helm chart"),
+        is_ambiguous=True,
+        disambiguation_contexts=("helm charts", "helm chart", "helm3", "kubernetes", "k8s", "devops", "deploy", "chart", "charts", "package manager", "manifests"),
+        related_skills=("Kubernetes", "DevOps", "Docker"),
+        transferable_to=(),
     ),
     SkillDefinition(
         canonical_name="AWS",
@@ -437,7 +479,7 @@ RAW_TAXONOMY: list[SkillDefinition] = [
     ),
     SkillDefinition(
         canonical_name="Agile",
-        category=DOMAINS["CORE"],
+        category=DOMAINS["PROJECT"],
         aliases=("agile", "scrum", "kanban", "sprint planning", "jira"),
         related_skills=(),
         transferable_to=(),
@@ -449,6 +491,73 @@ RAW_TAXONOMY: list[SkillDefinition] = [
         related_skills=("Microservices", "REST APIs"),
         transferable_to=(),
     ),
+
+    # ── Accounting & Finance ──
+    SkillDefinition(
+        canonical_name="Accounts Payable",
+        category=DOMAINS["ACCOUNTING"],
+        aliases=("accounts payable", "payables", "ap"),
+        is_ambiguous=True,
+        disambiguation_contexts=("accounts payable", "accounts receivable", "invoice", "general ledger", "accounting"),
+    ),
+    SkillDefinition(
+        canonical_name="Accounts Receivable",
+        category=DOMAINS["ACCOUNTING"],
+        aliases=("accounts receivable", "receivables", "ar"),
+        is_ambiguous=True,
+        disambiguation_contexts=("accounts receivable", "accounts payable", "invoice", "general ledger", "accounting"),
+    ),
+    SkillDefinition(
+        canonical_name="General Ledger",
+        category=DOMAINS["ACCOUNTING"],
+        aliases=("general ledger", "gl"),
+        is_ambiguous=True,
+        disambiguation_contexts=("general ledger", "accounting", "accounts payable", "accounts receivable", "journal entry"),
+    ),
+    SkillDefinition("Bank Reconciliation", DOMAINS["ACCOUNTING"], ("bank reconciliation", "bank reconciliations", "account reconciliation")),
+    SkillDefinition("Financial Reporting", DOMAINS["ACCOUNTING"], ("financial reporting", "management reporting")),
+    SkillDefinition("Financial Statements", DOMAINS["ACCOUNTING"], ("financial statements", "income statement", "balance sheet", "cash flow statement")),
+    SkillDefinition("GST", DOMAINS["ACCOUNTING"], ("gst", "goods and services tax")),
+    SkillDefinition("Tally", DOMAINS["ACCOUNTING"], ("tally", "tally erp", "tally prime"), is_ambiguous=True, disambiguation_contexts=("tally erp", "tally prime", "accounting", "gst", "general ledger")),
+    SkillDefinition("QuickBooks", DOMAINS["ACCOUNTING"], ("quickbooks", "quick books")),
+    SkillDefinition("Auditing", DOMAINS["ACCOUNTING"], ("auditing", "audit procedures", "financial audit")),
+    SkillDefinition("Payroll", DOMAINS["ACCOUNTING"], ("payroll", "payroll processing")),
+    SkillDefinition("Budgeting and Forecasting", DOMAINS["ACCOUNTING"], ("budgeting", "financial forecasting", "budget forecasting")),
+
+    # ── Healthcare & Nursing ──
+    SkillDefinition("Patient Care", DOMAINS["HEALTHCARE"], ("patient care", "direct patient care", "care delivery")),
+    SkillDefinition("Clinical Assessment", DOMAINS["HEALTHCARE"], ("clinical assessment", "patient assessment", "nursing assessment")),
+    SkillDefinition("Medication Administration", DOMAINS["HEALTHCARE"], ("medication administration", "administering medications", "medication management")),
+    SkillDefinition("Vital Signs Monitoring", DOMAINS["HEALTHCARE"], ("vital signs", "vital signs monitoring", "vital sign monitoring")),
+    SkillDefinition("Electronic Health Records", DOMAINS["HEALTHCARE"], ("electronic health records", "electronic health record", "ehr", "emr")),
+    SkillDefinition("Basic Life Support", DOMAINS["HEALTHCARE"], ("basic life support", "bls"), is_ambiguous=True, disambiguation_contexts=("basic life support", "cpr", "healthcare", "nursing", "clinical", "patient care")),
+    SkillDefinition("CPR", DOMAINS["HEALTHCARE"], ("cpr", "cardiopulmonary resuscitation")),
+    SkillDefinition("Care Planning", DOMAINS["HEALTHCARE"], ("care planning", "patient care plans", "nursing care plan")),
+    SkillDefinition("Infection Control", DOMAINS["HEALTHCARE"], ("infection control", "infection prevention")),
+
+    # ── Business Analysis ──
+    SkillDefinition("Business Analysis", DOMAINS["BUSINESS"], ("business analysis", "business analyst")),
+    SkillDefinition("Requirements Gathering", DOMAINS["BUSINESS"], ("requirements gathering", "requirements elicitation", "requirement analysis")),
+    SkillDefinition("Stakeholder Management", DOMAINS["BUSINESS"], ("stakeholder management", "stakeholder engagement", "stakeholder analysis")),
+    SkillDefinition("Process Mapping", DOMAINS["BUSINESS"], ("process mapping", "business process mapping", "process modeling")),
+    SkillDefinition("Data Analysis", DOMAINS["BUSINESS"], ("data analysis", "data analytics", "business data analysis")),
+    SkillDefinition("Microsoft Excel", DOMAINS["BUSINESS"], ("microsoft excel", "ms excel", "excel")),
+    SkillDefinition("Power BI", DOMAINS["BUSINESS"], ("power bi", "powerbi")),
+    SkillDefinition("Tableau", DOMAINS["BUSINESS"], ("tableau",)),
+
+    # ── Project Management ──
+    SkillDefinition("Project Management", DOMAINS["PROJECT"], ("project management", "project manager")),
+    SkillDefinition("Project Planning", DOMAINS["PROJECT"], ("project planning", "project scheduling", "project plan")),
+    SkillDefinition("Risk Management", DOMAINS["PROJECT"], ("risk management", "project risk management")),
+
+    # ── Digital Marketing ──
+    SkillDefinition("Digital Marketing", DOMAINS["MARKETING"], ("digital marketing", "online marketing")),
+    SkillDefinition("Search Engine Optimization", DOMAINS["MARKETING"], ("search engine optimization", "search engine optimisation", "seo")),
+    SkillDefinition("Search Engine Marketing", DOMAINS["MARKETING"], ("search engine marketing", "sem"), is_ambiguous=True, disambiguation_contexts=("search engine marketing", "paid search", "digital marketing", "campaign")),
+    SkillDefinition("Campaign Analytics", DOMAINS["MARKETING"], ("campaign analytics", "marketing analytics", "campaign performance")),
+    SkillDefinition("Return on Investment", DOMAINS["MARKETING"], ("return on investment", "roi"), is_ambiguous=True, disambiguation_contexts=("return on investment", "marketing", "campaign", "advertising", "revenue")),
+    SkillDefinition("Content Marketing", DOMAINS["MARKETING"], ("content marketing", "content strategy")),
+    SkillDefinition("Social Media Marketing", DOMAINS["MARKETING"], ("social media marketing", "social media campaigns")),
 ]
 
 

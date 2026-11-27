@@ -57,6 +57,7 @@ class AuthenticationService:
         existing = (
             db.query(RefreshSession)
             .filter(RefreshSession.token_hash == hash_refresh_token(refresh_token))
+            .with_for_update()
             .one_or_none()
         )
         if not existing or existing.revoked_at is not None:
