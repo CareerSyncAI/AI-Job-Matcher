@@ -306,4 +306,3 @@ def test_helm_and_kubernetes_are_separate_skills(extractor, normalizer):
     prose_text = "She served at the helm of the organization for five years, driving record business growth."
     prose_skills = {s["canonical_name"] for s in extractor.extract_from_text(prose_text)}
     assert "Helm" not in prose_skills
-

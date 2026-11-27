@@ -169,4 +169,3 @@ def test_synthetic_experience_and_education_edge_cases():
     no_degree = extract_education_from_text("Education:\nOnline coursework and professional development")
     assert degrees and degrees[0]["degree_level"] == "Master"
     assert no_degree == []
-

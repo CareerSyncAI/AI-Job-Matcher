@@ -1307,5 +1307,3 @@ def test_historical_run_application_isolation_same_candidate_two_applications(cl
     res_valid2 = client.get(f"/api/v1/applications/{app2_id}/match-results?run_id={run2.id}", headers=c_headers)
     assert res_valid2.status_code == 200
     assert res_valid2.json()["application_id"] == app2_id
-
-

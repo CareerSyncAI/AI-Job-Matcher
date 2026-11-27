@@ -62,6 +62,3 @@ frontend_backup/
 scratch/
 scripts/scratch_*.py
 scripts/*.tmp
-
-
-
